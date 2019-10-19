@@ -7,16 +7,28 @@ namespace NesEmu
 {
     public partial class EmulatorForm : Form
     {
-        private EntertainmentSystem gameSystem = new EntertainmentSystem();
+        private EntertainmentSystem gameSystem;
 
         public EmulatorForm()
         {
             InitializeComponent();
 
             this.KeyPreview = true;
+        }
 
-            this.nesDisplay.System = gameSystem;
-            this.registers.Cpu = gameSystem.Cpu;
+        public EntertainmentSystem EntertainmentSystem
+        {
+            get
+            {
+                return this.gameSystem;
+            }
+
+            set
+            {
+                this.gameSystem = value;
+                this.nesDisplay.System = value;
+                this.registers.Cpu = value.Cpu;
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

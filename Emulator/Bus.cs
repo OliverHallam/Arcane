@@ -1,17 +1,39 @@
-﻿namespace NesEmu.Emulator
-{
-    class Bus
-    {
-        private byte[] memory = new byte[2048];
+﻿using System;
 
-        public byte Read(short address)
+namespace NesEmu.Emulator
+{
+    public class Bus
+    {
+        private Cart cart;
+        private byte[] ram = new byte[2048];
+
+        public byte Read(ushort address)
         {
-            return memory[address & 0x7ff];
+            if (address < 0x2000)
+            {
+                return ram[address & 0x7ff];
+            }
+
+            byte value;
+            if (cart.Read(address, out value))
+            {
+                return value;
+            }
+
+            return 0;
         }
 
-        public void Write(short address, byte value)
+        public void Write(ushort address, byte value)
         {
-            memory[address & 0x7ff] = value;
+            if (address < 0x2000)
+            {
+                ram[address & 0x7ff] = value;
+            }
+        }
+
+        internal void Attach(Cart cart)
+        {
+            this.cart = cart;
         }
     }
 }

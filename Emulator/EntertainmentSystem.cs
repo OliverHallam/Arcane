@@ -6,6 +6,7 @@ namespace NesEmu.Emulator
     public class EntertainmentSystem
     {
         private NesCpu cpu;
+        private Bus bus;
 
         private Thread emulationThread;
         private bool running;
@@ -15,12 +16,23 @@ namespace NesEmu.Emulator
 
         public EntertainmentSystem()
         {
-            this.cpu = new NesCpu();
+            this.bus = new Bus();
+            this.cpu = new NesCpu(this.bus);
 
             this.emulationThread = new Thread(this.Run);
         }
 
         public NesCpu Cpu => this.cpu;
+
+        public void InsertCart(Cart cart)
+        {
+            bus.Attach(cart);
+        }
+
+        public void Reset()
+        {
+            this.cpu.Reset();
+        }
 
         public void Start()
         {

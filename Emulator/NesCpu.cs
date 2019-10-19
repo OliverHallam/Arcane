@@ -6,6 +6,8 @@ namespace NesEmu.Emulator
 {
     public class NesCpu
     {
+        private Bus bus;
+
         // Registers
         public byte A;
         public byte X;
@@ -16,12 +18,23 @@ namespace NesEmu.Emulator
 
         public int CycleCount;
 
+        public NesCpu(Bus bus)
+        {
+            this.bus = bus;
+        }
+
+        public void Reset()
+        {
+            // 7 cycles
+
+            this.PC = (ushort)(bus.Read(0xfffc) << 8 | bus.Read(0xfffd));
+        }
+
         public void Tick()
         {
+
+
             CycleCount++;
-
-            A++;
-
             this.Ticked?.Invoke(this, EventArgs.Empty);
         }
 
