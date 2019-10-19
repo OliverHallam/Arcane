@@ -18,4 +18,22 @@
     <ProjectReference Include="..\Emulator\Emulator.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="EmulatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="EmulatorForm.Designer.cs">
+      <DependentUpon>EmulatorForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="NesDisplayControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="EmulatorForm.resx">
+      <DependentUpon>EmulatorForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

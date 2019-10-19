@@ -1,0 +1,94 @@
+﻿using System.Drawing;
+using System.Windows.Forms;
+using System.Drawing.Imaging;
+using NesEmu.Emulator;
+using System;
+using System.Drawing.Drawing2D;
+
+namespace NesEmu
+{
+    public partial class NesDisplayControl : Control
+    {
+        private Bitmap frame = new Bitmap(256, 240, PixelFormat.Format24bppRgb);
+        private EntertainmentSystem system;
+
+        public NesDisplayControl()
+        {
+            this.DoubleBuffered = true;
+        }
+
+        public EntertainmentSystem System
+        {
+            get
+            {
+                return this.system;
+            }
+            set
+            {
+                if (this.system != null)
+                {
+                    this.system.OnFrame -= OnFrame;
+                }
+
+                this.system = value;
+                if (this.system != null)
+                {
+                    this.system.OnFrame += OnFrame;
+                }
+            }
+        }
+
+        protected unsafe void OnFrame(object sender, EventArgs e)
+        {
+            this.Invalidate();
+        }
+
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+
+            var graphics = e.Graphics;
+
+            if (this.system != null)
+            {
+                this.CaptureFrame();
+
+                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                graphics.DrawImage(frame, 0, 0, this.Width, this.Height);
+            }
+            else
+            {
+                graphics.Clear(Color.Blue);
+            }
+        }
+
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            Invalidate();
+            base.OnKeyDown(e);
+        }
+
+        private unsafe void CaptureFrame()
+        {
+            var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+            fixed (byte* framePtr = this.system.Frame)
+            {
+                var srcPtr = framePtr;
+                var destPtr = (byte*)data.Scan0;
+
+                for (var i = 0; i < 256 * 240; i++)
+                {
+                    *destPtr++ = *srcPtr;
+                    *destPtr++ = *srcPtr;
+                    *destPtr++ = *srcPtr;
+
+                    srcPtr++;
+                }
+            }
+
+            frame.UnlockBits(data);
+        }
+    }
+}

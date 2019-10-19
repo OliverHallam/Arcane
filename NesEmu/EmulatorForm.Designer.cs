@@ -28,13 +28,34 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.nesDisplay = new NesEmu.NesDisplayControl();
+            this.SuspendLayout();
+            // 
+            // nesDisplay
+            // 
+            this.nesDisplay.Location = new System.Drawing.Point(13, 13);
+            this.nesDisplay.Name = "nesDisplay";
+            this.nesDisplay.Size = new System.Drawing.Size(1024, 960);
+            this.nesDisplay.System = null;
+            this.nesDisplay.TabIndex = 0;
+            this.nesDisplay.Text = "nesDisplayControl";
+            // 
+            // EmulatorForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "Form1";
+            this.ClientSize = new System.Drawing.Size(1048, 983);
+            this.Controls.Add(this.nesDisplay);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Name = "EmulatorForm";
+            this.Text = "NesEmu";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private NesDisplayControl nesDisplay;
     }
 }
 
