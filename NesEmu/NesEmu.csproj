@@ -28,6 +28,9 @@
     <Compile Update="NesDisplayControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Update="RegistersControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

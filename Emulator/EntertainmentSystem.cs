@@ -5,44 +5,56 @@ namespace NesEmu.Emulator
 {
     public class EntertainmentSystem
     {
+        private NesCpu cpu;
+
         private Thread emulationThread;
+        private bool running;
         private bool stopRequested;
 
         public byte[] Frame { get; } = new byte[256 * 240];
 
         public EntertainmentSystem()
         {
+            this.cpu = new NesCpu();
+
             this.emulationThread = new Thread(this.Run);
         }
 
-        private void Tick()
-        {
-            var random = new Random();
-            var frameBytes = new Span<byte>(this.Frame);
-            var index = 0;
-            for (var y=0; y<240; y++)
-            {
-                for (var x = 0; x<256; x++)
-                {
-                    frameBytes[index++] = (byte)random.Next(0, 256);
-                }
-            }
-
-            this.OnFrame?.Invoke(this, EventArgs.Empty);
-        }
+        public NesCpu Cpu => this.cpu;
 
         public void Start()
         {
+            if (this.running)
+            {
+                return;
+            }
+
+            this.running = true;
             this.emulationThread.Start();
+        }
+
+        public void Step()
+        {
+            if (this.running)
+            {
+                return;
+            }
+
+            this.Tick();
         }
 
         public void Stop()
         {
+            if (!this.running)
+            {
+                return;
+            }
+
             this.stopRequested = true;
             this.emulationThread.Join();
             this.stopRequested = false;
+            this.running = false;
         }
-
 
         private void Run()
         {
@@ -53,7 +65,26 @@ namespace NesEmu.Emulator
             }
         }
 
+        private unsafe void Tick()
+        {
+            this.Cpu.Tick();
 
+            var random = new Random();
+            var index = 0;
+
+            fixed (byte* frameBytes = Frame)
+            {
+                for (var y = 0; y < 240; y++)
+                {
+                    for (var x = 0; x < 256; x++)
+                    {
+                        frameBytes[index++] = (byte)random.Next(0, 256);
+                    }
+                }
+            }
+
+            this.OnFrame?.Invoke(this, EventArgs.Empty);
+        }
 
         public event EventHandler OnFrame;
     }

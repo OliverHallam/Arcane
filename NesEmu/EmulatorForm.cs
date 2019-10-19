@@ -13,9 +13,23 @@ namespace NesEmu
         {
             InitializeComponent();
 
-            this.nesDisplay.System = gameSystem;
+            this.KeyPreview = true;
 
-            gameSystem.Start();
+            this.nesDisplay.System = gameSystem;
+            this.registers.Cpu = gameSystem.Cpu;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space)
+            {
+                gameSystem.Step();
+            }
+
+            if (e.KeyCode == Keys.F5)
+            {
+                gameSystem.Start();
+            }
         }
 
         protected override void OnClosed(EventArgs e)
