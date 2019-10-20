@@ -14,11 +14,16 @@ namespace NesEmu.Emulator
         private bool running;
         private bool stopRequested;
 
+        private ushort breakpoint = 0xc85f;
+
         public EntertainmentSystem()
         {
-            this.ppu = new Ppu();
-            this.bus = new Bus(ppu);
+            this.bus = new Bus();
+            this.ppu = new Ppu(this.bus);
             this.cpu = new NesCpu(this.bus);
+
+            bus.Attach(cpu);
+            bus.Attach(ppu);
         }
 
         public NesCpu Cpu => this.cpu;
@@ -95,6 +100,15 @@ namespace NesEmu.Emulator
                         return;
                     }
 
+                    if (this.Cpu.PC == breakpoint)
+                    {
+                        this.stopRequested = false;
+                        this.running = false;
+
+                        this.Breaked?.Invoke(this, EventArgs.Empty);
+                        return;
+                    }
+
                     this.Cpu.RunInstruction();
                 }
 
@@ -117,6 +131,7 @@ namespace NesEmu.Emulator
 
             this.Breaked?.Invoke(this, EventArgs.Empty);
         }
+
 
         public void Break()
         {

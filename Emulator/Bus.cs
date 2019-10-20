@@ -4,29 +4,31 @@ namespace NesEmu.Emulator
 {
     public class Bus
     {
+        private NesCpu cpu;
         private Ppu ppu;
 
         private Cart cart;
-        private byte[] ram = new byte[2048];
+
+        private byte[] cpuRam = new byte[2048];
+        private byte[] ppuRam = new byte[2048];
 
         public ushort LastWriteAddress { get; set; }
 
 
-        public Bus(Ppu ppu)
+        public Bus()
         {
             for (var i=0; i<2048; i++)
             {
-                ram[i] = 0xff;
+                cpuRam[i] = 0xff;
+                ppuRam[i] = 0xff;
             }
-
-            this.ppu = ppu;
         }
 
         public byte Peek(ushort address)
         {
             if (address < 0x2000)
             {
-                return ram[address & 0x7ff];
+                return cpuRam[address & 0x7ff];
             }
 
             if (address < 0x4000)
@@ -47,7 +49,7 @@ namespace NesEmu.Emulator
         {
             if (address < 0x2000)
             {
-                return ram[address & 0x7ff];
+                return cpuRam[address & 0x7ff];
             }
 
             if (address < 0x4000)
@@ -68,15 +70,55 @@ namespace NesEmu.Emulator
         {
             this.LastWriteAddress = address;
 
+            if (address == 0x10 && value != 0x10)
+            {
+                
+            }
+
             if (address < 0x2000)
             {
-                ram[address & 0x7ff] = value;
+                cpuRam[address & 0x7ff] = value;
             }
+            else if (address < 0x4000)
+            {
+                ppu.Write(address, value);
+            }
+        }
+
+        internal void SignalNmi()
+        {
+            this.cpu.SignalNmi();
         }
 
         public byte PpuRead(ushort address)
         {
-            return cart.PpuRead(address);
+            address &= 0x3fff;
+
+            if (address < 0x2000)
+            {
+                return cart.PpuRead(address);
+            }
+            else if (address < 0x3000)
+            {
+                // TODO: more general nametable mirroring
+                address &= 0xfbff;
+
+                return this.ppuRam[address & 0x07ff];
+            }
+
+            return 0;
+        }
+
+        public void PpuWrite(ushort address, byte value)
+        {
+            address &= 0x3fff;
+            if (address >= 0x2000 & address < 0x3000)
+            {
+                // TODO: more general nametable mirroring
+                address &= 0xfbff;
+
+                this.ppuRam[address & 0x07ff] = value;
+            }
         }
 
         public void TickCpu()
@@ -84,9 +126,19 @@ namespace NesEmu.Emulator
             this.ppu.Tick();
         }
 
-        internal void Attach(Cart cart)
+        public void Attach(Cart cart)
         {
             this.cart = cart;
+        }
+
+        internal void Attach(NesCpu cpu)
+        {
+            this.cpu = cpu;
+        }
+
+        internal void Attach(Ppu ppu)
+        {
+            this.ppu = ppu;
         }
     }
 }
