@@ -27,16 +27,21 @@ namespace NesEmu
             {
                 this.gameSystem = value;
                 this.nesDisplay.System = value;
-                this.registers.Cpu = value.Cpu;
+                this.registers.System = value;
                 this.dissassembly.Bus = value.Bus;
 
-                value.Cpu.Ticked += OnCpuTick;
+                value.Breaked += OnBreak;
             }
         }
 
-        private void OnCpuTick(object sender, EventArgs e)
+        private void OnBreak(object sender, EventArgs e)
         {
-            this.dissassembly.StartAddress = this.dissassembly.ProgramCounter = ((NesCpu)sender).PC;
+            this.dissassembly.ProgramCounter = this.gameSystem.Cpu.PC;
+
+            if (this.dissassembly.ProgramCounter >= this.dissassembly.StartAddress + this.dissassembly.InstructionCount)
+            {
+                this.dissassembly.StartAddress = this.dissassembly.ProgramCounter;
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -48,6 +53,7 @@ namespace NesEmu
 
             if (e.KeyCode == Keys.F5)
             {
+                this.dissassembly.ProgramCounter = 0;
                 gameSystem.Start();
             }
         }

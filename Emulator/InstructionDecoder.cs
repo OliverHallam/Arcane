@@ -58,8 +58,8 @@ namespace NesEmu.Emulator
             const AddressingMode zp = AddressingMode.ZeroPage;
             const AddressingMode zpx = AddressingMode.ZeroPageX;
             const AddressingMode zpy = AddressingMode.ZeroPageY;
-            const AddressingMode izx = AddressingMode.PostIndexedIndirect;
-            const AddressingMode izy = AddressingMode.PreIndexedIndirect;
+            const AddressingMode izx = AddressingMode.IndexedIndirect;
+            const AddressingMode izy = AddressingMode.IndirectIndexed;
             const AddressingMode ind = AddressingMode.Indirect;
             const AddressingMode abs = AddressingMode.Absolute;
             const AddressingMode abx = AddressingMode.AbsoluteX;

@@ -13,8 +13,8 @@
         Accumulator,
         Indexed,
         Indirect,
-        PreIndexedIndirect,
-        PostIndexedIndirect,
+        IndirectIndexed,
+        IndexedIndirect,
         Relative
     }
 

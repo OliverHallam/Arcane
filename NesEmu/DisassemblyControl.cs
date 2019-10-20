@@ -211,6 +211,25 @@ namespace NesEmu
                         break;
                     }
 
+                case AddressingMode.ZeroPage:
+                    {
+                        var value = this.bus.Read(currentAddress++);
+                        graphics.DrawString("$" + value.ToString("X2"), this.Font, this.absoluteBrush, argX, y);
+                        break;
+                    }
+
+                case AddressingMode.IndirectIndexed:
+                    {
+                        var value = this.bus.Read(currentAddress++);
+                        graphics.DrawString("(", this.Font, this.instructionBrush, argX, y);
+                        argX += graphics.MeasureString("(", this.Font).Width;
+                        var address = "$" + value.ToString("X2");
+                        graphics.DrawString(address, this.Font, this.absoluteBrush, argX, y);
+                        argX += graphics.MeasureString(address, this.Font).Width;
+                        graphics.DrawString("),Y", this.Font, this.instructionBrush, argX, y);
+                        break;
+                    }
+
                 default:
                     currentAddress += (ushort)InstructionDecoder.GetAddressingBytes(opCode);
                     graphics.DrawString("...", this.Font, this.instructionBrush, argX, y);

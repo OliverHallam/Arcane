@@ -39,63 +39,94 @@ namespace NesEmu.Emulator
         public void Tick()
         {
             this.RunInstruction();
-
-            this.Ticked?.Invoke(this, EventArgs.Empty);
         }
-
-        public event EventHandler Ticked;
 
         private void RunInstruction()
         {
             var opCode = bus.Read(this.PC++);
-            CycleCount++;
+            this.CycleCount++;
 
             switch(opCode)
             {
+                case 0x10:
+                    this.Relative();
+                    this.Bpl();
+                    return;
+
                 case 0x29:
-                    Immediate();
-                    And();
+                    this.Immediate();
+                    this.And();
                     return;
 
                 case 0x78:
-                    CycleCount++;
-                    Sei();
+                    this.CycleCount++;
+                    this.Sei();
+                    return;
+
+                case 0x84:
+                    this.ZeroPage();
+                    this.Sty();
+                    return;
+
+                case 0x88:
+                    this.CycleCount++;
+                    this.Dey();
                     return;
 
                 case 0x8d:
-                    Absolute();
-                    Sta();
+                    this.Absolute();
+                    this.Sta();
+                    return;
+
+                case 0x91:
+                    this.IndirectIndexed();
+                    this.Sta();
                     return;
 
                 case 0x9a:
-                    CycleCount++;
-                    Txs();
+                    this.CycleCount++;
+                    this.Txs();
                     return;
 
+                case 0xa0:
+                    this.Immediate();
+                    this.Ldy();
+                    break;
+
                 case 0xa2:
-                    Immediate();
-                    Ldx();
+                    this.Immediate();
+                    this.Ldx();
                     return;
 
                 case 0xa9:
-                    Immediate();
-                    Lda();
+                    this.Immediate();
+                    this.Lda();
                     return;
 
                 case 0xad:
-                    Absolute();
-                    Load();
-                    Lda();
+                    this.Absolute();
+                    this.Load();
+                    this.Lda();
+                    return;
+
+                case 0xc6:
+                    this.ZeroPage();
+                    this.Dec();
+                    return;
+
+                case 0xd0:
+                    this.Relative();
+                    this.Bne();
                     return;
 
                 case 0xd8:
-                    CycleCount++;
-                    Cld();
+                    this.CycleCount++;
+                    this.Cld();
                     return;
 
                 case 0xf0:
-                    Relative();
-                    Beq();
+                    this.Relative();
+                    this.Beq();
                     return;
             }
         }
@@ -103,39 +134,69 @@ namespace NesEmu.Emulator
         private void Immediate()
         {
             this.value = bus.Read(this.PC++);
-            CycleCount++;
+            this.CycleCount++;
         }
 
         private void Absolute()
         {
             this.address = (ushort)(this.bus.Read(this.PC++) | this.bus.Read(this.PC++) << 8);
-            CycleCount += 2;
+            this.CycleCount += 2;
+        }
+
+        private void ZeroPage()
+        {
+            this.address = bus.Read(this.PC++);
+            this.CycleCount++;
         }
 
         private void Relative()
         {
             var relative = (sbyte)(this.bus.Read(this.PC++));
             this.address = (ushort)(this.PC + relative);
-            CycleCount++;
+            this.CycleCount++;
+        }
+
+        private void IndirectIndexed()
+        {
+            ushort indirectAddress = bus.Read(this.PC++);
+            this.address = (ushort)(this.bus.Read(indirectAddress) | this.bus.Read((ushort)(indirectAddress + 1)) << 8);
+            this.address += this.Y;
+            this.CycleCount += 4;
         }
 
         private void Load()
         {
             this.value = bus.Read(this.address);
-            CycleCount++;
+            this.CycleCount++;
         }
 
         private void And()
         {
             this.A &= this.value;
-            SetFlags(this.A);
+            this.SetFlags(this.A);
         }
 
         private void Beq()
         {
             if ((this.P & ZFlag) != 0)
             {
-                Jump();
+                this.Jump();
+            }
+        }
+
+        private void Bne()
+        {
+            if ((this.P & ZFlag) == 0)
+            {
+                this.Jump();
+            }
+        }
+
+        private void Bpl()
+        {
+            if ((this.P & NFlag) == 0)
+            {
+                this.Jump();
             }
         }
 
@@ -144,16 +205,37 @@ namespace NesEmu.Emulator
             this.P &= 0xf7;
         }
 
+        private void Dec()
+        {
+            var value = this.bus.Read(this.address);
+            value--;
+            this.bus.Write(this.address, value);
+            this.CycleCount += 3;
+            this.SetFlags(value);
+        }
+
+        private void Dey()
+        {
+            this.Y--;
+            this.SetFlags(this.Y);
+        }
+
         private void Lda()
         {
             this.A = value;
-            SetFlags(this.A);
+            this.SetFlags(this.A);
         }
 
         private void Ldx()
         {
             this.X = value;
-            SetFlags(this.X);
+            this.SetFlags(this.X);
+        }
+
+        private void Ldy()
+        {
+            this.Y = value;
+            this.SetFlags(this.Y);
         }
 
         private void Sei()
@@ -164,7 +246,13 @@ namespace NesEmu.Emulator
         private void Sta()
         {
             this.bus.Write(this.address, this.A);
-            CycleCount++;
+            this.CycleCount++;
+        }
+
+        private void Sty()
+        {
+            this.bus.Write(this.address, this.Y);
+            this.CycleCount++;
         }
 
         private void Txs()
@@ -177,7 +265,7 @@ namespace NesEmu.Emulator
             if ((this.PC & 0xff00) != (this.address & 0xff00))
             {
                 // page crossed
-                CycleCount++;
+                this.CycleCount++;
             }
 
             this.PC = this.address;

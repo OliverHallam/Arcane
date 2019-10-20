@@ -36,7 +36,7 @@
             // registers
             // 
             this.registers.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.registers.Cpu = null;
+            this.registers.System = null;
             this.registers.Location = new System.Drawing.Point(1566, 19);
             this.registers.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.registers.Name = "registers";

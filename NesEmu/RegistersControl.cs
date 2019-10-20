@@ -11,7 +11,7 @@ namespace WindowsFormsApp1
 {
     class RegistersControl : Control
     {
-        private NesCpu cpu;
+        private EntertainmentSystem system;
 
         private int a;
         private int x;
@@ -52,25 +52,25 @@ namespace WindowsFormsApp1
             base.Dispose(disposing);
         }
 
-        public NesCpu Cpu
+        public EntertainmentSystem System
         {
             get
             {
-                return this.cpu;
+                return this.system;
             }
 
             set
             {
-                if (this.cpu != null)
+                if (this.system != null)
                 {
-                    this.cpu.Ticked -= OnTick;
+                    this.system.Breaked -= OnTick;
                 }
 
-                this.cpu = value;
+                this.system = value;
 
-                if (this.cpu != null)
+                if (this.system != null)
                 {
-                    this.cpu.Ticked += OnTick;
+                    this.system.Breaked += OnTick;
                 }
 
                 Invalidate();
@@ -121,12 +121,13 @@ namespace WindowsFormsApp1
 
         private void OnTick(object sender, EventArgs e)
         {
-            this.a = this.cpu.A;
-            this.x = this.cpu.X;
-            this.y = this.cpu.Y;
-            this.pc = this.cpu.PC;
-            this.s = this.cpu.S;
-            this.p = this.cpu.P;
+            var cpu = this.system.Cpu;
+            this.a = cpu.A;
+            this.x = cpu.X;
+            this.y = cpu.Y;
+            this.pc = cpu.PC;
+            this.s = cpu.S;
+            this.p = cpu.P;
 
             this.Invalidate();
         }

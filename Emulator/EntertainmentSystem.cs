@@ -54,6 +54,8 @@ namespace NesEmu.Emulator
             }
 
             this.Tick();
+
+            this.Breaked?.Invoke(this, EventArgs.Empty);
         }
 
         public void Stop()
@@ -67,6 +69,8 @@ namespace NesEmu.Emulator
             this.emulationThread.Join();
             this.stopRequested = false;
             this.running = false;
+
+            this.Breaked?.Invoke(this, EventArgs.Empty);
         }
 
         private void Run()
@@ -100,5 +104,13 @@ namespace NesEmu.Emulator
         }
 
         public event EventHandler OnFrame;
+
+
+        public void Break()
+        {
+            this.Breaked?.Invoke(this, EventArgs.Empty);
+        }
+
+        public event EventHandler Breaked;
     }
 }
