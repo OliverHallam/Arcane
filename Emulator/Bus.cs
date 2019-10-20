@@ -22,6 +22,27 @@ namespace NesEmu.Emulator
             this.ppu = ppu;
         }
 
+        public byte Peek(ushort address)
+        {
+            if (address < 0x2000)
+            {
+                return ram[address & 0x7ff];
+            }
+
+            if (address < 0x4000)
+            {
+                ppu.Peek(address);
+            }
+
+            byte value;
+            if (cart != null && cart.CpuRead(address, out value))
+            {
+                return value;
+            }
+
+            return 0;
+        }
+
         public byte CpuRead(ushort address)
         {
             if (address < 0x2000)
@@ -29,12 +50,10 @@ namespace NesEmu.Emulator
                 return ram[address & 0x7ff];
             }
 
-            if (address == 0x2002)
+            if (address < 0x4000)
             {
-                // hack to get games booting
-                return 0x80;
+                return ppu.Read(address);
             }
-
 
             byte value;
             if (cart != null && cart.CpuRead(address, out value))
