@@ -47,9 +47,20 @@ namespace NesEmu.Emulator
                     this.Bpl();
                     return;
 
+                case 0x18:
+                    this.bus.TickCpu();
+                    this.Clc();
+                    return;
+
                 case 0x20:
                     // timings are a little different on this one, so the decoding happens in the instruction
                     this.Jsr();
+                    return;
+
+                case 0x25:
+                    this.ZeroPage();
+                    this.Load();
+                    this.And();
                     return;
 
                 case 0x29:
@@ -57,14 +68,56 @@ namespace NesEmu.Emulator
                     this.And();
                     return;
 
+                case 0x45:
+                    this.ZeroPage();
+                    this.Load();
+                    this.Eor();
+                    return;
+
                 case 0x48:
                     this.bus.TickCpu();
                     this.Pha();
                     return;
 
+                case 0x49:
+                    this.Immediate();
+                    this.Eor();
+                    return;
+
+                case 0x4a:
+                    this.bus.TickCpu();
+                    this.LsrA();
+                    return;
+
                 case 0x4c:
                     this.Absolute();
                     this.Jmp();
+                    return;
+
+                case 0x60:
+                    this.bus.TickCpu();
+                    this.Rts();
+                    return;
+
+                case 0x65:
+                    this.ZeroPage();
+                    this.Load();
+                    this.Adc();
+                    return;
+
+                case 0x66:
+                    this.ZeroPage();
+                    this.Ror();
+                    return;
+
+                case 0x68:
+                    this.bus.TickCpu();
+                    this.Pla();
+                    return;
+
+                case 0x69:
+                    this.Immediate();
+                    this.Adc();
                     return;
 
                 case 0x78:
@@ -128,9 +181,25 @@ namespace NesEmu.Emulator
                     this.Lda();
                     return;
 
+                case 0xa6:
+                    this.ZeroPage();
+                    this.Load();
+                    this.Ldx();
+                    return;
+
+                case 0xa8:
+                    this.bus.TickCpu();
+                    this.Tay();
+                    return;
+
                 case 0xa9:
                     this.Immediate();
                     this.Lda();
+                    return;
+
+                case 0xaa:
+                    this.bus.TickCpu();
+                    this.Tax();
                     return;
 
                 case 0xad:
@@ -144,9 +213,19 @@ namespace NesEmu.Emulator
                     this.Dec();
                     return;
 
+                case 0xc8:
+                    this.bus.TickCpu();
+                    this.Iny();
+                    return;
+
                 case 0xc9:
                     this.Immediate();
                     this.Cmp();
+                    return;
+
+                case 0xca:
+                    this.bus.TickCpu();
+                    this.Dex();
                     return;
 
                 case 0xd0:
@@ -177,10 +256,10 @@ namespace NesEmu.Emulator
             this.bus.TickCpu();
 
             this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + (sbyte)this.S--), (byte)(this.PC >> 8));
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC >> 8));
 
             this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + (sbyte)this.S--), (byte)(this.PC & 0xff));
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC & 0xff));
 
             var highByte = this.bus.CpuRead(this.PC);
             this.PC = (ushort)(highByte << 8 | lowByte);
@@ -239,6 +318,26 @@ namespace NesEmu.Emulator
             this.bus.TickCpu();
         }
 
+        private void Adc()
+        {
+            var result = this.A + this.value;
+            this.A = (byte)(result & 0xff);
+
+            this.P &= 0x7c;
+
+            if ((this.A & 0x08) != 0)
+            {
+                this.P |= NFlag;
+            }
+
+            if (this.A == 0)
+            {
+                this.P |= ZFlag;
+            }
+
+            this.P |= (byte)(result >> 8);
+        }
+
         private void And()
         {
             this.A &= this.value;
@@ -267,6 +366,11 @@ namespace NesEmu.Emulator
             {
                 this.Jump();
             }
+        }
+
+        private void Clc()
+        {
+            this.P &= 0xfe;
         }
 
         private void Cld()
@@ -307,9 +411,33 @@ namespace NesEmu.Emulator
             this.SetFlags(value);
         }
 
+        private void Dex()
+        {
+            this.X--;
+            this.SetFlags(this.X);
+        }
+
         private void Dey()
         {
             this.Y--;
+            this.SetFlags(this.Y);
+        }
+
+        private void Eor()
+        {
+            this.A ^= this.value;
+            this.SetFlags(this.A);
+        }
+
+        private void Inx()
+        {
+            this.X++;
+            this.SetFlags(this.X);
+        }
+
+        private void Iny()
+        {
+            this.Y++;
             this.SetFlags(this.Y);
         }
 
@@ -336,10 +464,82 @@ namespace NesEmu.Emulator
             this.SetFlags(this.Y);
         }
 
+        private void LsrA()
+        {
+            var lowBit = A & 1;
+
+            this.A >>= 1;
+
+            this.P &= 0x7c;
+
+            if (this.A == 0)
+            {
+                this.P |= ZFlag;
+            }
+
+            this.P |= (byte)lowBit;
+        }
+
         private void Pha()
         {
             this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + (sbyte)this.S--), this.A);
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), this.A);
+        }
+
+        private void Pla()
+        {
+            ++this.S;
+            this.bus.TickCpu();
+
+            this.A = this.bus.CpuRead((ushort)(0x100 + this.S));
+            this.bus.TickCpu();
+        }
+
+        private void Ror()
+        {
+            var value = this.bus.CpuRead(this.address);
+            this.bus.TickCpu();
+
+            var lowBit = value & 1;
+            value >>= 1;
+            if ((this.P & CFlag) != 0)
+            {
+                value |= 0x80;
+            }
+
+            this.P &= 0x7c;
+
+            if (value == 0)
+            {
+                this.P |= ZFlag;
+            }
+
+            if ((value & 0x80) != 0)
+            {
+                this.P |= NFlag;
+            }
+
+            this.P |= (byte)lowBit;
+
+            this.bus.TickCpu();
+
+            this.bus.TickCpu();
+            this.bus.CpuWrite(this.address, value);
+        }
+
+
+        private void Rts()
+        {
+            this.bus.TickCpu();
+
+            var lowByte = this.bus.CpuRead((ushort)(0x100 + ++this.S));
+            this.bus.TickCpu();
+
+            var highByte = this.bus.CpuRead((ushort)(0x100 + ++this.S));
+            this.bus.TickCpu();
+
+            this.PC = (ushort)((highByte << 8) | lowByte + 1);
+            this.bus.TickCpu();
         }
 
         private void Sei()
@@ -357,6 +557,18 @@ namespace NesEmu.Emulator
         {
             this.bus.TickCpu();
             this.bus.CpuWrite(this.address, this.Y);
+        }
+
+        private void Tax()
+        {
+            this.X = this.A;
+            this.SetFlags(this.X);
+        }
+
+        private void Tay()
+        {
+            this.Y = this.A;
+            this.SetFlags(this.Y);
         }
 
         private void Txa()
