@@ -14,6 +14,13 @@ namespace NesEmu.Emulator
                 return ram[address & 0x7ff];
             }
 
+            if (address == 0x2002)
+            {
+                // hack to get games booting
+                return 0x80;
+            }
+
+
             byte value;
             if (cart != null && cart.Read(address, out value))
             {
