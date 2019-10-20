@@ -53,6 +53,7 @@ namespace NesEmu.Emulator
 
         static AddressingMode[] GetAddressingModes()
         {
+            const AddressingMode acc = AddressingMode.Accumulator;
             const AddressingMode imp = AddressingMode.Implicit;
             const AddressingMode imm = AddressingMode.Immediate;
             const AddressingMode zp = AddressingMode.ZeroPage;
@@ -68,13 +69,13 @@ namespace NesEmu.Emulator
 
             return new AddressingMode[256]
             {
-                imp, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, imp, imm, abs, abs, abs, abs,
+                imp, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, acc, imm, abs, abs, abs, abs,
                 rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-                abs, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, imp, imm, abs, abs, abs, abs,
+                abs, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, acc, imm, abs, abs, abs, abs,
                 rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-                imp, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, imp, imm, abs, abs, abs, abs,
+                imp, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, acc, imm, abs, abs, abs, abs,
                 rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
-                imp, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, imp, imm, ind, abs, abs, abs,
+                imp, izx, imp, izx, zp,  zp,  zp,  zp,  imp, imm, acc, imm, ind, abs, abs, abs,
                 rel, izy, imp, izy, zpx, zpx, zpx, zpx, imp, aby, imp, aby, abx, abx, abx, abx,
                 imm, izx, imm, izx, zp,  zp,  zp,  zp,  imp, imm, imp, imm, abs, abs, abs, abs,
                 rel, izy, imp, izy, zpx, zpx, zpy, zpy, imp, aby, imp, aby, abx, abx, aby, aby,

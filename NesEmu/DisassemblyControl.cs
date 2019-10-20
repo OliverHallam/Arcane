@@ -22,8 +22,9 @@ namespace NesEmu
         private SolidBrush instructionBrush;
         private SolidBrush immediateBrush;
         private SolidBrush absoluteBrush;
+        private SolidBrush registerBrush;
         private SolidBrush currentInstructionBrush;
-        
+
         private int padding;
         private int splitX;
         private float bytesX;
@@ -39,6 +40,7 @@ namespace NesEmu
             this.instructionBrush = new SolidBrush(Color.LightGray);
             this.immediateBrush = new SolidBrush(Color.Chocolate);
             this.absoluteBrush = new SolidBrush(Color.Firebrick);
+            this.registerBrush = new SolidBrush(Color.SlateBlue);
             this.seperatorPen = new Pen(new SolidBrush(Color.DimGray));
         }
 
@@ -52,6 +54,7 @@ namespace NesEmu
                 this.instructionBrush.Dispose();
                 this.immediateBrush.Dispose();
                 this.absoluteBrush.Dispose();
+                this.registerBrush.Dispose();
             }
 
             base.Dispose(disposing);
@@ -186,6 +189,10 @@ namespace NesEmu
             switch (addressingMode)
             {
                 case AddressingMode.Implicit:
+                    break;
+
+                case AddressingMode.Accumulator:
+                    graphics.DrawString("A", this.Font, this.registerBrush, argX, y);
                     break;
 
                 case AddressingMode.Immediate:
