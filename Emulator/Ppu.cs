@@ -99,18 +99,15 @@ namespace NesEmu.Emulator
                         switch (scanlineCycle & 0x07)
                         {
                             case 0:
-                                if (scanlineCycle != 0)
+                                // increment the x part of the address
+                                if ((this.currentAddress & 0x001f) == 0x001f)
                                 {
-                                    // increment the x part of the address
-                                    if ((this.currentAddress & 0x001f) == 0x001f)
-                                    {
-                                        this.currentAddress &= 0xffe0;
-                                        this.currentAddress ^= 0x0400;
-                                    }
-                                    else
-                                    {
-                                        this.currentAddress++;
-                                    }
+                                    this.currentAddress &= 0xffe0;
+                                    this.currentAddress ^= 0x0400;
+                                }
+                                else
+                                {
+                                    this.currentAddress++;
                                 }
                                 break;
 
@@ -221,7 +218,6 @@ namespace NesEmu.Emulator
         public void Write(ushort address, byte value)
         {
             address &= 0x07;
-
             switch (address)
             {
                 case 0:
