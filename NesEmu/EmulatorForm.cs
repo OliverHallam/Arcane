@@ -46,7 +46,8 @@ namespace NesEmu
         {
             this.dissassembly.ProgramCounter = this.gameSystem.Cpu.PC;
 
-            if (this.dissassembly.ProgramCounter >= this.dissassembly.StartAddress + this.dissassembly.InstructionCount)
+            if (this.dissassembly.ProgramCounter < this.dissassembly.StartAddress ||
+                this.dissassembly.ProgramCounter >= this.dissassembly.StartAddress + this.dissassembly.InstructionCount)
             {
                 this.dissassembly.StartAddress = this.dissassembly.ProgramCounter;
             }
@@ -66,6 +67,11 @@ namespace NesEmu
             {
                 this.dissassembly.ProgramCounter = 0;
                 gameSystem.Start();
+            }
+
+            if (e.KeyCode == Keys.P)
+            {
+                gameSystem.Stop();
             }
         }
 

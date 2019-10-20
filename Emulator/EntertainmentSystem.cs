@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace NesEmu.Emulator
 {
     public class EntertainmentSystem
     {
+        private Ppu ppu;
         private NesCpu cpu;
         private Bus bus;
 
@@ -12,17 +14,15 @@ namespace NesEmu.Emulator
         private bool running;
         private bool stopRequested;
 
-        public byte[] Frame { get; } = new byte[256 * 240];
-
         public EntertainmentSystem()
         {
-            this.bus = new Bus();
+            this.ppu = new Ppu();
+            this.bus = new Bus(ppu);
             this.cpu = new NesCpu(this.bus);
-
-            this.emulationThread = new Thread(this.Run);
         }
 
         public NesCpu Cpu => this.cpu;
+        public Ppu Ppu => this.ppu;
         public Bus Bus => this.bus;
 
         public void InsertCart(Cart cart)
@@ -45,6 +45,8 @@ namespace NesEmu.Emulator
             }
 
             this.running = true;
+
+            this.emulationThread = new Thread(this.Run);
             this.emulationThread.Start();
         }
 
@@ -55,7 +57,7 @@ namespace NesEmu.Emulator
                 return;
             }
 
-            this.Tick();
+            this.Cpu.RunInstruction();
 
             this.Breaked?.Invoke(this, EventArgs.Empty);
         }
@@ -77,36 +79,44 @@ namespace NesEmu.Emulator
 
         private void Run()
         {
+            var frameInTicks = TimeSpan.TicksPerSecond / 60;
+            var stopwatch = Stopwatch.StartNew();
+
             while (!this.stopRequested)
             {
-                Tick();
-                //Thread.Sleep(33);
-            }
-        }
+                stopwatch.Reset();
+                stopwatch.Start();
 
-        private unsafe void Tick()
-        {
-            this.Cpu.Tick();
-
-            var random = new Random();
-            var index = 0;
-
-            fixed (byte* frameBytes = Frame)
-            {
-                for (var y = 0; y < 240; y++)
+                int currentFrame = ppu.FrameCount;
+                while (ppu.FrameCount == currentFrame)
                 {
-                    for (var x = 0; x < 256; x++)
+                    if (this.stopRequested)
                     {
-                        frameBytes[index++] = (byte)random.Next(0, 64);
+                        return;
                     }
-                }
-            }
 
-            this.OnFrame?.Invoke(this, EventArgs.Empty);
+                    this.Cpu.RunInstruction();
+                }
+
+                SpinWait.SpinUntil(() => stopwatch.ElapsedTicks >= frameInTicks);
+            }
         }
 
-        public event EventHandler OnFrame;
+        public void RunFrame()
+        {
+            if (this.running)
+            {
+                return;
+            }
 
+            int currentFrame = ppu.FrameCount;
+            while (ppu.FrameCount == currentFrame)
+            {
+                this.Cpu.RunInstruction();
+            }
+
+            this.Breaked?.Invoke(this, EventArgs.Empty);
+        }
 
         public void Break()
         {

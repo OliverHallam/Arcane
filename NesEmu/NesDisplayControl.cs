@@ -30,13 +30,13 @@ namespace NesEmu
             {
                 if (this.system != null)
                 {
-                    this.system.OnFrame -= OnFrame;
+                    this.system.Ppu.OnFrame -= OnFrame;
                 }
 
                 this.system = value;
                 if (this.system != null)
                 {
-                    this.system.OnFrame += OnFrame;
+                    this.system.Ppu.OnFrame += OnFrame;
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace NesEmu
         private unsafe void CaptureFrame()
         {
             var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
-            fixed (byte* framePtr = this.system.Frame)
+            fixed (byte* framePtr = this.system.Ppu.Frame)
             {
                 var srcPtr = framePtr;
                 var destPtr = (byte*)data.Scan0;
