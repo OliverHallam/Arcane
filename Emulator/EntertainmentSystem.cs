@@ -32,6 +32,8 @@ namespace NesEmu.Emulator
 
         public void Reset()
         {
+            this.PoweredUp?.Invoke(this, EventArgs.Empty);
+
             this.cpu.Reset();
         }
 
@@ -112,5 +114,7 @@ namespace NesEmu.Emulator
         }
 
         public event EventHandler Breaked;
+
+        public event EventHandler PoweredUp;
     }
 }

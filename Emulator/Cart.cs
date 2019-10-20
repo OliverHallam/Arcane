@@ -20,7 +20,7 @@ namespace NesEmu.Emulator
             this.chrData = chrData;
         }
 
-        public bool Read(ushort address, out byte value)
+        public bool CpuRead(ushort address, out byte value)
         {
             if (address >= 0xC000)
             {
@@ -36,6 +36,11 @@ namespace NesEmu.Emulator
 
             value = 0;
             return false;
+        }
+
+        internal byte PpuRead(ushort address)
+        {
+            return this.chrData[address & 0x1fff];
         }
 
         public static Cart Load(Stream data)

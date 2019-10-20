@@ -33,7 +33,7 @@ namespace NesEmu.Emulator
         {
             // 7 cycles
             this.P = 4;
-            this.PC = (ushort)(bus.Read(0xfffd) << 8 | bus.Read(0xfffc));
+            this.PC = (ushort)(bus.CpuRead(0xfffd) << 8 | bus.CpuRead(0xfffc));
         }
 
         public void Tick()
@@ -43,7 +43,7 @@ namespace NesEmu.Emulator
 
         private void RunInstruction()
         {
-            var opCode = bus.Read(this.PC++);
+            var opCode = bus.CpuRead(this.PC++);
             this.CycleCount++;
 
             switch(opCode)
@@ -133,40 +133,40 @@ namespace NesEmu.Emulator
 
         private void Immediate()
         {
-            this.value = bus.Read(this.PC++);
+            this.value = bus.CpuRead(this.PC++);
             this.CycleCount++;
         }
 
         private void Absolute()
         {
-            this.address = (ushort)(this.bus.Read(this.PC++) | this.bus.Read(this.PC++) << 8);
+            this.address = (ushort)(this.bus.CpuRead(this.PC++) | this.bus.CpuRead(this.PC++) << 8);
             this.CycleCount += 2;
         }
 
         private void ZeroPage()
         {
-            this.address = bus.Read(this.PC++);
+            this.address = bus.CpuRead(this.PC++);
             this.CycleCount++;
         }
 
         private void Relative()
         {
-            var relative = (sbyte)(this.bus.Read(this.PC++));
+            var relative = (sbyte)(this.bus.CpuRead(this.PC++));
             this.address = (ushort)(this.PC + relative);
             this.CycleCount++;
         }
 
         private void IndirectIndexed()
         {
-            ushort indirectAddress = bus.Read(this.PC++);
-            this.address = (ushort)(this.bus.Read(indirectAddress) | this.bus.Read((ushort)(indirectAddress + 1)) << 8);
+            ushort indirectAddress = bus.CpuRead(this.PC++);
+            this.address = (ushort)(this.bus.CpuRead(indirectAddress) | this.bus.CpuRead((ushort)(indirectAddress + 1)) << 8);
             this.address += this.Y;
             this.CycleCount += 4;
         }
 
         private void Load()
         {
-            this.value = bus.Read(this.address);
+            this.value = bus.CpuRead(this.address);
             this.CycleCount++;
         }
 
@@ -207,9 +207,9 @@ namespace NesEmu.Emulator
 
         private void Dec()
         {
-            var value = this.bus.Read(this.address);
+            var value = this.bus.CpuRead(this.address);
             value--;
-            this.bus.Write(this.address, value);
+            this.bus.CpuWrite(this.address, value);
             this.CycleCount += 3;
             this.SetFlags(value);
         }
@@ -245,13 +245,13 @@ namespace NesEmu.Emulator
 
         private void Sta()
         {
-            this.bus.Write(this.address, this.A);
+            this.bus.CpuWrite(this.address, this.A);
             this.CycleCount++;
         }
 
         private void Sty()
         {
-            this.bus.Write(this.address, this.Y);
+            this.bus.CpuWrite(this.address, this.Y);
             this.CycleCount++;
         }
 

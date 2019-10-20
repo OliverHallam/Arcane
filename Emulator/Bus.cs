@@ -7,7 +7,7 @@ namespace NesEmu.Emulator
         private Cart cart;
         private byte[] ram = new byte[2048];
 
-        public byte Read(ushort address)
+        public byte CpuRead(ushort address)
         {
             if (address < 0x2000)
             {
@@ -22,7 +22,7 @@ namespace NesEmu.Emulator
 
 
             byte value;
-            if (cart != null && cart.Read(address, out value))
+            if (cart != null && cart.CpuRead(address, out value))
             {
                 return value;
             }
@@ -30,7 +30,12 @@ namespace NesEmu.Emulator
             return 0;
         }
 
-        public void Write(ushort address, byte value)
+        public byte PpuRead(ushort address)
+        {
+            return cart.PpuRead(address);
+        }
+
+        public void CpuWrite(ushort address, byte value)
         {
             if (address < 0x2000)
             {

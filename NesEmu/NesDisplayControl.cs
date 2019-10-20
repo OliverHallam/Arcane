@@ -67,13 +67,6 @@ namespace NesEmu
             }
         }
 
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            Invalidate();
-            base.OnKeyDown(e);
-        }
-
         private unsafe void CaptureFrame()
         {
             var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);

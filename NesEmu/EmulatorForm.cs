@@ -14,6 +14,9 @@ namespace NesEmu
             InitializeComponent();
 
             this.KeyPreview = true;
+
+            this.patternLeft.TableAddress = 0;
+            this.patternRight.TableAddress = 0x1000;
         }
 
         public EntertainmentSystem EntertainmentSystem
@@ -29,6 +32,9 @@ namespace NesEmu
                 this.nesDisplay.System = value;
                 this.registers.System = value;
                 this.dissassembly.Bus = value.Bus;
+
+                this.patternLeft.System = value;
+                this.patternRight.System = value;
 
                 value.Breaked += OnBreak;
             }

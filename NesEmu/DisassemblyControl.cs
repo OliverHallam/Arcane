@@ -162,7 +162,7 @@ namespace NesEmu
 
             graphics.DrawString("0x" + currentAddress.ToString("X4"), this.Font, this.addressBrush, padding, y);
 
-            var opCode = this.bus.Read(currentAddress++);
+            var opCode = this.bus.CpuRead(currentAddress++);
 
             var byteX = this.bytesX;
             var byteWidth = graphics.MeasureString("00 ", this.Font).Width;
@@ -171,7 +171,7 @@ namespace NesEmu
             for (var i=0; i < addressByteCount; i++)
             {
                 byteX += byteWidth;
-                var nextByte = this.bus.Read((ushort)(currentAddress + i));
+                var nextByte = this.bus.CpuRead((ushort)(currentAddress + i));
                 graphics.DrawString(nextByte.ToString("X2"), this.Font, this.addressBrush, byteX, y);
             }
 
@@ -190,7 +190,7 @@ namespace NesEmu
 
                 case AddressingMode.Immediate:
                     {
-                        var value = this.bus.Read(currentAddress++);
+                        var value = this.bus.CpuRead(currentAddress++);
                         graphics.DrawString("#$" + value.ToString("X2"), this.Font, this.immediateBrush, argX, y);
                         break;
                     }
@@ -198,14 +198,14 @@ namespace NesEmu
                 case AddressingMode.Absolute:
                     {
                         // TODO: highlight the jump target
-                        var value = this.bus.Read(currentAddress++) | this.bus.Read(currentAddress++) << 8;
+                        var value = this.bus.CpuRead(currentAddress++) | this.bus.CpuRead(currentAddress++) << 8;
                         graphics.DrawString("$" + value.ToString("X4"), this.Font, this.absoluteBrush, argX, y);
                         break;
                     }
 
                 case AddressingMode.Relative:
                     {
-                        var relative = (sbyte)this.bus.Read(currentAddress++);
+                        var relative = (sbyte)this.bus.CpuRead(currentAddress++);
                         var value = currentAddress + relative;
                         graphics.DrawString("$" + value.ToString("X4"), this.Font, this.absoluteBrush, argX, y);
                         break;
@@ -213,14 +213,14 @@ namespace NesEmu
 
                 case AddressingMode.ZeroPage:
                     {
-                        var value = this.bus.Read(currentAddress++);
+                        var value = this.bus.CpuRead(currentAddress++);
                         graphics.DrawString("$" + value.ToString("X2"), this.Font, this.absoluteBrush, argX, y);
                         break;
                     }
 
                 case AddressingMode.IndirectIndexed:
                     {
-                        var value = this.bus.Read(currentAddress++);
+                        var value = this.bus.CpuRead(currentAddress++);
                         graphics.DrawString("(", this.Font, this.instructionBrush, argX, y);
                         argX += graphics.MeasureString("(", this.Font).Width;
                         var address = "$" + value.ToString("X2");
