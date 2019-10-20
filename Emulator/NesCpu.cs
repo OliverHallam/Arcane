@@ -108,7 +108,7 @@ namespace NesEmu.Emulator
 
         private void Absolute()
         {
-            this.address = (ushort)(this.bus.Read(this.PC++) << 8 | this.bus.Read(this.PC++));
+            this.address = (ushort)(this.bus.Read(this.PC++) | this.bus.Read(this.PC++) << 8);
             CycleCount += 2;
         }
 

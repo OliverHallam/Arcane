@@ -198,7 +198,7 @@ namespace NesEmu
                 case AddressingMode.Absolute:
                     {
                         // TODO: highlight the jump target
-                        var value = this.bus.Read(currentAddress++) << 8 | this.bus.Read(currentAddress++);
+                        var value = this.bus.Read(currentAddress++) | this.bus.Read(currentAddress++) << 8;
                         graphics.DrawString("$" + value.ToString("X4"), this.Font, this.absoluteBrush, argX, y);
                         break;
                     }
