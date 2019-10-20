@@ -72,7 +72,6 @@ namespace NesEmu.Emulator
 
                 case 0x09:
                     this.Immediate();
-                    this.Load();
                     this.Ora();
                     return;
 
@@ -377,6 +376,11 @@ namespace NesEmu.Emulator
                     this.Lda();
                     return;
 
+                case 0xc0:
+                    this.Immediate();
+                    this.Cpy();
+                    return;
+
                 case 0xc5:
                     this.ZeroPage();
                     this.Load();
@@ -428,20 +432,25 @@ namespace NesEmu.Emulator
                     this.Cpx();
                     return;
 
-                case 0xe6:
-                    this.ZeroPage();
-                    this.Inc();
-                    return;
-
                 case 0xe5:
                     this.ZeroPage();
                     this.Load();
                     this.Sbc();
                     return;
 
+                case 0xe6:
+                    this.ZeroPage();
+                    this.Inc();
+                    return;
+
                 case 0xe8:
                     this.bus.TickCpu();
                     this.Inx();
+                    return;
+
+                case 0xe9:
+                    this.Immediate();
+                    this.Sbc();
                     return;
 
                 case 0xee:
@@ -724,6 +733,11 @@ namespace NesEmu.Emulator
         }
 
         private void Cpx()
+        {
+            SetCompareFlags(this.X);
+        }
+
+        private void Cpy()
         {
             SetCompareFlags(this.X);
         }

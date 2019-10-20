@@ -14,7 +14,7 @@ namespace NesEmu.Emulator
         private bool running;
         private bool stopRequested;
 
-        private ushort breakpoint = 0xc85f;
+        private ushort breakpoint;
 
         public EntertainmentSystem()
         {
