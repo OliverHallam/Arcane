@@ -19,6 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="DisassemblyControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Update="EmulatorForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -27,7 +27,7 @@ namespace NesEmu.Emulator
         {
             // 7 cycles
 
-            this.PC = (ushort)(bus.Read(0xfffc) << 8 | bus.Read(0xfffd));
+            this.PC = (ushort)(bus.Read(0xfffd) << 8 | bus.Read(0xfffc));
         }
 
         public void Tick()

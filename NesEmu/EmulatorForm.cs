@@ -28,7 +28,15 @@ namespace NesEmu
                 this.gameSystem = value;
                 this.nesDisplay.System = value;
                 this.registers.Cpu = value.Cpu;
+                this.dissassembly.Bus = value.Bus;
+
+                value.Cpu.Ticked += OnCpuTick;
             }
+        }
+
+        private void OnCpuTick(object sender, EventArgs e)
+        {
+            this.dissassembly.StartAddress = this.dissassembly.ProgramCounter = ((NesCpu)sender).PC;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

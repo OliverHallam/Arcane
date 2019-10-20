@@ -23,6 +23,7 @@ namespace NesEmu.Emulator
         }
 
         public NesCpu Cpu => this.cpu;
+        public Bus Bus => this.bus;
 
         public void InsertCart(Cart cart)
         {

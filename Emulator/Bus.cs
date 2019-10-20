@@ -15,7 +15,7 @@ namespace NesEmu.Emulator
             }
 
             byte value;
-            if (cart.Read(address, out value))
+            if (cart != null && cart.Read(address, out value))
             {
                 return value;
             }
