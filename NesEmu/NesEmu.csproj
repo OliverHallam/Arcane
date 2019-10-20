@@ -28,6 +28,9 @@
     <Compile Update="EmulatorForm.Designer.cs">
       <DependentUpon>EmulatorForm.cs</DependentUpon>
     </Compile>
+    <Compile Update="MemoryControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Update="NesDisplayControl.cs">
       <SubType>Component</SubType>
     </Compile>

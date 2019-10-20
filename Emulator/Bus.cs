@@ -7,6 +7,16 @@ namespace NesEmu.Emulator
         private Cart cart;
         private byte[] ram = new byte[2048];
 
+        public ushort LastWriteAddress { get; set; }
+
+        public Bus()
+        {
+            for (var i=0; i<2048; i++)
+            {
+                ram[i] = 0xff;
+            }
+        }
+
         public byte CpuRead(ushort address)
         {
             if (address < 0x2000)
@@ -37,6 +47,8 @@ namespace NesEmu.Emulator
 
         public void CpuWrite(ushort address, byte value)
         {
+            this.LastWriteAddress = address;
+
             if (address < 0x2000)
             {
                 ram[address & 0x7ff] = value;

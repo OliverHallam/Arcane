@@ -36,6 +36,8 @@ namespace NesEmu
                 this.patternLeft.System = value;
                 this.patternRight.System = value;
 
+                this.memory.Bus = value.Bus;
+
                 value.Breaked += OnBreak;
             }
         }
@@ -48,6 +50,9 @@ namespace NesEmu
             {
                 this.dissassembly.StartAddress = this.dissassembly.ProgramCounter;
             }
+
+            this.memory.LastAcccessAddress = this.gameSystem.Bus.LastWriteAddress;
+            this.memory.BaseAddress = (ushort)(this.gameSystem.Bus.LastWriteAddress & 0xfe00);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
