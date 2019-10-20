@@ -26,6 +26,8 @@ namespace NesEmu
         
         private int padding;
         private int splitX;
+        private float bytesX;
+        private int splitX2;
         private float instructionX;
         private int lineHeight;
 
@@ -131,7 +133,10 @@ namespace NesEmu
 
             var addressSize = graphics.MeasureString("0x0000", this.Font).Width;
             this.splitX = (int)addressSize + padding * 2;
-            this.instructionX = splitX + padding;
+            this.bytesX = splitX + padding;
+            var bytesSize = graphics.MeasureString("00 00 00", this.Font).Width;
+            this.splitX2 = (int)(bytesX + bytesSize); 
+            this.instructionX = splitX2 + padding;
 
             var y = padding;
             var currentAddress = this.startAddress;
@@ -143,6 +148,7 @@ namespace NesEmu
             }
 
             graphics.DrawLine(this.seperatorPen, this.splitX, padding, this.splitX, y - lineHeight + this.Font.Height);
+            graphics.DrawLine(this.seperatorPen, this.splitX2, padding, this.splitX2, y - lineHeight + this.Font.Height);
 
             base.OnPaint(e);
         }
@@ -151,12 +157,24 @@ namespace NesEmu
         {
             if (currentAddress == this.programCounter)
             {
-                graphics.FillRectangle(this.currentInstructionBrush, splitX, y, this.Width -  splitX - padding, this.FontHeight);
+                graphics.FillRectangle(this.currentInstructionBrush, splitX2, y, this.Width -  splitX - padding, this.FontHeight);
             }
 
             graphics.DrawString("0x" + currentAddress.ToString("X4"), this.Font, this.addressBrush, padding, y);
 
             var opCode = this.bus.Read(currentAddress++);
+
+            var byteX = this.bytesX;
+            var byteWidth = graphics.MeasureString("00 ", this.Font).Width;
+            graphics.DrawString(opCode.ToString("X2"), this.Font, this.addressBrush, byteX, y);
+            var addressByteCount = InstructionDecoder.GetAddressingBytes(opCode);
+            for (var i=0; i < addressByteCount; i++)
+            {
+                byteX += byteWidth;
+                var nextByte = this.bus.Read((ushort)(currentAddress + i));
+                graphics.DrawString(nextByte.ToString("X2"), this.Font, this.addressBrush, byteX, y);
+            }
+
             var operation = InstructionDecoder.GetOperation(opCode);
 
             var opCodeWidth = graphics.MeasureString(operation + " ", this.Font).Width;
