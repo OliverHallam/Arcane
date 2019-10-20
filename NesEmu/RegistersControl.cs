@@ -23,6 +23,7 @@ namespace WindowsFormsApp1
         private SolidBrush nameBrush;
         private Pen seperatorPen;
         private SolidBrush valueBrush;
+        private SolidBrush disabledBrush;
         private int padding;
         private int lineHeight;
         private float nameRight;
@@ -34,6 +35,7 @@ namespace WindowsFormsApp1
             this.DoubleBuffered = true;
             this.nameBrush = new SolidBrush(Color.Gray);
             this.valueBrush = new SolidBrush(Color.LightGray);
+            this.disabledBrush = new SolidBrush(Color.DimGray);
             this.seperatorPen = new Pen(new SolidBrush(Color.DimGray));
         }
 
@@ -43,6 +45,8 @@ namespace WindowsFormsApp1
             {
                 this.nameBrush.Dispose();
                 this.seperatorPen.Dispose();
+                this.valueBrush.Dispose();
+                this.disabledBrush.Dispose();
             }
 
             base.Dispose(disposing);
@@ -110,7 +114,7 @@ namespace WindowsFormsApp1
             this.DrawRegister(graphics, y, "S", this.s.ToString("X2"));
 
             y += lineHeight;
-            this.DrawRegister(graphics, y, "P", this.p.ToString("X2"));
+            this.DrawFlags(graphics, y, "P", (byte)this.p);
 
             graphics.DrawLine(this.seperatorPen, this.splitX, padding, this.splitX, y + this.Font.Height);
         }
@@ -132,6 +136,31 @@ namespace WindowsFormsApp1
             var size = graphics.MeasureString(registerName, this.Font);
             graphics.DrawString(registerName, this.Font, this.nameBrush, nameRight - size.Width, y);
             graphics.DrawString(value, this.Font, this.valueBrush, this.valueX, y);
+        }
+
+        private void DrawFlags(Graphics graphics, int y, string registerName, byte value)
+        {
+            var size = graphics.MeasureString(registerName, this.Font);
+            graphics.DrawString(registerName, this.Font, this.nameBrush, nameRight - size.Width, y);
+
+            var x = valueX;
+
+            graphics.DrawString("C", this.Font, (value & 0x01) != 0 ? this.valueBrush : this.disabledBrush, x, y);
+            x += graphics.MeasureString("C ", this.Font).Width;
+
+            graphics.DrawString("Z", this.Font, (value & 0x02) != 0 ? this.valueBrush : this.disabledBrush, x, y);
+            x += graphics.MeasureString("Z ", this.Font).Width;
+
+            graphics.DrawString("I", this.Font, (value & 0x04) != 0 ? this.valueBrush : this.disabledBrush, x, y);
+            x += graphics.MeasureString("I ", this.Font).Width;
+
+            graphics.DrawString("D", this.Font, (value & 0x08) != 0 ? this.valueBrush : this.disabledBrush, x, y);
+            x += graphics.MeasureString("D ", this.Font).Width;
+
+            graphics.DrawString("V", this.Font, (value & 0x40) != 0 ? this.valueBrush : this.disabledBrush, x, y);
+            x += graphics.MeasureString("V ", this.Font).Width;
+
+            graphics.DrawString("N", this.Font, (value & 0x80) != 0 ? this.valueBrush : this.disabledBrush, x, y);
         }
     }
 }
