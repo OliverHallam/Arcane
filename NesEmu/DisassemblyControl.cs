@@ -199,7 +199,15 @@ namespace NesEmu
                     {
                         // TODO: highlight the jump target
                         var value = this.bus.Read(currentAddress++) << 8 | this.bus.Read(currentAddress++);
-                        graphics.DrawString("$" + value.ToString(""), this.Font, this.absoluteBrush, argX, y);
+                        graphics.DrawString("$" + value.ToString("X4"), this.Font, this.absoluteBrush, argX, y);
+                        break;
+                    }
+
+                case AddressingMode.Relative:
+                    {
+                        var relative = (sbyte)this.bus.Read(currentAddress++);
+                        var value = currentAddress + relative;
+                        graphics.DrawString("$" + value.ToString("X4"), this.Font, this.absoluteBrush, argX, y);
                         break;
                     }
 
