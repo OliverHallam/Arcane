@@ -69,6 +69,11 @@ namespace NesEmu
                 gameSystem.Start();
             }
 
+            if (e.KeyCode == Keys.F)
+            {
+                gameSystem.RunFrame();
+            }
+
             if (e.KeyCode == Keys.P)
             {
                 gameSystem.Stop();
