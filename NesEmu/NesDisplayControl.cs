@@ -9,12 +9,15 @@ namespace NesEmu
 {
     public partial class NesDisplayControl : Control
     {
-        private Bitmap frame = new Bitmap(256, 240, PixelFormat.Format24bppRgb);
+        private Bitmap frame;
         private EntertainmentSystem system;
 
         public NesDisplayControl()
         {
             this.DoubleBuffered = true;
+
+            this.frame = new Bitmap(256, 240, PixelFormat.Format8bppIndexed);
+            NesColorPalette.SetPalette(frame.Palette);
         }
 
         public EntertainmentSystem System
@@ -54,6 +57,7 @@ namespace NesEmu
             {
                 this.CaptureFrame();
 
+                graphics.PixelOffsetMode = PixelOffsetMode.Half;
                 graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
                 graphics.DrawImage(frame, 0, 0, this.Width, this.Height);
             }
@@ -72,7 +76,7 @@ namespace NesEmu
 
         private unsafe void CaptureFrame()
         {
-            var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+            var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
             fixed (byte* framePtr = this.system.Frame)
             {
                 var srcPtr = framePtr;
@@ -80,11 +84,7 @@ namespace NesEmu
 
                 for (var i = 0; i < 256 * 240; i++)
                 {
-                    *destPtr++ = *srcPtr;
-                    *destPtr++ = *srcPtr;
-                    *destPtr++ = *srcPtr;
-
-                    srcPtr++;
+                    *destPtr++ = *srcPtr++;
                 }
             }
 

@@ -95,7 +95,7 @@ namespace NesEmu.Emulator
                 {
                     for (var x = 0; x < 256; x++)
                     {
-                        frameBytes[index++] = (byte)random.Next(0, 256);
+                        frameBytes[index++] = (byte)random.Next(0, 64);
                     }
                 }
             }
