@@ -993,7 +993,6 @@ namespace NesEmu.Emulator
         }
 
         private void RorA()
-        {
             var lowBit = this.A & 1;
             this.A >>= 1;
             if ((this.P & CFlag) != 0)
