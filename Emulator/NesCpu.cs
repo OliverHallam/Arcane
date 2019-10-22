@@ -126,6 +126,7 @@
                     this.Absolute();
                     this.Load();
                     this.Asl();
+                    this.Store();
                     return;
 
                 case 0x10:
@@ -148,7 +149,8 @@
                 case 0x16:
                     this.ZeroPageX();
                     this.Load();
-                    this.Ora();
+                    this.Asl();
+                    this.Store();
                     return;
 
                 case 0x18:
@@ -172,6 +174,7 @@
                     this.AbsoluteX();
                     this.Load();
                     this.Asl();
+                    this.Store();
                     return;
 
                 case 0x20:
@@ -307,7 +310,9 @@
 
                 case 0x46:
                     this.ZeroPage();
+                    this.Load();
                     this.Lsr();
+                    this.Store();
                     return;
 
                 case 0x48:
@@ -799,6 +804,7 @@
 
                 case 0xd5:
                     this.ZeroPageX();
+                    this.Load();
                     this.Cmp();
                     return;
 
@@ -1036,20 +1042,24 @@
 
         private void ZeroPageX()
         {
-            this.address = bus.CpuRead(this.PC++);
+            var zpAddress = bus.CpuRead(this.PC++);
             this.bus.TickCpu();
 
+            zpAddress += this.X;
             this.bus.TickCpu();
-            this.address += this.X;
+
+            this.address = zpAddress;
         }
 
         private void ZeroPageY()
         {
-            this.address = bus.CpuRead(this.PC++);
+            var zpAddress = bus.CpuRead(this.PC++);
             this.bus.TickCpu();
 
+            zpAddress += this.Y;
             this.bus.TickCpu();
-            this.address += this.Y;
+
+            this.address = zpAddress;
         }
 
         private void Relative()
@@ -1082,7 +1092,7 @@
 
         private void IndexIndirect()
         {
-            ushort indirectAddress = bus.CpuRead(this.PC++);
+            byte indirectAddress = bus.CpuRead(this.PC++);
             this.bus.TickCpu();
 
             indirectAddress += this.X;
@@ -1091,7 +1101,7 @@
             var addressLow = this.bus.CpuRead(indirectAddress);
             this.bus.TickCpu();
 
-            var addressHigh = this.bus.CpuRead((ushort)(indirectAddress + 1));
+            var addressHigh = this.bus.CpuRead((byte)(indirectAddress + 1));
             this.bus.TickCpu();
 
             this.address = (ushort)(addressLow | addressHigh << 8);
@@ -1106,7 +1116,7 @@
             var addressLow = this.bus.CpuRead(indirectAddress);
             this.bus.TickCpu();
 
-            var addressHigh = this.bus.CpuRead((ushort)(indirectAddress + 1));
+            var addressHigh = this.bus.CpuRead((byte)(indirectAddress + 1));
             this.bus.TickCpu();
 
             this.address = (ushort)(addressLow | addressHigh << 8);

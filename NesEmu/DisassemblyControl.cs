@@ -237,6 +237,18 @@ namespace NesEmu
                         break;
                     }
 
+                case AddressingMode.IndexedIndirect:
+                    {
+                        var value = this.bus.CpuRead(currentAddress++);
+                        graphics.DrawString("(", this.Font, this.instructionBrush, argX, y);
+                        argX += graphics.MeasureString("(", this.Font).Width;
+                        var address = "$" + value.ToString("X2");
+                        graphics.DrawString(address, this.Font, this.absoluteBrush, argX, y);
+                        argX += graphics.MeasureString(address, this.Font).Width;
+                        graphics.DrawString(",X)", this.Font, this.instructionBrush, argX, y);
+                        break;
+                    }
+
                 default:
                     currentAddress += (ushort)InstructionDecoder.GetAddressingBytes(opCode);
                     graphics.DrawString("...", this.Font, this.instructionBrush, argX, y);
