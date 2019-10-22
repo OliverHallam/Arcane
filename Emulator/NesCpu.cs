@@ -119,6 +119,12 @@
                     this.Jsr();
                     return;
 
+                case 0x24:
+                    this.ZeroPage();
+                    this.Load();
+                    this.Bit();
+                    return;
+
                 case 0x25:
                     this.ZeroPage();
                     this.Load();
@@ -198,6 +204,11 @@
                     this.Jmp();
                     return;
 
+                case 0x50:
+                    this.Relative();
+                    this.Bvc();
+                    return;
+
                 case 0x60:
                     this.Implicit();
                     this.Rts();
@@ -242,6 +253,11 @@
                     this.Absolute();
                     this.Load();
                     this.Adc();
+                    return;
+
+                case 0x70:
+                    this.Relative();
+                    this.Bvs();
                     return;
 
                 case 0x78:
@@ -743,6 +759,13 @@
             }
         }
 
+        private void Bit()
+        {
+            this.N = (this.value & 0x80) != 0;
+            this.V = (this.value & 0x70) != 0;
+            this.Z = (this.value & this.A) == 0;
+        }
+
         private void Bmi()
         {
             if (this.N)
@@ -762,6 +785,22 @@
         private void Bpl()
         {
             if (!this.N)
+            {
+                this.Jump();
+            }
+        }
+
+        private void Bvc()
+        {
+            if (!this.V)
+            {
+                this.Jump();
+            }
+        }
+
+        private void Bvs()
+        {
+            if (this.V)
             {
                 this.Jump();
             }
