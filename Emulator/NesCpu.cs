@@ -6,11 +6,6 @@ namespace NesEmu.Emulator
 {
     public class NesCpu
     {
-        private const byte CFlag = 0x01;
-        private const byte ZFlag = 0x02;
-        private const byte BFlag = 0x08;
-        private const byte NFlag = 0x80;
-
         private Bus bus;
 
         // Registers
@@ -19,7 +14,33 @@ namespace NesEmu.Emulator
         public byte Y;
         public ushort PC;
         public byte S;
-        public byte P;
+
+        // the flags register as seperate bytes
+        private bool C, Z, I, D, B, V, N;
+        public byte P
+        {
+            get
+            {
+                return (byte)
+                    ((this.N ? 0x80 : 0) |
+                    (this.V ? 0x40 : 0) |
+                    (this.B ? 0x10 : 0) |
+                    (this.D ? 0x08 : 0) |
+                    (this.I ? 0x04 : 0) |
+                    (this.Z ? 0x02 : 0) |
+                    (this.C ? 0x01 : 0));
+
+            }
+            set
+            {
+                this.N = (value & 0x80) != 0;
+                this.V = (value & 0x40) != 0;
+                this.B = (value & 0x10) != 0;
+                this.D = (value & 0x08) != 0;
+                this.I = (value & 0x04) != 0;
+                this.Z = (value & 0x02) != 0;
+            }
+        }
 
         private ushort address;
         private byte value;
@@ -34,7 +55,9 @@ namespace NesEmu.Emulator
         public void Reset()
         {
             // 7 cycles
-            this.P = 4;
+            this.C = this.Z = this.D = this.B = this.V = this.N = false;
+            this.I = true;
+
             this.PC = (ushort)(bus.CpuRead(0xfffd) << 8 | bus.CpuRead(0xfffc));
         }
 
@@ -666,28 +689,20 @@ namespace NesEmu.Emulator
 
         private void Adc()
         {
+            var highBit = this.A & 0x80;
+
             var result = this.A + this.value;
 
-            if ((this.P & CFlag) != 0)
+            if (this.C)
             {
                 result++;
             }
 
             this.A = (byte)result;
 
-            this.P &= 0x7c;
-
-            if ((this.A & 0x80) != 0)
-            {
-                this.P |= NFlag;
-            }
-
-            if (this.A == 0)
-            {
-                this.P |= ZFlag;
-            }
-
-            this.P |= (byte)(result >> 8);
+            this.N = (this.A & 0x80) != 0;
+            this.Z = this.A == 0;
+            this.V = (this.A & 0x80) != highBit;
         }
 
         private void And()
@@ -698,28 +713,17 @@ namespace NesEmu.Emulator
 
         private void Asl()
         {
-            var highBit = this.value & 0x80;
+            this.C = (this.value & 0x80) != 0;
 
             this.value <<= 1;
 
-            this.P &= 0x7c;
-
-            if (value == 0)
-            {
-                this.P |= ZFlag;
-            }
-
-            if ((value & 0x80) != 0)
-            {
-                this.P |= NFlag;
-            }
-
-            this.P |= (byte)(highBit >> 7);
+            this.Z = this.value == 0;
+            this.N = (this.value & 0x80) != 0;
         }
 
         private void Bcc()
         {
-            if ((this.P & CFlag) == 0)
+            if (!this.C)
             {
                 this.Jump();
             }
@@ -727,7 +731,7 @@ namespace NesEmu.Emulator
 
         private void Bcs()
         {
-            if ((this.P & CFlag) != 0)
+            if (this.C)
             {
                 this.Jump();
             }
@@ -735,7 +739,7 @@ namespace NesEmu.Emulator
 
         private void Beq()
         {
-            if ((this.P & ZFlag) != 0)
+            if (this.Z)
             {
                 this.Jump();
             }
@@ -743,7 +747,7 @@ namespace NesEmu.Emulator
 
         private void Bmi()
         {
-            if ((this.P & NFlag) != 0)
+            if (this.N)
             {
                 this.Jump();
             }
@@ -751,7 +755,7 @@ namespace NesEmu.Emulator
 
         private void Bne()
         {
-            if ((this.P & ZFlag) == 0)
+            if (!this.Z)
             {
                 this.Jump();
             }
@@ -759,7 +763,7 @@ namespace NesEmu.Emulator
 
         private void Bpl()
         {
-            if ((this.P & NFlag) == 0)
+            if (!this.N)
             {
                 this.Jump();
             }
@@ -767,12 +771,12 @@ namespace NesEmu.Emulator
 
         private void Clc()
         {
-            this.P &= 0xfe;
+            this.C = false;
         }
 
         private void Cld()
         {
-            this.P &= 0xf7;
+            this.D = false;
         }
 
         private void Cmp()
@@ -857,17 +861,12 @@ namespace NesEmu.Emulator
 
         private void Lsr()
         {
-            var lowBit = this.value & 0x01;
+            this.C = (this.value & 0x01) != 0;
+
             this.value >>= 1;
 
-            this.P &= 0x7c;
-
-            if (this.value == 0)
-            {
-                this.P |= ZFlag;
-            }
-
-            this.P |= (byte)lowBit;
+            this.N = false; // top bit is left unset
+            this.Z = this.value == 0;
         }
 
         private void Nmi()
@@ -879,7 +878,8 @@ namespace NesEmu.Emulator
             this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC & 0xff));
 
             this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | BFlag));
+            // set the B flag on the stack
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | 0x10));
 
             var pcLow = this.bus.CpuRead(0xfffa);
             this.bus.TickCpu();
@@ -917,50 +917,34 @@ namespace NesEmu.Emulator
 
         private void Rol()
         {
-            var highBit = this.value & 0x80;
+            var carry = (this.value & 0x80) != 0;
+
             this.value <<= 1;
-            if ((this.P & CFlag) != 0)
+
+            if (this.C)
             {
                 this.value |= 0x01;
             }
 
-            this.P &= 0x7c;
-
-            if (this.value == 0)
-            {
-                this.P |= ZFlag;
-            }
-
-            if ((this.value & 0x80) != 0)
-            {
-                this.P |= NFlag;
-            }
-
-            this.P |= (byte)(highBit >> 7);
+            this.Z = this.value == 0;
+            this.N = (this.value & 0x80) != 0;
+            this.C = carry;
         }
 
         private void Ror()
         {
-            var lowBit = this.value & 1;
+            var carry = (this.value & 1) != 0;
+
             this.value >>= 1;
-            if ((this.P & CFlag) != 0)
+
+            if (this.C)
             {
                 this.value |= 0x80;
             }
 
-            this.P &= 0x7c;
-
-            if (this.value == 0)
-            {
-                this.P |= ZFlag;
-            }
-
-            if ((this.value & 0x80) != 0)
-            {
-                this.P |= NFlag;
-            }
-
-            this.P |= (byte)lowBit;
+            this.Z = this.value == 0;
+            this.N = (this.value & 0x80) != 0;
+            this.C = carry;
         }
 
 
@@ -996,38 +980,30 @@ namespace NesEmu.Emulator
 
         private void Sec()
         {
-            this.P |= CFlag;
+            this.C = true;
         }
 
         private void Sei()
         {
-            this.P |= 0x04;
+            this.I = true;
         }
 
         private void Sbc()
         {
-            var result = this.A - this.value;
+            var highBit = (this.A & 0x80);
 
-            if ((this.P & CFlag) != 0)
+            var result = (int)this.A - value;
+            if (!this.C)
             {
                 result--;
             }
 
-            this.A = (byte)(result & 0xff);
+            this.A = (byte)result;
 
-            this.P &= 0x7c;
-
-            if ((this.A & 0x08) != 0)
-            {
-                this.P |= NFlag;
-            }
-
-            if (this.A == 0)
-            {
-                this.P |= ZFlag;
-            }
-
-            this.P |= (byte)(result >> 8);
+            this.N = (this.A & 0x80) != 0;
+            this.Z = this.A == 0;
+            this.C = (result & 0x100) == 0;
+            this.V = (this.A & 0x80) != highBit;
         }
 
         private void Sta()
@@ -1090,38 +1066,19 @@ namespace NesEmu.Emulator
 
         private void SetFlags(byte a)
         {
-            this.P &= 0x7d;
-
-            if ((sbyte)a <= 0)
-            {
-                if (a == 0)
-                {
-                    this.P |= ZFlag;
-                }
-                else
-                {
-                    this.P |= NFlag;
-                }
-            }
+            this.Z = a == 0;
+            this.N = (a & 0x80) != 0;
         }
 
         private void SetCompareFlags(byte reg)
         {
-            this.P &= 0x7c;
+            var result = reg - this.value;
 
-            if (reg < this.value)
-            {
-                this.P |= (byte)((reg & 0x80) >> 7);
-            }
-            else if (reg > this.value)
-            {
-                this.P |= CFlag;
-                this.P |= (byte)((reg & 0x80) >> 7);
-            }
-            else
-            {
-                this.P |= ZFlag | CFlag;
-            }
+            var tmp = (byte)result;
+
+            this.N = (tmp & 0x80) != 0;
+            this.Z = tmp == 0;
+            this.C = (result & 0x100) == 0;
         }
     }
 }
