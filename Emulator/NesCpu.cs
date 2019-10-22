@@ -429,6 +429,11 @@
                     this.Lda();
                     return;
 
+                case 0xb8:
+                    this.Implicit();
+                    this.Clv();
+                    return;
+
                 case 0xb9:
                     this.AbsoluteY();
                     this.Load();
@@ -717,8 +722,6 @@
 
         private void Adc()
         {
-            var highBit = this.A & 0x80;
-
             var result = this.A + this.value;
 
             if (this.C)
@@ -726,12 +729,13 @@
                 result++;
             }
 
+            this.V = (~(this.A ^ this.value) & (this.A ^ result) & 0x80) != 0;
+            this.C = (result & 0x100) != 0;
+
             this.A = (byte)result;
 
             this.N = (this.A & 0x80) != 0;
             this.Z = this.A == 0;
-            this.C = (result & 0x100) != 0;
-            this.V = (this.A & 0x80) != highBit;
         }
 
         private void And()
@@ -831,6 +835,11 @@
             this.D = false;
         }
 
+        private void Clv()
+        {
+            this.V = false;
+        }
+
         private void Cmp()
         {
             SetCompareFlags(this.A);
@@ -843,7 +852,7 @@
 
         private void Cpy()
         {
-            SetCompareFlags(this.X);
+            SetCompareFlags(this.Y);
         }
 
         private void Dec()
@@ -1062,20 +1071,20 @@
 
         private void Sbc()
         {
-            var highBit = (this.A & 0x80);
-
             var result = (int)this.A - value;
             if (!this.C)
             {
                 result--;
             }
 
+            this.V = ((this.A ^ this.value) & (this.A ^ result) & 0x80) != 0;
+            this.C = (result & 0x100) == 0;
+
             this.A = (byte)result;
 
             this.N = (this.A & 0x80) != 0;
             this.Z = this.A == 0;
-            this.C = (result & 0x100) == 0;
-            this.V = (this.A & 0x80) != highBit;
+
         }
 
         private void Sta()
