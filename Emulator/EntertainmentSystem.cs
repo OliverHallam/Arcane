@@ -9,6 +9,7 @@ namespace NesEmu.Emulator
         private Ppu ppu;
         private NesCpu cpu;
         private Bus bus;
+        private Controller controller;
 
         private Thread emulationThread;
         private bool running;
@@ -21,14 +22,17 @@ namespace NesEmu.Emulator
             this.bus = new Bus();
             this.ppu = new Ppu(this.bus);
             this.cpu = new NesCpu(this.bus);
+            this.controller = new Controller();
 
             bus.Attach(cpu);
             bus.Attach(ppu);
+            bus.Attach(controller);
         }
 
         public NesCpu Cpu => this.cpu;
         public Ppu Ppu => this.ppu;
         public Bus Bus => this.bus;
+        public Controller Controller => this.controller;
 
         public void InsertCart(Cart cart)
         {

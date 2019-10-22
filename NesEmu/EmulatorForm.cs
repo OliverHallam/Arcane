@@ -56,29 +56,6 @@ namespace NesEmu
             this.memory.BaseAddress = (ushort)(this.gameSystem.Bus.LastWriteAddress & 0xfe00);
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Space)
-            {
-                gameSystem.Step();
-            }
-
-            if (e.KeyCode == Keys.F5)
-            {
-                this.dissassembly.ProgramCounter = 0;
-                gameSystem.Start();
-            }
-
-            if (e.KeyCode == Keys.F)
-            {
-                gameSystem.RunFrame();
-            }
-
-            if (e.KeyCode == Keys.P)
-            {
-                gameSystem.Stop();
-            }
-        }
 
         protected override void OnClosed(EventArgs e)
         {
@@ -89,6 +66,102 @@ namespace NesEmu
         {
             this.Invalidate();
             base.OnDpiChanged(e);
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Up:
+                    gameSystem.Controller.Up = true;
+                    return true;
+
+                case Keys.Down:
+                    gameSystem.Controller.Down = true;
+                    return true;
+
+                case Keys.Left:
+                    gameSystem.Controller.Left = true;
+                    return true;
+
+                case Keys.Right:
+                    gameSystem.Controller.Right = true;
+                    return true;
+            }
+
+            return false;
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Space:
+                    gameSystem.Step();
+                    break;
+
+                case Keys.F5:
+                    this.dissassembly.ProgramCounter = 0;
+                    gameSystem.Start();
+                    break;
+
+                case Keys.F8:
+                    gameSystem.RunFrame();
+                    break;
+
+                case Keys.P:
+                    gameSystem.Stop();
+                    break;
+
+                case Keys.Z:
+                    gameSystem.Controller.A = true;
+                    break;
+                case Keys.X:
+                    gameSystem.Controller.B = true;
+                    break;
+                case Keys.Q:
+                    gameSystem.Controller.Select = true;
+                    break;
+                case Keys.W:
+                    gameSystem.Controller.Start = true;
+                    break;
+            }
+
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Up:
+                    gameSystem.Controller.Up = false;
+                    break;
+                case Keys.Down:
+                    gameSystem.Controller.Down = false;
+                    break;
+                case Keys.Left:
+                    gameSystem.Controller.Left = false;
+                    break;
+                case Keys.Right:
+                    gameSystem.Controller.Right = false;
+                    break;
+
+                case Keys.Z:
+                    gameSystem.Controller.A = false;
+                    break;
+                case Keys.X:
+                    gameSystem.Controller.B = false;
+                    break;
+                case Keys.Q:
+                    gameSystem.Controller.Select = false;
+                    break;
+                case Keys.W:
+                    gameSystem.Controller.Start = false;
+                    break;
+            }
+
+            base.OnKeyUp(e);
         }
     }
 }

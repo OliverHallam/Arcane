@@ -7,6 +7,7 @@ namespace NesEmu.Emulator
         private NesCpu cpu;
         private Ppu ppu;
 
+        private Controller controller;
         private Cart cart;
 
         private byte[] cpuRam = new byte[2048];
@@ -49,12 +50,21 @@ namespace NesEmu.Emulator
         {
             if (address < 0x2000)
             {
-                return cpuRam[address & 0x7ff];
+                return this.cpuRam[address & 0x7ff];
             }
 
             if (address < 0x4000)
             {
-                return ppu.Read(address);
+                return this.ppu.Read(address);
+            }
+
+            if (address < 0x4020)
+            {
+                if (address == 0x4016)
+                {
+                    return this.controller.Read();
+                }
+                return 0;
             }
 
             byte value;
@@ -70,11 +80,6 @@ namespace NesEmu.Emulator
         {
             this.LastWriteAddress = address;
 
-            if (address == 0x10 && value != 0x10)
-            {
-                
-            }
-
             if (address < 0x2000)
             {
                 cpuRam[address & 0x7ff] = value;
@@ -82,6 +87,13 @@ namespace NesEmu.Emulator
             else if (address < 0x4000)
             {
                 ppu.Write(address, value);
+            }
+            else if (address < 0x4020)
+            {
+                if (address == 0x4016)
+                {
+                    this.controller.Write(value);
+                }
             }
         }
 
@@ -139,6 +151,11 @@ namespace NesEmu.Emulator
         internal void Attach(Ppu ppu)
         {
             this.ppu = ppu;
+        }
+
+        internal void Attach(Controller controller)
+        {
+            this.controller = controller;
         }
     }
 }
