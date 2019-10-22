@@ -214,6 +214,12 @@
                     this.Jmp();
                     return;
 
+                case 0x4d:
+                    this.Absolute();
+                    this.Load();
+                    this.Eor();
+                    return;
+
                 case 0x50:
                     this.Relative();
                     this.Bvc();
@@ -275,6 +281,12 @@
                     this.Sei();
                     return;
 
+                case 0x7d:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Adc();
+                    return;
+
                 case 0x84:
                     this.ZeroPage();
                     this.Sty();
@@ -325,6 +337,12 @@
                     this.Sta();
                     return;
 
+                case 0x94:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Sty();
+                    return;
+
                 case 0x95:
                     this.ZeroPageX();
                     this.Sta();
@@ -333,6 +351,12 @@
                 case 0x98:
                     this.Implicit();
                     this.Tya();
+                    return;
+
+                case 0x99:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Sta();
                     return;
 
                 case 0x9a:
@@ -445,6 +469,12 @@
                     this.Tsx();
                     return;
 
+                case 0xbc:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Ldy();
+                    return;
+
                 case 0xbd:
                     this.AbsoluteX();
                     this.Load();
@@ -484,6 +514,12 @@
                     this.Dex();
                     return;
 
+                case 0xcd:
+                    this.Absolute();
+                    this.Load();
+                    this.Cmp();
+                    return;
+
                 case 0xce:
                     this.Absolute();
                     this.Load();
@@ -494,6 +530,11 @@
                 case 0xd0:
                     this.Relative();
                     this.Bne();
+                    return;
+
+                case 0xd5:
+                    this.ZeroPageX();
+                    this.Cmp();
                     return;
 
                 case 0xd6:
@@ -508,8 +549,26 @@
                     this.Cld();
                     return;
 
+                case 0xd9:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Cmp();
+                    return;
+
+                case 0xdd:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Cmp();
+                    return;
+
                 case 0xe0:
                     this.Immediate();
+                    this.Cpx();
+                    return;
+
+                case 0xe4:
+                    this.ZeroPage();
+                    this.Load();
                     this.Cpx();
                     return;
 
@@ -553,9 +612,29 @@
                     this.Beq();
                     return;
 
+                case 0xf6:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Inc();
+                    this.Store();
+                    return;
+
                 case 0xf8:
                     this.Implicit();
                     this.Sed();
+                    return;
+
+                case 0xfd:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Sbc();
+                    return;
+
+                case 0xfe:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Inc();
+                    this.Store();
                     return;
 
                 default:
