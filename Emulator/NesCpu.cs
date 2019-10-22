@@ -20,7 +20,6 @@
                 return (byte)
                     ((this.N ? 0x80 : 0) |
                     (this.V ? 0x40 : 0) |
-                    (this.B ? 0x20 : 0) |
                     (this.D ? 0x08 : 0) |
                     (this.I ? 0x04 : 0) |
                     (this.Z ? 0x02 : 0) |
@@ -31,7 +30,6 @@
             {
                 this.N = (value & 0x80) != 0;
                 this.V = (value & 0x40) != 0;
-                this.B = (value & 0x20) != 0;
                 this.D = (value & 0x08) != 0;
                 this.I = (value & 0x04) != 0;
                 this.Z = (value & 0x02) != 0;
@@ -42,7 +40,7 @@
         private ushort address;
         private byte value;
 
-        private bool nmi;
+        private ushort interruptVector;
 
         public NesCpu(Bus bus)
         {
@@ -51,26 +49,24 @@
 
         public void Reset()
         {
-            // 7 cycles
-            this.C = this.Z = this.D = this.B = this.V = this.N = false;
-            this.I = true;
-
-            this.PC = (ushort)(bus.CpuRead(0xfffd) << 8 | bus.CpuRead(0xfffc));
+            this.C = this.Z = this.I = this.D = this.B = this.V = this.N = false;
+            this.interruptVector = 0xfffc;
         }
 
         public void SignalNmi()
         {
-            this.nmi = true;
+            this.interruptVector = 0xfffa;
         }
 
         public void RunInstruction()
         {
-            if (this.nmi)
+            if (this.interruptVector != 0)
             {
-                this.nmi = false;
+                this.I = true;
                 this.bus.TickCpu();
                 this.bus.TickCpu();
-                this.Nmi();
+                this.Interrupt();
+                this.interruptVector = 0;
                 return;
             }
 
@@ -79,6 +75,17 @@
 
             switch(opCode)
             {
+                case 0x00:
+                    this.Implicit();
+                    this.Brk();
+                    return;
+
+                case 0x01:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.Ora();
+                    return;
+
                 case 0x05:
                     this.ZeroPage();
                     this.Load();
@@ -109,9 +116,39 @@
                     this.StoreA();
                     return;
 
+                case 0x0d:
+                    this.Absolute();
+                    this.Load();
+                    this.Ora();
+                    return;
+
+                case 0x0e:
+                    this.Absolute();
+                    this.Load();
+                    this.Asl();
+                    return;
+
                 case 0x10:
                     this.Relative();
                     this.Bpl();
+                    return;
+
+                case 0x11:
+                    this.IndirectIndex();
+                    this.Load();
+                    this.Ora();
+                    return;
+
+                case 0x15:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Ora();
+                    return;
+
+                case 0x16:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Ora();
                     return;
 
                 case 0x18:
@@ -119,9 +156,33 @@
                     this.Clc();
                     return;
 
+                case 0x19:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Ora();
+                    return;
+
+                case 0x1d:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Ora();
+                    return;
+
+                case 0x1e:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Asl();
+                    return;
+
                 case 0x20:
                     // timings are a little different on this one, so the decoding happens in the instruction
                     this.Jsr();
+                    return;
+
+                case 0x21:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.And();
                     return;
 
                 case 0x24:
@@ -160,9 +221,34 @@
                     this.StoreA();
                     return;
 
+                case 0x2c:
+                    this.Absolute();
+                    this.Load();
+                    this.Bit();
+                    return;
+
+                case 0x2d:
+                    this.Absolute();
+                    this.Load();
+                    this.And();
+                    return;
+
+                case 0x2e:
+                    this.Absolute();
+                    this.Load();
+                    this.Rol();
+                    this.Store();
+                    return;
+
                 case 0x30:
                     this.Relative();
                     this.Bmi();
+                    return;
+
+                case 0x31:
+                    this.IndirectIndex();
+                    this.Load();
+                    this.And();
                     return;
 
                 case 0x35:
@@ -171,14 +257,46 @@
                     this.And();
                     return;
 
+                case 0x36:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Rol();
+                    this.Store();
+                    return;
+
                 case 0x38:
                     this.Implicit();
                     this.Sec();
                     return;
 
+                case 0x39:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.And();
+                    return;
+
+                case 0x3d:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.And();
+                    return;
+
+                case 0x3e:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Rol();
+                    this.Store();
+                    return;
+
                 case 0x40:
                     this.Implicit();
                     this.Rti();
+                    return;
+
+                case 0x41:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.Eor();
                     return;
 
                 case 0x45:
@@ -220,14 +338,70 @@
                     this.Eor();
                     return;
 
+                case 0x4e:
+                    this.Absolute();
+                    this.Load();
+                    this.Lsr();
+                    this.Store();
+                    return;
+
                 case 0x50:
                     this.Relative();
                     this.Bvc();
                     return;
 
+                case 0x51:
+                    this.IndirectIndex();
+                    this.Load();
+                    this.Eor();
+                    return;
+
+                case 0x55:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Eor();
+                    return;
+
+                case 0x56:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Lsr();
+                    this.Store();
+                    return;
+
+                case 0x58:
+                    this.Implicit();
+                    this.Cli();
+                    return;
+
+                case 0x59:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Eor();
+                    return;
+
+                case 0x5d:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Eor();
+                    return;
+
+                case 0x5e:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Lsr();
+                    this.Store();
+                    return;
+
                 case 0x60:
                     this.Implicit();
                     this.Rts();
+                    return;
+
+                case 0x61:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.Adc();
                     return;
 
                 case 0x65:
@@ -271,9 +445,35 @@
                     this.Adc();
                     return;
 
+                case 0x6e:
+                    this.Absolute();
+                    this.Load();
+                    this.Ror();
+                    this.Store();
+                    return;
+
                 case 0x70:
                     this.Relative();
                     this.Bvs();
+                    return;
+
+                case 0x71:
+                    this.IndirectIndex();
+                    this.Load();
+                    this.Adc();
+                    return;
+
+                case 0x75:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Adc();
+                    return;
+
+                case 0x76:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Ror();
+                    this.Store();
                     return;
 
                 case 0x78:
@@ -281,10 +481,28 @@
                     this.Sei();
                     return;
 
+                case 0x79:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Adc();
+                    return;
+
                 case 0x7d:
                     this.AbsoluteX();
                     this.Load();
                     this.Adc();
+                    return;
+
+                case 0x7e:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Ror();
+                    this.Store();
+                    return;
+
+                case 0x81:
+                    this.IndexIndirect();
+                    this.Sta();
                     return;
 
                 case 0x84:
@@ -333,7 +551,7 @@
                     return;
 
                 case 0x91:
-                    this.IndirectIndexed();
+                    this.IndirectIndex();
                     this.Sta();
                     return;
 
@@ -346,6 +564,11 @@
                 case 0x95:
                     this.ZeroPageX();
                     this.Sta();
+                    return;
+
+                case 0x96:
+                    this.ZeroPageY();
+                    this.Stx();
                     return;
 
                 case 0x98:
@@ -372,7 +595,13 @@
                 case 0xa0:
                     this.Immediate();
                     this.Ldy();
-                    break;
+                    return;
+
+                case 0xa1:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.Lda();
+                    return;
 
                 case 0xa2:
                     this.Immediate();
@@ -436,7 +665,7 @@
                     return;
 
                 case 0xb1:
-                    this.IndirectIndexed();
+                    this.IndirectIndex();
                     this.Load();
                     this.Lda();
                     return;
@@ -451,6 +680,12 @@
                     this.ZeroPageX();
                     this.Load();
                     this.Lda();
+                    return;
+
+                case 0xb6:
+                    this.ZeroPageY();
+                    this.Load();
+                    this.Ldx();
                     return;
 
                 case 0xb8:
@@ -481,8 +716,26 @@
                     this.Lda();
                     return;
 
+                case 0xbe:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Ldx();
+                    return;
+
                 case 0xc0:
                     this.Immediate();
+                    this.Cpy();
+                    return;
+
+                case 0xc1:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.Cmp();
+                    return;
+
+                case 0xc4:
+                    this.ZeroPage();
+                    this.Load();
                     this.Cpy();
                     return;
 
@@ -514,6 +767,12 @@
                     this.Dex();
                     return;
 
+                case 0xcc:
+                    this.Absolute();
+                    this.Load();
+                    this.Cpy();
+                    return;
+
                 case 0xcd:
                     this.Absolute();
                     this.Load();
@@ -530,6 +789,12 @@
                 case 0xd0:
                     this.Relative();
                     this.Bne();
+                    return;
+
+                case 0xd1:
+                    this.IndirectIndex();
+                    this.Load();
+                    this.Cmp();
                     return;
 
                 case 0xd5:
@@ -561,9 +826,22 @@
                     this.Cmp();
                     return;
 
+                case 0xde:
+                    this.AbsoluteX();
+                    this.Load();
+                    this.Dec();
+                    this.Store();
+                    return;
+
                 case 0xe0:
                     this.Immediate();
                     this.Cpx();
+                    return;
+
+                case 0xe1:
+                    this.IndexIndirect();
+                    this.Load();
+                    this.Sbc();
                     return;
 
                 case 0xe4:
@@ -600,6 +878,18 @@
                     this.Nop();
                     return;
 
+                case 0xec:
+                    this.Absolute();
+                    this.Load();
+                    this.Cpx();
+                    return;
+
+                case 0xed:
+                    this.Absolute();
+                    this.Load();
+                    this.Sbc();
+                    return;
+
                 case 0xee:
                     this.Absolute();
                     this.Load();
@@ -612,6 +902,18 @@
                     this.Beq();
                     return;
 
+                case 0xf1:
+                    this.IndirectIndex();
+                    this.Load();
+                    this.Sbc();
+                    return;
+
+                case 0xf5:
+                    this.ZeroPageX();
+                    this.Load();
+                    this.Sbc();
+                    return;
+
                 case 0xf6:
                     this.ZeroPageX();
                     this.Load();
@@ -622,6 +924,12 @@
                 case 0xf8:
                     this.Implicit();
                     this.Sed();
+                    return;
+
+                case 0xf9:
+                    this.AbsoluteY();
+                    this.Load();
+                    this.Sbc();
                     return;
 
                 case 0xfd:
@@ -735,6 +1043,15 @@
             this.address += this.X;
         }
 
+        private void ZeroPageY()
+        {
+            this.address = bus.CpuRead(this.PC++);
+            this.bus.TickCpu();
+
+            this.bus.TickCpu();
+            this.address += this.Y;
+        }
+
         private void Relative()
         {
             var relative = (sbyte)(this.bus.CpuRead(this.PC++));
@@ -763,7 +1080,25 @@
             this.address = (ushort)((addressHigh << 8) | addressLow);
         }
 
-        private void IndirectIndexed()
+        private void IndexIndirect()
+        {
+            ushort indirectAddress = bus.CpuRead(this.PC++);
+            this.bus.TickCpu();
+
+            indirectAddress += this.X;
+            this.bus.TickCpu();
+
+            var addressLow = this.bus.CpuRead(indirectAddress);
+            this.bus.TickCpu();
+
+            var addressHigh = this.bus.CpuRead((ushort)(indirectAddress + 1));
+            this.bus.TickCpu();
+
+            this.address = (ushort)(addressLow | addressHigh << 8);
+        }
+
+
+        private void IndirectIndex()
         {
             ushort indirectAddress = bus.CpuRead(this.PC++);
             this.bus.TickCpu();
@@ -802,6 +1137,38 @@
         {
             this.bus.TickCpu();
             this.A = this.value;
+        }
+
+        private void Interrupt()
+        {
+            if (this.interruptVector != 0xfffc)
+            {
+                // don't push on reset
+                this.bus.TickCpu();
+                this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC >> 8));
+
+                this.bus.TickCpu();
+                this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC & 0xff));
+
+                var p = (byte)(this.P | 0x20);
+                p |= (byte)(this.B ? 0x10 : 0);
+                this.bus.CpuWrite((ushort)(0x100 + this.S--), p);
+                this.bus.TickCpu();
+            }
+            else
+            {
+                this.bus.TickCpu();
+                this.bus.TickCpu();
+                this.bus.TickCpu();
+            }
+
+            var pcLow = this.bus.CpuRead(this.interruptVector);
+            this.bus.TickCpu();
+
+            var pcHigh = this.bus.CpuRead((ushort)(this.interruptVector + 1));
+            this.bus.TickCpu();
+
+            this.PC = (ushort)((pcHigh << 8) | pcLow);
         }
 
         private void Adc()
@@ -893,6 +1260,12 @@
             }
         }
 
+        private void Brk()
+        {
+            this.B = true;
+            this.interruptVector = 0xfffe;
+        }
+
         private void Bvc()
         {
             if (!this.V)
@@ -917,6 +1290,11 @@
         private void Cld()
         {
             this.D = false;
+        }
+
+        private void Cli()
+        {
+            this.I = false;
         }
 
         private void Clv()
@@ -1012,27 +1390,6 @@
 
             this.N = false; // top bit is left unset
             this.Z = this.value == 0;
-        }
-
-        private void Nmi()
-        {
-            this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC >> 8));
-
-            this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC & 0xff));
-
-            this.bus.TickCpu();
-            // set the B flag on the stack
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | 0x20));
-
-            var pcLow = this.bus.CpuRead(0xfffa);
-            this.bus.TickCpu();
-
-            var pcHigh = this.bus.CpuRead(0xfffb);
-            this.bus.TickCpu();
-
-            this.PC = (ushort)((pcHigh << 8) | pcLow);
         }
 
         private void Ora()
