@@ -20,7 +20,7 @@
                 return (byte)
                     ((this.N ? 0x80 : 0) |
                     (this.V ? 0x40 : 0) |
-                    (this.B ? 0x10 : 0) |
+                    (this.B ? 0x20 : 0) |
                     (this.D ? 0x08 : 0) |
                     (this.I ? 0x04 : 0) |
                     (this.Z ? 0x02 : 0) |
@@ -31,7 +31,7 @@
             {
                 this.N = (value & 0x80) != 0;
                 this.V = (value & 0x40) != 0;
-                this.B = (value & 0x10) != 0;
+                this.B = (value & 0x20) != 0;
                 this.D = (value & 0x08) != 0;
                 this.I = (value & 0x04) != 0;
                 this.Z = (value & 0x02) != 0;
@@ -92,6 +92,11 @@
                     this.Store();
                     return;
 
+                case 0x08:
+                    this.Implicit();
+                    this.Php();
+                    return;
+
                 case 0x09:
                     this.Immediate();
                     this.Ora();
@@ -136,6 +141,11 @@
                     this.Load();
                     this.Rol();
                     this.Store();
+                    return;
+
+                case 0x28:
+                    this.Implicit();
+                    this.Plp();
                     return;
 
                 case 0x29:
@@ -533,6 +543,11 @@
                     this.Beq();
                     return;
 
+                case 0xf8:
+                    this.Implicit();
+                    this.Sed();
+                    return;
+
                 default:
                     return;
             }
@@ -916,7 +931,7 @@
 
             this.bus.TickCpu();
             // set the B flag on the stack
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | 0x10));
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | 0x20));
 
             var pcLow = this.bus.CpuRead(0xfffa);
             this.bus.TickCpu();
@@ -943,12 +958,27 @@
             this.bus.CpuWrite((ushort)(0x100 + this.S--), this.A);
         }
 
+        private void Php()
+        {
+            this.bus.TickCpu();
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | 0x30));
+        }
+
         private void Pla()
         {
-            ++this.S;
             this.bus.TickCpu();
 
-            this.A = this.bus.CpuRead((ushort)(0x100 + this.S));
+            this.A = this.bus.CpuRead((ushort)(0x100 + ++this.S));
+            this.bus.TickCpu();
+
+            this.SetFlags(this.A);
+        }
+
+        private void Plp()
+        {
+            this.bus.TickCpu();
+
+            this.P = this.bus.CpuRead((ushort)(0x100 + ++this.S));
             this.bus.TickCpu();
         }
 
@@ -1018,6 +1048,11 @@
         private void Sec()
         {
             this.C = true;
+        }
+
+        private void Sed()
+        {
+            this.D = true;
         }
 
         private void Sei()
