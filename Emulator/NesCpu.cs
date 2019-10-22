@@ -440,6 +440,11 @@
                     this.Lda();
                     return;
 
+                case 0xba:
+                    this.Implicit();
+                    this.Tsx();
+                    return;
+
                 case 0xbd:
                     this.AbsoluteX();
                     this.Load();
@@ -1115,6 +1120,12 @@
         {
             this.Y = this.A;
             this.SetFlags(this.Y);
+        }
+
+        private void Tsx()
+        {
+            this.X = this.S;
+            this.SetFlags(this.X);
         }
 
         private void Txa()
