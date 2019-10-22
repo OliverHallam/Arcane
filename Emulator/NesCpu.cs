@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NesEmu.Emulator
+﻿namespace NesEmu.Emulator
 {
     public class NesCpu
     {
@@ -39,6 +35,7 @@ namespace NesEmu.Emulator
                 this.D = (value & 0x08) != 0;
                 this.I = (value & 0x04) != 0;
                 this.Z = (value & 0x02) != 0;
+                this.C = (value & 0x01) != 0;
             }
         }
 
@@ -702,6 +699,7 @@ namespace NesEmu.Emulator
 
             this.N = (this.A & 0x80) != 0;
             this.Z = this.A == 0;
+            this.C = (result & 0x100) != 0;
             this.V = (this.A & 0x80) != highBit;
         }
 
