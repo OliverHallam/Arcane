@@ -118,7 +118,7 @@ namespace NesEmu.Emulator
                                     0x2000 | (this.currentAddress & 0x0C00) | // select table
                                     0x03C0 | // attribute block at end of table
                                     (this.currentAddress >> 4) & 0x0038 | // 3 bits of tile y
-                                    (this.currentAddress >> 2) & 0x0003); // 3 bits of tile x
+                                    (this.currentAddress >> 2) & 0x0007); // 3 bits of tile x
 
                                 var attributes = this.bus.PpuRead(attributeAddress);
 
