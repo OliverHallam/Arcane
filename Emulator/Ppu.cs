@@ -298,6 +298,7 @@ namespace NesEmu.Emulator
                         var writeAddress = (ushort)(this.currentAddress & 0x3fff);
                         if (writeAddress >= 0x3f00)
                         {
+                            this.pallette[writeAddress & 0x001f] = value;
                         }
                         else
                         {
