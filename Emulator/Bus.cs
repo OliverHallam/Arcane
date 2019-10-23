@@ -12,7 +12,6 @@ namespace NesEmu.Emulator
 
         private byte[] cpuRam = new byte[2048];
         private byte[] ppuRam = new byte[2048];
-        private byte[] pallette = new byte[32];
 
         public ushort LastWriteAddress { get; set; }
 
@@ -105,36 +104,25 @@ namespace NesEmu.Emulator
 
         public byte PpuRead(ushort address)
         {
-            address &= 0x3fff;
-
             if (address < 0x2000)
             {
                 return cart.PpuRead(address);
             }
-            else if (address < 0x3f00)
-            {
-                // TODO: more general nametable mirroring
-                address &= 0xfbff;
 
-                return this.ppuRam[address & 0x07ff];
-            }
+            // TODO: more general nametable mirroring
+            address &= 0xfbff;
 
-            return this.pallette[address & 0x001f];
+            return this.ppuRam[address & 0x07ff];
         }
 
         public void PpuWrite(ushort address, byte value)
         {
-            address &= 0x3fff;
-            if (address >= 0x2000 & address < 0x3f00)
+            if (address >= 0x2000)
             {
                 // TODO: more general nametable mirroring
                 address &= 0xfbff;
 
                 this.ppuRam[address & 0x07ff] = value;
-            }
-            else
-            {
-                this.pallette[address & 0x001f] = value;
             }
         }
 

@@ -13,18 +13,19 @@ namespace NesEmu.Emulator
         private byte ppuControl;
         private byte ppuMask;
 
-        private byte ppuData;
-
         private bool addressLatch;
-
-        private byte nextTileId;
-        private byte nextPatternByteLow;
-        private byte nextPatternByteHigh;
 
         // the bits address register can be viewed as 0ttt NNYY YYYX XXXX
         private byte fineX;
         private ushort currentAddress;
         private ushort initialAddress;
+
+        public int currentScanLine = -1;
+        public int scanlineCycle = -1;
+
+        private byte nextTileId;
+        private byte nextPatternByteLow;
+        private byte nextPatternByteHigh;
 
         private ushort patternShiftHigh;
         private ushort patternShiftLow;
@@ -35,6 +36,8 @@ namespace NesEmu.Emulator
         // cache for code performance
         private ushort patternAddress;
 
+        private byte[] pallette = new byte[32];
+
         public Ppu(Bus bus)
         {
             this.bus = bus;
@@ -42,8 +45,8 @@ namespace NesEmu.Emulator
 
         public byte[] Frame { get; } = new byte[256 * 240];
 
-        public int currentScanLine = -1;
-        public int scanlineCycle = -1;
+        public byte[] Pallette => this.pallette;
+
 
         public void Tick()
         {
@@ -97,7 +100,7 @@ namespace NesEmu.Emulator
                                 index |= (byte)((this.attributeShift & 0xC0000000) >> 28); // pallette
                             }
 
-                            this.Frame[this.currentPixelAddress++] = this.bus.PpuRead((ushort)(0x3f00 + index));
+                            this.Frame[this.currentPixelAddress++] = this.pallette[index];
                         }
 
                         switch (scanlineCycle & 0x07)
@@ -243,7 +246,6 @@ namespace NesEmu.Emulator
             return 0;
         }
 
-
         public void Write(ushort address, byte value)
         {
             address &= 0x07;
@@ -293,7 +295,14 @@ namespace NesEmu.Emulator
 
                 case 7:
                     {
-                        this.bus.PpuWrite(this.currentAddress, value);
+                        var writeAddress = (ushort)(this.currentAddress & 0x3fff);
+                        if (writeAddress >= 0x3f00)
+                        {
+                        }
+                        else
+                        {
+                            this.bus.PpuWrite(writeAddress, value);
+                        }
 
                         if ((this.ppuControl & 0x04) != 0)
                         {
