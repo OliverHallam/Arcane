@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Imaging;
-using System.Text;
 
 namespace NesEmu
 {
     class NesColorPalette
     {
-        public static void SetPalette(ColorPalette palette)
+        public static void UpdatePalette(ColorPalette palette)
         {
             palette.Entries[0] = Color.FromArgb(124, 124, 124);
             palette.Entries[1] = Color.FromArgb(0, 0, 252);
@@ -74,6 +71,11 @@ namespace NesEmu
             palette.Entries[61] = Color.FromArgb(248, 216, 248);
             palette.Entries[62] = Color.FromArgb(0, 0, 0);
             palette.Entries[63] = Color.FromArgb(0, 0, 0);
+
+            for (var i=64; i<256; i++)
+            {
+                palette.Entries[i] = Color.Black;
+            }
         }
     }
 }

@@ -19,8 +19,11 @@ namespace NesEmu
             this.DoubleBuffered = true;
 
             this.frame = new Bitmap(128, 128, PixelFormat.Format8bppIndexed);
-            NesColorPalette.SetPalette(frame.Palette);
-        }
+
+            var palette = frame.Palette;
+            NesColorPalette.UpdatePalette(palette);
+            frame.Palette = palette;
+         }
 
         public EntertainmentSystem System
         {
@@ -32,14 +35,14 @@ namespace NesEmu
             {
                 if (this.system != null)
                 {
-                    this.system.PoweredUp -= this.OnPowerUp;
+                    this.system.Ppu.OnFrame -= this.OnFrame;
                 }
 
                 this.system = value;
 
                 if (this.system != null)
                 {
-                    this.system.PoweredUp += this.OnPowerUp;
+                    this.system.Ppu.OnFrame += this.OnFrame;
                 }
             }
         }
@@ -77,7 +80,7 @@ namespace NesEmu
             }
         }
 
-        private void OnPowerUp(object sender, EventArgs e)
+        private void OnFrame(object sender, EventArgs e)
         {
             this.Invalidate();
         }
@@ -100,10 +103,11 @@ namespace NesEmu
 
                         for (var x = 0; x < 8; x++)
                         {
-                            var pixel = (byte)((tileByteHigh & 0x80) >> 6 | (tileByteLow & 0x80) >> 7);
+                            var index = (byte)((tileByteHigh & 0x80) >> 6 | (tileByteLow & 0x80) >> 7);
                             tileByteHigh <<= 1;
                             tileByteLow <<= 1;
-                            *destPtr++ = pixel;
+
+                            *destPtr++ = this.system.Bus.PpuRead((ushort)(0x3f00 + index));
                         }
                     }
                 }
