@@ -18,17 +18,18 @@ namespace NesEmu.Emulator
         private bool addressLatch;
 
         private byte nextTileId;
-        private byte nextAttributeByte;
         private byte nextPatternByteLow;
         private byte nextPatternByteHigh;
 
-        // the bits address register can be viewed as 0tttNNYYYYYXXXXX
+        // the bits address register can be viewed as 0ttt NNYY YYYX XXXX
         private byte fineX;
         private ushort currentAddress;
         private ushort initialAddress;
 
         private ushort patternShiftHigh;
         private ushort patternShiftLow;
+        private uint attributeShift;
+        private ushort nextAttributeShift;
         private int currentPixelAddress;
 
         // cache for code performance
@@ -85,41 +86,51 @@ namespace NesEmu.Emulator
             {
                 if (currentScanLine < 240)
                 {
-                    if (currentScanLine >= 0 && scanlineCycle < 256)
+                    if (scanlineCycle < 256 || (scanlineCycle >= 320 && scanlineCycle < 336))
                     {
-                        // draw the pixel
-                        var value = (byte)((this.patternShiftHigh & 0x80) >> 6 | (this.patternShiftLow & 0x80) >> 7);
-                        this.Frame[this.currentPixelAddress++] = value;
-                        this.patternShiftHigh <<= 1;
-                        this.patternShiftLow <<= 1;
-                    }
+                        if (currentScanLine >= 0 && scanlineCycle < 256)
+                        {
+                            // draw the pixel
+                            var index = (byte)((this.patternShiftHigh & 0x8000) >> 14 | (this.patternShiftLow & 0x8000) >> 15);
+                            if (index != 0)
+                            {
+                                index |= (byte)((this.attributeShift & 0xC0000000) >> 28); // pallette
+                            }
 
-                    if (scanlineCycle < 256)
-                    {
+                            this.Frame[this.currentPixelAddress++] = this.bus.PpuRead((ushort)(0x3f00 + index));
+                        }
+
                         switch (scanlineCycle & 0x07)
                         {
                             case 0:
-                                // increment the x part of the address
-                                if ((this.currentAddress & 0x001f) == 0x001f)
-                                {
-                                    this.currentAddress &= 0xffe0;
-                                    this.currentAddress ^= 0x0400;
-                                }
-                                else
-                                {
-                                    this.currentAddress++;
-                                }
+                                this.patternShiftHigh |= this.nextPatternByteHigh;
+                                this.patternShiftLow |= this.nextPatternByteLow;
+                                this.attributeShift |= this.nextAttributeShift;
                                 break;
 
                             case 1:
-                                this.patternShiftHigh |= (ushort)(this.nextPatternByteHigh);
-                                this.patternShiftLow |= (ushort)(this.nextPatternByteLow);
-                                this.nextTileId = this.bus.PpuRead((ushort)(0x2000 | this.currentAddress & 0x0fff));
+                                var tileAddress = (ushort)(0x2000 | this.currentAddress & 0x0fff);
+                                this.nextTileId = this.bus.PpuRead(tileAddress);
                                 break;
 
                             case 3:
-                                // TODO: attribute address = 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
-                                this.nextAttributeByte = 0;
+                                var attributeAddress = (ushort)(
+                                    0x2000 | (this.currentAddress & 0x0C00) | // select table
+                                    0x03C0 | // attribute block at end of table
+                                    (this.currentAddress >> 4) & 0x0038 | // 3 bits of tile y
+                                    (this.currentAddress >> 2) & 0x0003); // 3 bits of tile x
+
+                                var attributes = this.bus.PpuRead(attributeAddress);
+
+                                // use one more bit of the tile x and y to get the quadrant
+                                attributes >>= ((this.currentAddress & 0x0040) >> 4) | (this.currentAddress & 0x0002); 
+                                attributes &= 0x03;
+                                
+                                // we've determined the pallette index.  Lets duplicate this 8 times for the tile pixels
+                                this.nextAttributeShift = attributes;
+                                this.nextAttributeShift |= (ushort)(nextAttributeShift << 2);
+                                this.nextAttributeShift |= (ushort)(nextAttributeShift << 4);
+                                this.nextAttributeShift |= (ushort)(nextAttributeShift << 8);
                                 break;
 
                             case 5:
@@ -135,29 +146,46 @@ namespace NesEmu.Emulator
                             case 7:
                                 // address is 000PTTTTTTTT1YYY
                                 this.nextPatternByteHigh = this.bus.PpuRead((ushort)(this.patternAddress | 8));
-                                break;
-                        }
 
-                        if (scanlineCycle == 255)
-                        {
-                            // adjust y scroll
-                            this.currentAddress += 0x1000;
-                            this.currentAddress &= 0x7fff;
-
-                            if ((this.currentAddress & 0x7000) == 0)
-                            {
-                                // move to the next row
-                                if ((this.currentAddress & 0x03e0) == 0x03e0)
+                                if (scanlineCycle == 255)
                                 {
-                                    this.currentAddress &= 0x7c1f;
-                                    this.currentAddress ^= 0x0800;
+                                    // adjust y scroll
+                                    this.currentAddress += 0x1000;
+                                    this.currentAddress &= 0x7fff;
+
+                                    if ((this.currentAddress & 0x7000) == 0)
+                                    {
+                                        // move to the next row
+                                        if ((this.currentAddress & 0x03e0) == 0x03e0)
+                                        {
+                                            this.currentAddress &= 0x7c1f;
+                                            this.currentAddress ^= 0x0800;
+                                        }
+                                        else
+                                        {
+                                            this.currentAddress += 0x0020;
+                                        }
+                                    }
                                 }
                                 else
                                 {
-                                    this.currentAddress += 0x0020;
+                                    // increment the x part of the address
+                                    if ((this.currentAddress & 0x001f) == 0x001f)
+                                    {
+                                        this.currentAddress &= 0xffe0;
+                                        this.currentAddress ^= 0x0400;
+                                    }
+                                    else
+                                    {
+                                        this.currentAddress++;
+                                    }
                                 }
-                            }
+                                break;
                         }
+
+                        this.patternShiftHigh <<= 1;
+                        this.patternShiftLow <<= 1;
+                        this.attributeShift <<= 2;
                     }
                     else if (scanlineCycle == 256)
                     {
@@ -166,7 +194,8 @@ namespace NesEmu.Emulator
                     }
                     else if (currentScanLine < 0 && (scanlineCycle >= 279 && scanlineCycle < 304))
                     {
-                        this.currentAddress = this.initialAddress;
+                        this.currentAddress &= 0x0c1f;
+                        this.currentAddress |= (ushort)(this.initialAddress & 0xf3e0);
                     }
                 }
             }
