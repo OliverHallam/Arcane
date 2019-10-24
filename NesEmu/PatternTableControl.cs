@@ -107,7 +107,7 @@ namespace NesEmu
                             tileByteHigh <<= 1;
                             tileByteLow <<= 1;
 
-                            *destPtr++ = this.system.Ppu.Pallette[index];
+                            *destPtr++ = this.system.Ppu.Palette[index];
                         }
                     }
                 }

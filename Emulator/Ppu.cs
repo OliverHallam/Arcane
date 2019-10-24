@@ -15,10 +15,12 @@ namespace NesEmu.Emulator
 
         private bool addressLatch;
 
-        // the bits address register can be viewed as 0ttt NNYY YYYX XXXX
-        private byte fineX;
+        // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
         private ushort currentAddress;
         private ushort initialAddress;
+        private byte fineX;
+
+        private byte[] palette = new byte[32];
 
         public int currentScanLine = -1;
         public int scanlineCycle = -1;
@@ -31,12 +33,21 @@ namespace NesEmu.Emulator
         private ushort patternShiftLow;
         private uint attributeShift;
         private ushort nextAttributeShift;
+        private byte currentPixel;
         private int currentPixelAddress;
 
         // cache for code performance
         private ushort patternAddress;
 
-        private byte[] pallette = new byte[32];
+        private short oamAddress;
+        private byte oamData;
+        private byte[] oam = new byte[256];
+        private byte[] oamCopy = new byte[64];
+        private byte oamCopyIndex;
+
+        private int spriteIndex = 0;
+        private Sprite[] sprites = new Sprite[8];
+        private bool spriteSelected;
 
         public Ppu(Bus bus)
         {
@@ -45,176 +56,13 @@ namespace NesEmu.Emulator
 
         public byte[] Frame { get; } = new byte[256 * 240];
 
-        public byte[] Pallette => this.pallette;
-
+        public byte[] Palette => this.palette;
 
         public void Tick()
         {
             this.DoTick();
             this.DoTick();
             this.DoTick();
-        }
-
-        private void DoTick()
-        {
-            if (scanlineCycle == 0)
-            {
-                if (currentScanLine == 241)
-                {
-                    this.currentPixelAddress = 0;
-                    this.FrameCount++;
-                    this.OnFrame?.Invoke(this, EventArgs.Empty);
-
-                    if ((this.ppuControl & 0x80) != 0)
-                    {
-                        this.bus.SignalNmi();
-                    }
-
-                    // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
-                    ppuStatus |= 0x80;
-                }
-                else if (currentScanLine == -1)
-                {
-                    ppuStatus &= 0x7f;
-                }
-            }
-
-            if (scanlineCycle == -1)
-            {
-                scanlineCycle++;
-                return;
-            }
-
-            if ((this.ppuMask & 0x08) != 0)
-            {
-                if (currentScanLine < 240)
-                {
-                    if (scanlineCycle < 256 || (scanlineCycle >= 320 && scanlineCycle < 336))
-                    {
-                        if (currentScanLine >= 0 && scanlineCycle < 256)
-                        {
-                            // draw the pixel
-                            var index = (byte)((this.patternShiftHigh & 0x8000) >> 14 | (this.patternShiftLow & 0x8000) >> 15);
-                            if (index != 0)
-                            {
-                                index |= (byte)((this.attributeShift & 0xC0000000) >> 28); // pallette
-                            }
-
-                            this.Frame[this.currentPixelAddress++] = this.pallette[index];
-                        }
-
-                        switch (scanlineCycle & 0x07)
-                        {
-                            case 0:
-                                this.patternShiftHigh |= this.nextPatternByteHigh;
-                                this.patternShiftLow |= this.nextPatternByteLow;
-                                this.attributeShift |= this.nextAttributeShift;
-                                break;
-
-                            case 1:
-                                var tileAddress = (ushort)(0x2000 | this.currentAddress & 0x0fff);
-                                this.nextTileId = this.bus.PpuRead(tileAddress);
-                                break;
-
-                            case 3:
-                                var attributeAddress = (ushort)(
-                                    0x2000 | (this.currentAddress & 0x0C00) | // select table
-                                    0x03C0 | // attribute block at end of table
-                                    (this.currentAddress >> 4) & 0x0038 | // 3 bits of tile y
-                                    (this.currentAddress >> 2) & 0x0007); // 3 bits of tile x
-
-                                var attributes = this.bus.PpuRead(attributeAddress);
-
-                                // use one more bit of the tile x and y to get the quadrant
-                                attributes >>= ((this.currentAddress & 0x0040) >> 4) | (this.currentAddress & 0x0002); 
-                                attributes &= 0x03;
-                                
-                                // we've determined the pallette index.  Lets duplicate this 8 times for the tile pixels
-                                this.nextAttributeShift = attributes;
-                                this.nextAttributeShift |= (ushort)(nextAttributeShift << 2);
-                                this.nextAttributeShift |= (ushort)(nextAttributeShift << 4);
-                                this.nextAttributeShift |= (ushort)(nextAttributeShift << 8);
-                                break;
-
-                            case 5:
-                                // address is 000PTTTTTTTT0YYY
-                                this.patternAddress = (ushort)
-                                    (((this.ppuControl & 0x10) << 8) | // pattern selector
-                                     (this.nextTileId << 4) |
-                                     (this.currentAddress >> 12)); // fineY
-
-                                this.nextPatternByteLow = this.bus.PpuRead(this.patternAddress);
-                                break;
-
-                            case 7:
-                                // address is 000PTTTTTTTT1YYY
-                                this.nextPatternByteHigh = this.bus.PpuRead((ushort)(this.patternAddress | 8));
-
-                                if (scanlineCycle == 255)
-                                {
-                                    // adjust y scroll
-                                    this.currentAddress += 0x1000;
-                                    this.currentAddress &= 0x7fff;
-
-                                    if ((this.currentAddress & 0x7000) == 0)
-                                    {
-                                        // move to the next row
-                                        if ((this.currentAddress & 0x03e0) == 0x03e0)
-                                        {
-                                            this.currentAddress &= 0x7c1f;
-                                            this.currentAddress ^= 0x0800;
-                                        }
-                                        else
-                                        {
-                                            this.currentAddress += 0x0020;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    // increment the x part of the address
-                                    if ((this.currentAddress & 0x001f) == 0x001f)
-                                    {
-                                        this.currentAddress &= 0xffe0;
-                                        this.currentAddress ^= 0x0400;
-                                    }
-                                    else
-                                    {
-                                        this.currentAddress++;
-                                    }
-                                }
-                                break;
-                        }
-
-                        this.patternShiftHigh <<= 1;
-                        this.patternShiftLow <<= 1;
-                        this.attributeShift <<= 2;
-                    }
-                    else if (scanlineCycle == 256)
-                    {
-                        this.currentAddress &= 0xffe0;
-                        this.currentAddress |= (ushort)(this.initialAddress & 0x001f);
-                    }
-                    else if (currentScanLine < 0 && (scanlineCycle >= 279 && scanlineCycle < 304))
-                    {
-                        this.currentAddress &= 0x0c1f;
-                        this.currentAddress |= (ushort)(this.initialAddress & 0xf3e0);
-                    }
-                }
-            }
-
-            scanlineCycle++;
-            if (scanlineCycle == 340)
-            {
-                scanlineCycle = -1;
-
-                currentScanLine++;
-
-                if (currentScanLine == 261)
-                {
-                    currentScanLine = -1;
-                }
-            }
         }
 
         public byte Peek(ushort address)
@@ -262,6 +110,10 @@ namespace NesEmu.Emulator
                     this.ppuMask = value;
                     return;
 
+                case 3:
+                    this.oamAddress = value;
+                    return;
+
                 case 5:
                     if (!this.addressLatch)
                     {
@@ -298,7 +150,7 @@ namespace NesEmu.Emulator
                         var writeAddress = (ushort)(this.currentAddress & 0x3fff);
                         if (writeAddress >= 0x3f00)
                         {
-                            this.pallette[writeAddress & 0x001f] = value;
+                            this.palette[writeAddress & 0x001f] = value;
                         }
                         else
                         {
@@ -321,6 +173,364 @@ namespace NesEmu.Emulator
             }
         }
 
+        internal void DmaWrite(byte value)
+        {
+            this.oam[this.oamAddress++] = value;
+        }
+
         public event EventHandler OnFrame;
+
+        private void DoTick()
+        {
+            if (scanlineCycle == 0)
+            {
+                if (currentScanLine == 241)
+                {
+                    this.currentPixelAddress = 0;
+                    this.FrameCount++;
+                    this.OnFrame?.Invoke(this, EventArgs.Empty);
+
+                    if ((this.ppuControl & 0x80) != 0)
+                    {
+                        this.bus.SignalNmi();
+                    }
+
+                    // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
+                    ppuStatus |= 0x80;
+                }
+                else if (currentScanLine == -1)
+                {
+                    ppuStatus &= 0x7f;
+                }
+            }
+
+            if (scanlineCycle == -1)
+            {
+                scanlineCycle++;
+                return;
+            }
+
+
+            if (this.currentScanLine < 240)
+            {
+                if (this.scanlineCycle < 256)
+                {
+                    if (this.currentScanLine >= 0)
+                    {
+                        this.currentPixel = palette[0];
+
+                        if ((this.ppuMask & 0x08) != 0)
+                        {
+                            this.BackgroundRender();
+                        }
+
+                        if ((this.ppuMask & 0x10) != 0)
+                        {
+                            this.SpriteRender();
+                            this.SpriteTick();
+                        }
+
+                        this.Frame[this.currentPixelAddress++] = this.currentPixel;
+                    }
+
+                    if ((this.ppuMask & 0x18) != 0)
+                    {
+                        this.BackgroundLoadTick();
+                        this.BackgroundTick();
+                        this.SpriteEvaluationTick();
+                    }
+                }
+                else if (this.scanlineCycle == 256)
+                {
+                    this.oamAddress = 0;
+                    this.oamCopyIndex = 0;
+                    this.spriteIndex = 0;
+
+                    if ((this.ppuMask & 0x18) != 0)
+                    {
+                        this.BackgroundHReset();
+                    }
+                }
+                else if (this.scanlineCycle >= 256 && this.scanlineCycle < 320)
+                {
+                    if ((this.ppuMask & 0x18) != 0)
+                    {
+                        // sprite tile loading
+                        this.SpriteLoadTick();
+                    }
+
+                    if (this.currentScanLine < 0 && (this.scanlineCycle >= 279 && this.scanlineCycle < 304))
+                    {
+                        if ((this.ppuMask & 0x18) != 0)
+                        {
+                            this.BackgroundVReset();
+                        }
+                    }
+                }
+                else if (this.scanlineCycle >= 320 && this.scanlineCycle < 336)
+                {
+                    if ((this.ppuMask & 0x18) != 0)
+                    {
+                        this.BackgroundLoadTick();
+                        this.BackgroundTick();
+                    }
+                }
+            }
+
+            this.scanlineCycle++;
+            if (this.scanlineCycle == 340)
+            {
+                this.scanlineCycle = -1;
+
+                this.currentScanLine++;
+
+                if (this.currentScanLine == 261)
+                {
+                    this.currentScanLine = -1;
+                }
+            }
+        }
+
+        private void BackgroundRender()
+        {
+            var index = (byte)((this.patternShiftHigh & 0x8000) >> 14 | (this.patternShiftLow & 0x8000) >> 15);
+
+            if (index != 0)
+            {
+                index |= (byte)((this.attributeShift & 0xC0000000) >> 28); // palette
+                this.currentPixel = this.palette[index];
+            }
+        }
+
+        private void BackgroundLoadTick()
+        {
+            switch (scanlineCycle & 0x07)
+            {
+                case 0:
+                    this.patternShiftHigh |= this.nextPatternByteHigh;
+                    this.patternShiftLow |= this.nextPatternByteLow;
+                    this.attributeShift |= this.nextAttributeShift;
+                    break;
+
+                case 1:
+                    var tileAddress = (ushort)(0x2000 | this.currentAddress & 0x0fff);
+                    this.nextTileId = this.bus.PpuRead(tileAddress);
+                    break;
+
+                case 3:
+                    var attributeAddress = (ushort)(
+                        0x2000 | (this.currentAddress & 0x0C00) | // select table
+                        0x03C0 | // attribute block at end of table
+                        (this.currentAddress >> 4) & 0x0038 | // 3 bits of tile y
+                        (this.currentAddress >> 2) & 0x0007); // 3 bits of tile x
+
+                    var attributes = this.bus.PpuRead(attributeAddress);
+
+                    // use one more bit of the tile x and y to get the quadrant
+                    attributes >>= ((this.currentAddress & 0x0040) >> 4) | (this.currentAddress & 0x0002);
+                    attributes &= 0x03;
+
+                    // we've determined the palette index.  Lets duplicate this 8 times for the tile pixels
+                    this.nextAttributeShift = attributes;
+                    this.nextAttributeShift |= (ushort)(nextAttributeShift << 2);
+                    this.nextAttributeShift |= (ushort)(nextAttributeShift << 4);
+                    this.nextAttributeShift |= (ushort)(nextAttributeShift << 8);
+                    break;
+
+                case 5:
+                    // address is 000PTTTTTTTT0YYY
+                    this.patternAddress = (ushort)
+                        (((this.ppuControl & 0x10) << 8) | // pattern selector
+                            (this.nextTileId << 4) |
+                            (this.currentAddress >> 12)); // fineY
+
+                    this.nextPatternByteLow = this.bus.PpuRead(this.patternAddress);
+                    break;
+
+                case 7:
+                    // address is 000PTTTTTTTT1YYY
+                    this.nextPatternByteHigh = this.bus.PpuRead((ushort)(this.patternAddress | 8));
+
+                    if (scanlineCycle == 255)
+                    {
+                        // adjust y scroll
+                        this.currentAddress += 0x1000;
+                        this.currentAddress &= 0x7fff;
+
+                        if ((this.currentAddress & 0x7000) == 0)
+                        {
+                            // move to the next row
+                            if ((this.currentAddress & 0x03e0) == 0x03e0)
+                            {
+                                this.currentAddress &= 0x7c1f;
+                                this.currentAddress ^= 0x0800;
+                            }
+                            else
+                            {
+                                this.currentAddress += 0x0020;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // increment the x part of the address
+                        if ((this.currentAddress & 0x001f) == 0x001f)
+                        {
+                            this.currentAddress &= 0xffe0;
+                            this.currentAddress ^= 0x0400;
+                        }
+                        else
+                        {
+                            this.currentAddress++;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void BackgroundTick()
+        {
+            this.patternShiftHigh <<= 1;
+            this.patternShiftLow <<= 1;
+            this.attributeShift <<= 2;
+        }
+
+        private void BackgroundVReset()
+        {
+            this.currentAddress &= 0x0c1f;
+            this.currentAddress |= (ushort)(this.initialAddress & 0xf3e0);
+        }
+
+        private void BackgroundHReset()
+        {
+            this.currentAddress &= 0xffe0;
+            this.currentAddress |= (ushort)(this.initialAddress & 0x001f);
+        }
+
+        private void SpriteRender()
+        {
+            for (var i = 0; i < 8; i++)
+            {
+                if (this.sprites[i].X == 0)
+                {
+                    var index = (byte)((this.sprites[i].patternShiftHigh & 0x80) >> 6 | (this.sprites[i].patternShiftLow & 0x80) >> 7);
+
+                    this.sprites[i].patternShiftHigh <<= 1;
+                    this.sprites[i].patternShiftLow <<= 1;
+
+                    if (index != 0)
+                    {
+                        index |= (byte)((0x04 | (this.sprites[i].attributes & 0x03)) << 2); // palette
+                        this.currentPixel = this.palette[index];
+                    }
+                }
+            }
+        }
+
+        private void SpriteTick()
+        {
+            for (var i=0; i<8; i++)
+            {
+                if (this.sprites[i].X > 0)
+                {
+                    this.sprites[i].X--;
+                }
+            }
+        }
+
+        private void SpriteEvaluationTick()
+        {
+            if (this.scanlineCycle < 64)
+            {
+                this.oamCopy[this.scanlineCycle] = this.oamData = 0xff;
+                return;
+            }
+
+            if ((this.scanlineCycle & 1) == 0)
+            {
+                // setting up the read
+                return;
+            }
+
+            if (this.oamAddress >= 256)
+            {
+                return;
+            }
+
+            this.oamData = this.oam[this.oamAddress];
+            if (this.oamCopyIndex < 8)
+            {
+                this.oamCopy[this.oamCopyIndex] = this.oamData;
+
+                if (spriteSelected)
+                {
+                    if ((this.oamAddress & 0x03) != 0)
+                    {
+                        this.oamAddress++;
+                        this.oamCopyIndex++;
+                        return;
+                    }
+
+                    spriteSelected = false;
+                }
+            }
+
+            var spriteRow = (uint)(this.currentScanLine - this.oamData);
+            if (spriteRow < 8)
+            {
+                if (oamCopyIndex >= 8)
+                {
+                    this.ppuStatus |= 0x20;
+                    this.oamAddress += 4;
+                }
+                else
+                {
+                    this.oamAddress++;
+                    this.oamCopyIndex++;
+                    this.spriteSelected = true;
+                }
+            }
+            else
+            {
+                this.oamAddress += 4;
+
+                // TODO: overflow bug
+            }
+        }
+
+        private void SpriteLoadTick()
+        {
+            switch (scanlineCycle & 0x07)
+            {
+                case 5:
+                    var oamAddress = this.spriteIndex << 2;
+                    var tileId = this.oamCopy[oamAddress + 1];
+                    var tileFineY = this.currentScanLine - this.oamCopy[oamAddress];
+                    // address is 000PTTTTTTTT0YYY
+                    this.patternAddress = (ushort)
+                        (((this.ppuControl & 0x08) << 9) | // pattern selector
+                        (tileId << 4) |
+                        tileFineY); 
+                    sprites[spriteIndex].patternShiftLow = this.bus.PpuRead(this.patternAddress);
+
+                    sprites[spriteIndex].attributes = this.oamCopy[oamAddress + 2];
+                    sprites[spriteIndex].X = this.oamCopy[oamAddress + 3];
+                    break;
+
+                case 7:
+                    // address is 000PTTTTTTTT1YYY
+                    sprites[spriteIndex].patternShiftHigh = this.bus.PpuRead((ushort)(this.patternAddress | 8));
+                    spriteIndex++;
+                    break;
+            }
+        }
+
+        private struct Sprite
+        {
+            public byte X;
+            public byte patternShiftHigh;
+            public byte patternShiftLow;
+            public byte attributes;
+        }
     }
 }

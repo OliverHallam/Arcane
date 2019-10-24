@@ -1,4 +1,6 @@
-﻿namespace NesEmu.Emulator
+﻿using System;
+
+namespace NesEmu.Emulator
 {
     public class NesCpu
     {
@@ -953,6 +955,24 @@
 
                 default:
                     return;
+            }
+        }
+
+        internal void Dma(byte page)
+        {
+            this.bus.TickCpu();
+            // TODO: second tick only on odd cycles
+            this.bus.TickCpu();
+
+            var address = (ushort)(page << 8);
+            var endAddress = address + 0x100;
+            while (address != endAddress)
+            {
+                var value = this.bus.CpuRead(address++);
+                this.bus.TickCpu();
+
+                this.bus.DmaWrite(value);
+                this.bus.TickCpu();
             }
         }
 

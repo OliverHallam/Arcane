@@ -90,6 +90,11 @@ namespace NesEmu.Emulator
             }
             else if (address < 0x4020)
             {
+                if (address == 0x4014)
+                {
+                    this.cpu.Dma(value);
+                }
+
                 if (address == 0x4016)
                 {
                     this.controller.Write(value);
@@ -149,6 +154,11 @@ namespace NesEmu.Emulator
         internal void Attach(Controller controller)
         {
             this.controller = controller;
+        }
+
+        internal void DmaWrite(byte value)
+        {
+            this.ppu.DmaWrite(value);
         }
     }
 }
