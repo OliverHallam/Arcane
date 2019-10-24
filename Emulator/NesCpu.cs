@@ -1521,7 +1521,7 @@ namespace NesEmu.Emulator
             var highByte = this.bus.CpuRead((ushort)(0x100 + ++this.S));
             this.bus.TickCpu();
 
-            this.PC = (ushort)((highByte << 8) | lowByte + 1);
+            this.PC = (ushort)(((highByte << 8) | lowByte) + 1);
             this.bus.TickCpu();
         }
 
