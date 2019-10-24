@@ -42,7 +42,7 @@ namespace NesEmu.Emulator
         private short oamAddress;
         private byte oamData;
         private byte[] oam = new byte[256];
-        private byte[] oamCopy = new byte[64];
+        private byte[] oamCopy = new byte[32];
         private byte oamCopyIndex;
 
         private int spriteIndex = 0;
@@ -413,10 +413,21 @@ namespace NesEmu.Emulator
             {
                 if (this.sprites[i].X == 0)
                 {
-                    var index = (byte)((this.sprites[i].patternShiftHigh & 0x80) >> 6 | (this.sprites[i].patternShiftLow & 0x80) >> 7);
+                    byte index;
+                    if ((sprites[i].attributes & 0x40) == 0)
+                    {
+                        index = (byte)((this.sprites[i].patternShiftHigh & 0x80) >> 6 | (this.sprites[i].patternShiftLow & 0x80) >> 7);
 
-                    this.sprites[i].patternShiftHigh <<= 1;
-                    this.sprites[i].patternShiftLow <<= 1;
+                        this.sprites[i].patternShiftHigh <<= 1;
+                        this.sprites[i].patternShiftLow <<= 1;
+                    }
+                    else
+                    {
+                        index = (byte)((this.sprites[i].patternShiftHigh & 0x01) << 1 | this.sprites[i].patternShiftLow & 0x01);
+
+                        this.sprites[i].patternShiftHigh >>= 1;
+                        this.sprites[i].patternShiftLow >>= 1;
+                    }
 
                     if (index != 0)
                     {
@@ -440,15 +451,15 @@ namespace NesEmu.Emulator
 
         private void SpriteEvaluationTick()
         {
-            if (this.scanlineCycle < 64)
+            if ((this.scanlineCycle & 1) == 0)
             {
-                this.oamCopy[this.scanlineCycle] = this.oamData = 0xff;
+                // setting up the read/write
                 return;
             }
 
-            if ((this.scanlineCycle & 1) == 0)
+            if (this.scanlineCycle < 64)
             {
-                // setting up the read
+                this.oamCopy[this.scanlineCycle/2] = this.oamData = 0xff;
                 return;
             }
 
@@ -458,7 +469,7 @@ namespace NesEmu.Emulator
             }
 
             this.oamData = this.oam[this.oamAddress];
-            if (this.oamCopyIndex < 8)
+            if (this.oamCopyIndex < 32)
             {
                 this.oamCopy[this.oamCopyIndex] = this.oamData;
 
@@ -478,7 +489,7 @@ namespace NesEmu.Emulator
             var spriteRow = (uint)(this.currentScanLine - this.oamData);
             if (spriteRow < 8)
             {
-                if (oamCopyIndex >= 8)
+                if (oamCopyIndex >= 32)
                 {
                     this.ppuStatus |= 0x20;
                     this.oamAddress += 4;
