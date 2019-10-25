@@ -54,7 +54,7 @@ namespace NesEmu.Emulator
             return cart;
         }
 
-        private static Cart TryLoad(Stream data)
+        public static Cart TryLoad(Stream data)
         {
             var header = new byte[16];
             if (data.Read(header, 0, 16) != 16)
