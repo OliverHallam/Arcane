@@ -10,6 +10,7 @@ namespace NesEmu.Emulator
         private NesCpu cpu;
         private Bus bus;
         private Controller controller;
+        private Display display;
 
         private Thread emulationThread;
         private bool running;
@@ -19,8 +20,9 @@ namespace NesEmu.Emulator
 
         public EntertainmentSystem()
         {
+            this.display = new Display();
             this.bus = new Bus();
-            this.ppu = new Ppu(this.bus);
+            this.ppu = new Ppu(this.bus, display);
             this.cpu = new NesCpu(this.bus);
             this.controller = new Controller();
 
@@ -33,6 +35,7 @@ namespace NesEmu.Emulator
         public Ppu Ppu => this.ppu;
         public Bus Bus => this.bus;
         public Controller Controller => this.controller;
+        public Display Display => this.display;
 
         public void InsertCart(Cart cart)
         {
@@ -116,6 +119,8 @@ namespace NesEmu.Emulator
                     this.Cpu.RunInstruction();
                 }
 
+                this.FrameRendered?.Invoke(this, EventArgs.Empty);
+
                 SpinWait.SpinUntil(() => stopwatch.ElapsedTicks >= frameInTicks);
             }
         }
@@ -133,6 +138,7 @@ namespace NesEmu.Emulator
                 this.Cpu.RunInstruction();
             }
 
+            this.FrameRendered?.Invoke(this, EventArgs.Empty);
             this.Breaked?.Invoke(this, EventArgs.Empty);
         }
 
@@ -145,5 +151,7 @@ namespace NesEmu.Emulator
         public event EventHandler Breaked;
 
         public event EventHandler PoweredUp;
+
+        public event EventHandler FrameRendered;
     }
 }

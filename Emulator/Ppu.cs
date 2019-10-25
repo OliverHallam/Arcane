@@ -5,6 +5,7 @@ namespace NesEmu.Emulator
     public class Ppu
     {
         private Bus bus;
+        private Display display;
 
         // approx!
         public int FrameCount = 0;
@@ -34,7 +35,6 @@ namespace NesEmu.Emulator
         private uint attributeShift;
         private ushort nextAttributeShift;
         private byte currentPixel;
-        private int currentPixelAddress;
 
         // cache for code performance
         private ushort patternAddress;
@@ -49,12 +49,11 @@ namespace NesEmu.Emulator
         private Sprite[] sprites = new Sprite[8];
         private bool spriteSelected;
 
-        public Ppu(Bus bus)
+        public Ppu(Bus bus, Display display)
         {
             this.bus = bus;
+            this.display = display;
         }
-
-        public byte[] Frame { get; } = new byte[256 * 240];
 
         public byte[] Palette => this.palette;
 
@@ -178,17 +177,15 @@ namespace NesEmu.Emulator
             this.oam[this.oamAddress++] = value;
         }
 
-        public event EventHandler OnFrame;
-
         private void DoTick()
         {
             if (scanlineCycle == 0)
             {
                 if (currentScanLine == 241)
                 {
-                    this.currentPixelAddress = 0;
+                    this.display.VBlank();
+
                     this.FrameCount++;
-                    this.OnFrame?.Invoke(this, EventArgs.Empty);
 
                     if ((this.ppuControl & 0x80) != 0)
                     {
@@ -230,7 +227,7 @@ namespace NesEmu.Emulator
                             this.SpriteTick();
                         }
 
-                        this.Frame[this.currentPixelAddress++] = this.currentPixel;
+                        this.display.WritePixel(this.currentPixel);
                     }
 
                     if ((this.ppuMask & 0x18) != 0)
@@ -245,6 +242,8 @@ namespace NesEmu.Emulator
                     this.oamAddress = 0;
                     this.oamCopyIndex = 0;
                     this.spriteIndex = 0;
+
+                    this.display.HBlank();
 
                     if ((this.ppuMask & 0x18) != 0)
                     {

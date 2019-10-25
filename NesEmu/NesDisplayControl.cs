@@ -16,11 +16,7 @@ namespace NesEmu
         {
             this.DoubleBuffered = true;
 
-            this.frame = new Bitmap(256, 240, PixelFormat.Format8bppIndexed);
-
-            var palette = frame.Palette;
-            NesColorPalette.UpdatePalette(palette);
-            frame.Palette = palette;
+            this.frame = new Bitmap(256, 240, PixelFormat.Format32bppArgb);
         }
 
         public EntertainmentSystem System
@@ -33,18 +29,18 @@ namespace NesEmu
             {
                 if (this.system != null)
                 {
-                    this.system.Ppu.OnFrame -= OnFrame;
+                    this.system.FrameRendered -= OnFrameRendered;
                 }
 
                 this.system = value;
                 if (this.system != null)
                 {
-                    this.system.Ppu.OnFrame += OnFrame;
+                    this.system.FrameRendered += OnFrameRendered;
                 }
             }
         }
 
-        protected unsafe void OnFrame(object sender, EventArgs e)
+        protected unsafe void OnFrameRendered(object sender, EventArgs e)
         {
             this.Invalidate();
         }
@@ -72,11 +68,11 @@ namespace NesEmu
 
         private unsafe void CaptureFrame()
         {
-            var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
-            fixed (byte* framePtr = this.system.Ppu.Frame)
+            var data = frame.LockBits(new Rectangle(0, 0, 256, 240), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            fixed (uint* framePtr = this.system.Display.Frame)
             {
                 var srcPtr = framePtr;
-                var destPtr = (byte*)data.Scan0;
+                var destPtr = (uint*)data.Scan0;
 
                 for (var i = 0; i < 256 * 240; i++)
                 {

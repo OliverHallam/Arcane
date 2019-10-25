@@ -19,10 +19,6 @@ namespace NesEmu
             this.DoubleBuffered = true;
 
             this.frame = new Bitmap(128, 128, PixelFormat.Format8bppIndexed);
-
-            var palette = frame.Palette;
-            NesColorPalette.UpdatePalette(palette);
-            frame.Palette = palette;
          }
 
         public EntertainmentSystem System
@@ -35,14 +31,14 @@ namespace NesEmu
             {
                 if (this.system != null)
                 {
-                    this.system.Ppu.OnFrame -= this.OnFrame;
+                    this.system.FrameRendered -= this.OnFrame;
                 }
 
                 this.system = value;
 
                 if (this.system != null)
                 {
-                    this.system.Ppu.OnFrame += this.OnFrame;
+                    this.system.FrameRendered += this.OnFrame;
                 }
             }
         }
