@@ -50,6 +50,7 @@ namespace NesEmu.Emulator
         private int spriteIndex = 0;
         private Sprite[] sprites = new Sprite[8];
         private bool spriteSelected;
+        private bool sprite0Selected;
 
         public Ppu(Bus bus, Display display)
         {
@@ -221,7 +222,7 @@ namespace NesEmu.Emulator
                 }
                 else if (currentScanLine == -1)
                 {
-                    ppuStatus &= 0x7f;
+                    ppuStatus &= 0x1f;
                 }
             }
 
@@ -240,11 +241,6 @@ namespace NesEmu.Emulator
                     {
                         this.currentPixel = palette[0];
 
-                        if ((this.ppuMask & 0x10) != 0)
-                        {
-                            this.SpriteRender(false);
-                        }
-
                         if ((this.ppuMask & 0x08) != 0)
                         {
                             this.BackgroundRender();
@@ -252,7 +248,7 @@ namespace NesEmu.Emulator
 
                         if ((this.ppuMask & 0x10) != 0)
                         {
-                            this.SpriteRender(true);
+                            this.SpriteRender();
                             this.SpriteTick();
                         }
 
@@ -435,16 +431,11 @@ namespace NesEmu.Emulator
             this.currentAddress |= (ushort)(this.initialAddress & 0x001f);
         }
 
-        private void SpriteRender(bool foreground)
+        private void SpriteRender()
         {
             for (var i = 0; i < 8; i++)
             {
                 if (this.sprites[i].X != 0)
-                {
-                    continue;
-                }
-
-                if ((sprites[i].attributes & 0x20) != 0 == foreground)
                 {
                     continue;
                 }
@@ -467,6 +458,19 @@ namespace NesEmu.Emulator
 
                 if (index != 0)
                 {
+                    if (this.currentPixel != 0)
+                    {
+                        if (i == 0 && this.sprite0Selected)
+                        {
+                            this.ppuStatus |= 0x40;
+                        }
+
+                        if ((sprites[i].attributes & 0x20) == 0)
+                        {
+                            return;
+                        }
+                    }
+
                     index |= (byte)((0x04 | (this.sprites[i].attributes & 0x03)) << 2); // palette
                     this.currentPixel = this.palette[index];
                 }
@@ -522,7 +526,14 @@ namespace NesEmu.Emulator
             }
 
             var spriteRow = (uint)(this.currentScanLine - this.oamData);
-            if (spriteRow < 8)
+            bool visible = spriteRow < 8;
+
+            if (this.oamAddress == 0)
+            {
+                this.sprite0Selected = visible;
+            }
+
+            if (visible)
             {
                 if (oamCopyIndex >= 32)
                 {
