@@ -21,6 +21,8 @@ namespace NesEmu.Emulator
         private ushort initialAddress;
         private byte fineX;
 
+        private byte ppuData;
+
         private byte[] palette = new byte[32];
 
         public int currentScanLine = -1;
@@ -88,6 +90,28 @@ namespace NesEmu.Emulator
                 this.addressLatch = false;
 
                 return status;
+            }
+            else if (address == 0x07)
+            {
+                var data = this.ppuData;
+                var ppuAddress = (ushort)(this.currentAddress & 0x3fff);
+                this.ppuData = this.bus.PpuRead(ppuAddress);
+
+                if (ppuAddress >= 0x3f00)
+                {
+                    data = this.palette[ppuAddress & 0x1f];
+                }
+
+                if ((this.ppuControl & 0x04) != 0)
+                {
+                    this.currentAddress += 32;
+                }
+                else
+                {
+                    this.currentAddress += 1;
+                }
+
+                return data;
             }
 
             return 0;
