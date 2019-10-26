@@ -240,6 +240,11 @@ namespace NesEmu.Emulator
                     {
                         this.currentPixel = palette[0];
 
+                        if ((this.ppuMask & 0x10) != 0)
+                        {
+                            this.SpriteRender(false);
+                        }
+
                         if ((this.ppuMask & 0x08) != 0)
                         {
                             this.BackgroundRender();
@@ -247,7 +252,7 @@ namespace NesEmu.Emulator
 
                         if ((this.ppuMask & 0x10) != 0)
                         {
-                            this.SpriteRender();
+                            this.SpriteRender(true);
                             this.SpriteTick();
                         }
 
@@ -430,33 +435,40 @@ namespace NesEmu.Emulator
             this.currentAddress |= (ushort)(this.initialAddress & 0x001f);
         }
 
-        private void SpriteRender()
+        private void SpriteRender(bool foreground)
         {
             for (var i = 0; i < 8; i++)
             {
-                if (this.sprites[i].X == 0)
+                if (this.sprites[i].X != 0)
                 {
-                    byte index;
-                    if ((sprites[i].attributes & 0x40) == 0)
-                    {
-                        index = (byte)((this.sprites[i].patternShiftHigh & 0x80) >> 6 | (this.sprites[i].patternShiftLow & 0x80) >> 7);
+                    continue;
+                }
 
-                        this.sprites[i].patternShiftHigh <<= 1;
-                        this.sprites[i].patternShiftLow <<= 1;
-                    }
-                    else
-                    {
-                        index = (byte)((this.sprites[i].patternShiftHigh & 0x01) << 1 | this.sprites[i].patternShiftLow & 0x01);
+                if ((sprites[i].attributes & 0x20) != 0 == foreground)
+                {
+                    continue;
+                }
 
-                        this.sprites[i].patternShiftHigh >>= 1;
-                        this.sprites[i].patternShiftLow >>= 1;
-                    }
+                byte index;
+                if ((sprites[i].attributes & 0x40) == 0)
+                {
+                    index = (byte)((this.sprites[i].patternShiftHigh & 0x80) >> 6 | (this.sprites[i].patternShiftLow & 0x80) >> 7);
 
-                    if (index != 0)
-                    {
-                        index |= (byte)((0x04 | (this.sprites[i].attributes & 0x03)) << 2); // palette
-                        this.currentPixel = this.palette[index];
-                    }
+                    this.sprites[i].patternShiftHigh <<= 1;
+                    this.sprites[i].patternShiftLow <<= 1;
+                }
+                else
+                {
+                    index = (byte)((this.sprites[i].patternShiftHigh & 0x01) << 1 | this.sprites[i].patternShiftLow & 0x01);
+
+                    this.sprites[i].patternShiftHigh >>= 1;
+                    this.sprites[i].patternShiftLow >>= 1;
+                }
+
+                if (index != 0)
+                {
+                    index |= (byte)((0x04 | (this.sprites[i].attributes & 0x03)) << 2); // palette
+                    this.currentPixel = this.palette[index];
                 }
             }
         }
