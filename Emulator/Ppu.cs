@@ -37,6 +37,7 @@ namespace NesEmu.Emulator
         private uint attributeShift;
         private ushort nextAttributeShift;
         private byte currentPixel;
+        private bool pixelRendered;
 
         // cache for code performance
         private ushort patternAddress;
@@ -239,6 +240,7 @@ namespace NesEmu.Emulator
                 {
                     if (this.currentScanLine >= 0)
                     {
+                        this.pixelRendered = false;
                         this.currentPixel = palette[0];
 
                         if ((this.ppuMask & 0x08) != 0)
@@ -317,10 +319,12 @@ namespace NesEmu.Emulator
 
         private void BackgroundRender()
         {
-            var index = (byte)((this.patternShiftHigh & 0x8000) >> 14 | (this.patternShiftLow & 0x8000) >> 15);
+            var index = (byte)((this.patternShiftHigh & 0x8000) >> 14| (this.patternShiftLow & 0x8000) >> 15);
 
             if (index != 0)
             {
+                pixelRendered = true;
+
                 index |= (byte)((this.attributeShift & 0xC0000000) >> 28); // palette
                 this.currentPixel = this.palette[index];
             }
@@ -427,8 +431,8 @@ namespace NesEmu.Emulator
 
         private void BackgroundHReset()
         {
-            this.currentAddress &= 0xffe0;
-            this.currentAddress |= (ushort)(this.initialAddress & 0x001f);
+            this.currentAddress &= 0xfbe0;
+            this.currentAddress |= (ushort)(this.initialAddress & 0x041f);
         }
 
         private void SpriteRender()
@@ -458,7 +462,7 @@ namespace NesEmu.Emulator
 
                 if (index != 0)
                 {
-                    if (this.currentPixel != 0)
+                    if (this.pixelRendered)
                     {
                         if (i == 0 && this.sprite0Selected)
                         {
