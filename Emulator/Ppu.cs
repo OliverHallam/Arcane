@@ -463,6 +463,8 @@ namespace NesEmu.Emulator
 
         private void SpriteRender()
         {
+            bool drawnSprite = false;
+
             for (var i = 0; i < this.scanlineSpriteCount; i++)
             {
                 if (this.sprites[i].X != 0)
@@ -486,8 +488,10 @@ namespace NesEmu.Emulator
                     this.sprites[i].patternShiftLow >>= 1;
                 }
 
-                if (index != 0)
+                if (index != 0 && !drawnSprite)
                 {
+                    drawnSprite = true;
+
                     if (this.pixelRendered)
                     {
                         if (i == 0 && this.sprite0Selected)
@@ -503,7 +507,6 @@ namespace NesEmu.Emulator
 
                     index |= (byte)((0x04 | (this.sprites[i].attributes & 0x03)) << 2); // palette
                     this.currentPixel = this.palette[index];
-                    return;
                 }
             }
         }
@@ -597,9 +600,20 @@ namespace NesEmu.Emulator
             {
                 case 5:
                     var oamAddress = this.spriteIndex << 2;
+
+                    var attributes = this.oamCopy[oamAddress + 2];
+                    this.sprites[this.spriteIndex].attributes = attributes;
+                    this.sprites[this.spriteIndex].X = this.oamCopy[oamAddress + 3];
+
                     var tileId = this.oamCopy[oamAddress + 1];
 
                     var tileFineY = this.currentScanLine - this.oamCopy[oamAddress];
+
+                    if ((attributes & 0x80) != 0)
+                    {
+                        tileFineY = 7 - tileFineY;
+                    }
+
                     // address is 000PTTTTTTTT0YYY
                     this.patternAddress = (ushort)
                         (((this.ppuControl & 0x08) << 9) | // pattern selector
@@ -607,8 +621,6 @@ namespace NesEmu.Emulator
                         tileFineY); 
                     this.sprites[this.spriteIndex].patternShiftLow = this.bus.PpuRead(this.patternAddress);
 
-                    this.sprites[this.spriteIndex].attributes = this.oamCopy[oamAddress + 2];
-                    this.sprites[this.spriteIndex].X = this.oamCopy[oamAddress + 3];
                     break;
 
                 case 7:
