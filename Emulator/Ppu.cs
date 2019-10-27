@@ -175,7 +175,16 @@ namespace NesEmu.Emulator
                         var writeAddress = (ushort)(this.currentAddress & 0x3fff);
                         if (writeAddress >= 0x3f00)
                         {
-                            this.palette[writeAddress & 0x001f] = value;
+                            if ((writeAddress & 0x03) == 0)
+                            {
+                                // zero colors are mirrored
+                                this.palette[writeAddress & 0x000f] = value;
+                                this.palette[(writeAddress & 0x000f) | 0x0010] = value;
+                            }
+                            else
+                            {
+                                this.palette[writeAddress & 0x001f] = value;
+                            }
                         }
                         else
                         {
