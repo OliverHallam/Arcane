@@ -12,13 +12,16 @@ namespace NesEmu.Emulator
 
         private byte[] chrData;
 
-
-        public Cart(byte[] prgBankA, byte[] prgBankB, byte[] chrData)
+        public Cart(byte[] prgBankA, byte[] prgBankB, byte[] chrData, bool verticalMirroring)
         {
             this.prgBankA = prgBankA;
             this.prgBankB = prgBankB;
             this.chrData = chrData;
+
+            this.VerticalMirroring = verticalMirroring;
         }
+
+        public bool VerticalMirroring { get; }
 
         public bool CpuRead(ushort address, out byte value)
         {
@@ -73,7 +76,7 @@ namespace NesEmu.Emulator
             var flags6 = header[6];
 
             var mapper = flags6 >> 4;
-
+            var verticalMirroring = (flags6 & 1) != 0;
             var hasTrainer = (flags6 & 0x04) != 0;
 
             if (hasTrainer)
@@ -109,10 +112,10 @@ namespace NesEmu.Emulator
                     switch (prgBanks.Length)
                     {
                         case 1:
-                            return new Cart(prgBanks[0], prgBanks[0], chrData);
+                            return new Cart(prgBanks[0], prgBanks[0], chrData, verticalMirroring);
 
                         case 2:
-                            return new Cart(prgBanks[0], prgBanks[1], chrData);
+                            return new Cart(prgBanks[0], prgBanks[1], chrData, verticalMirroring);
                     }
                     break;
             }
