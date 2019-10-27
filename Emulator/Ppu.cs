@@ -478,7 +478,7 @@ namespace NesEmu.Emulator
                             this.ppuStatus |= 0x40;
                         }
 
-                        if ((sprites[i].attributes & 0x20) == 0)
+                        if ((sprites[i].attributes & 0x20) != 0)
                         {
                             return;
                         }
