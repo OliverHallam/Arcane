@@ -56,6 +56,7 @@ namespace NesEmu.Emulator
         private Sprite[] sprites = new Sprite[8];
         private bool spriteSelected;
         private bool sprite0Selected;
+        private bool sprite0Visible;
         private int scanlineSpriteCount;
 
         public Ppu(Bus bus, Display display)
@@ -291,6 +292,8 @@ namespace NesEmu.Emulator
                 else if (this.scanlineCycle == 256)
                 {
                     this.scanlineSpriteCount = this.oamCopyIndex >> 2;
+                    this.sprite0Visible = this.sprite0Selected;
+                    this.sprite0Selected = false;
                     this.oamAddress = 0;
                     this.oamCopyIndex = 0;
                     this.spriteIndex = 0;
@@ -494,14 +497,14 @@ namespace NesEmu.Emulator
 
                     if (this.pixelRendered)
                     {
-                        if (i == 0 && this.sprite0Selected)
+                        if (i == 0 && this.sprite0Visible)
                         {
                             this.ppuStatus |= 0x40;
                         }
 
                         if ((sprites[i].attributes & 0x20) != 0)
                         {
-                            return;
+                            continue;
                         }
                     }
 
