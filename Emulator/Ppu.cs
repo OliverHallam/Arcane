@@ -503,6 +503,7 @@ namespace NesEmu.Emulator
 
                     index |= (byte)((0x04 | (this.sprites[i].attributes & 0x03)) << 2); // palette
                     this.currentPixel = this.palette[index];
+                    return;
                 }
             }
         }
