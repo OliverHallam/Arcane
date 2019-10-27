@@ -19,7 +19,6 @@ namespace NesEmu.Emulator
         // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
         private ushort currentAddress;
         private ushort initialAddress;
-        private byte fineX;
 
         private byte ppuData;
 
@@ -38,6 +37,11 @@ namespace NesEmu.Emulator
         private ushort nextAttributeShift;
         private byte currentPixel;
         private bool pixelRendered;
+
+        private int patternMask;
+        private int patternBitShift;
+        private int attributeMask;
+        private int attributeBitShift;
 
         // cache for code performance
         private ushort patternAddress;
@@ -127,8 +131,13 @@ namespace NesEmu.Emulator
                 case 0:
                     this.ppuControl = value;
 
+                    if ((value & 3) != 0)
+                    {
+
+                    }
+
                     this.initialAddress &= 0xf3ff;
-                    this.initialAddress |= (ushort)(value & 3 << 10);
+                    this.initialAddress |= (ushort)((value & 3) << 10);
                     return;
 
                 case 1:
@@ -144,7 +153,7 @@ namespace NesEmu.Emulator
                     {
                         this.initialAddress &= 0xffe0;
                         this.initialAddress |= (byte)(value >> 3);
-                        this.fineX = (byte)(value & 7);
+                        this.SetFineX((byte)(value & 7));
                         addressLatch = true;
                     }
                     else
@@ -210,6 +219,16 @@ namespace NesEmu.Emulator
         internal void DmaWrite(byte value)
         {
             this.oam[this.oamAddress++] = value;
+        }
+
+        private void SetFineX(byte value)
+        {
+            this.patternBitShift = 15 - value;
+            this.patternMask = 1 << patternBitShift;
+
+            // 2 off since this maps to bits 2 and 3
+            this.attributeBitShift = 28 - 2 * value;
+            this.attributeMask = 3 << attributeBitShift + 2;
         }
 
         private void DoTick()
@@ -328,13 +347,14 @@ namespace NesEmu.Emulator
 
         private void BackgroundRender()
         {
-            var index = (byte)((this.patternShiftHigh & 0x8000) >> 14| (this.patternShiftLow & 0x8000) >> 15);
+            var index = (byte)((this.patternShiftHigh & this.patternMask) >> (this.patternBitShift - 1)
+                             | (this.patternShiftLow & this.patternMask) >> this.patternBitShift);
 
             if (index != 0)
             {
                 pixelRendered = true;
 
-                index |= (byte)((this.attributeShift & 0xC0000000) >> 28); // palette
+                index |= (byte)((this.attributeShift & this.attributeMask) >> attributeBitShift); // palette
                 this.currentPixel = this.palette[index];
             }
         }
@@ -434,8 +454,8 @@ namespace NesEmu.Emulator
 
         private void BackgroundVReset()
         {
-            this.currentAddress &= 0x0c1f;
-            this.currentAddress |= (ushort)(this.initialAddress & 0xf3e0);
+            this.currentAddress &= 0x041f;
+            this.currentAddress |= (ushort)(this.initialAddress & 0xfbe0);
         }
 
         private void BackgroundHReset()
