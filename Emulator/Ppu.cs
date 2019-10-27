@@ -56,6 +56,7 @@ namespace NesEmu.Emulator
         private Sprite[] sprites = new Sprite[8];
         private bool spriteSelected;
         private bool sprite0Selected;
+        private int scanlineSpriteCount;
 
         public Ppu(Bus bus, Display display)
         {
@@ -130,11 +131,6 @@ namespace NesEmu.Emulator
             {
                 case 0:
                     this.ppuControl = value;
-
-                    if ((value & 3) != 0)
-                    {
-
-                    }
 
                     this.initialAddress &= 0xf3ff;
                     this.initialAddress |= (ushort)((value & 3) << 10);
@@ -294,6 +290,7 @@ namespace NesEmu.Emulator
                 }
                 else if (this.scanlineCycle == 256)
                 {
+                    this.scanlineSpriteCount = this.oamCopyIndex >> 2;
                     this.oamAddress = 0;
                     this.oamCopyIndex = 0;
                     this.spriteIndex = 0;
@@ -466,7 +463,7 @@ namespace NesEmu.Emulator
 
         private void SpriteRender()
         {
-            for (var i = 0; i < 8; i++)
+            for (var i = 0; i < this.scanlineSpriteCount; i++)
             {
                 if (this.sprites[i].X != 0)
                 {
@@ -590,27 +587,33 @@ namespace NesEmu.Emulator
 
         private void SpriteLoadTick()
         {
+            if (this.spriteIndex >= this.scanlineSpriteCount)
+            {
+                return;
+            }
+
             switch (scanlineCycle & 0x07)
             {
                 case 5:
                     var oamAddress = this.spriteIndex << 2;
                     var tileId = this.oamCopy[oamAddress + 1];
+
                     var tileFineY = this.currentScanLine - this.oamCopy[oamAddress];
                     // address is 000PTTTTTTTT0YYY
                     this.patternAddress = (ushort)
                         (((this.ppuControl & 0x08) << 9) | // pattern selector
                         (tileId << 4) |
                         tileFineY); 
-                    sprites[spriteIndex].patternShiftLow = this.bus.PpuRead(this.patternAddress);
+                    this.sprites[this.spriteIndex].patternShiftLow = this.bus.PpuRead(this.patternAddress);
 
-                    sprites[spriteIndex].attributes = this.oamCopy[oamAddress + 2];
-                    sprites[spriteIndex].X = this.oamCopy[oamAddress + 3];
+                    this.sprites[this.spriteIndex].attributes = this.oamCopy[oamAddress + 2];
+                    this.sprites[this.spriteIndex].X = this.oamCopy[oamAddress + 3];
                     break;
 
                 case 7:
                     // address is 000PTTTTTTTT1YYY
-                    sprites[spriteIndex].patternShiftHigh = this.bus.PpuRead((ushort)(this.patternAddress | 8));
-                    spriteIndex++;
+                    this.sprites[this.spriteIndex].patternShiftHigh = this.bus.PpuRead((ushort)(this.patternAddress | 8));
+                    this.spriteIndex++;
                     break;
             }
         }
