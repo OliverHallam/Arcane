@@ -54,7 +54,6 @@ namespace NesEmu.Emulator
 
         private int spriteIndex = 0;
         private Sprite[] sprites = new Sprite[8];
-        private bool spriteSelected;
         private bool sprite0Selected;
         private bool sprite0Visible;
         private int scanlineSpriteCount;
@@ -549,16 +548,11 @@ namespace NesEmu.Emulator
             {
                 this.oamCopy[this.oamCopyIndex] = this.oamData;
 
-                if (spriteSelected)
+                if ((this.oamAddress & 0x03) != 0)
                 {
-                    if ((this.oamAddress & 0x03) != 0)
-                    {
-                        this.oamAddress++;
-                        this.oamCopyIndex++;
-                        return;
-                    }
-
-                    spriteSelected = false;
+                    this.oamAddress++;
+                    this.oamCopyIndex++;
+                    return;
                 }
             }
 
@@ -581,7 +575,6 @@ namespace NesEmu.Emulator
                 {
                     this.oamAddress++;
                     this.oamCopyIndex++;
-                    this.spriteSelected = true;
                 }
             }
             else
