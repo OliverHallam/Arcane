@@ -38,12 +38,13 @@ namespace NesEmu.Emulator
         private byte currentPixel;
         private bool pixelRendered;
 
+        // cache for code performance
         private int patternMask;
         private int patternBitShift;
         private int attributeMask;
         private int attributeBitShift;
-
-        // cache for code performance
+        private ushort backgroundPatternBase;
+        private ushort spritePatternBase;
         private ushort patternAddress;
 
         private short oamAddress;
@@ -131,6 +132,9 @@ namespace NesEmu.Emulator
             {
                 case 0:
                     this.ppuControl = value;
+
+                    this.backgroundPatternBase = (ushort)((this.ppuControl & 0x10) << 8);
+                    this.spritePatternBase = (ushort)((this.ppuControl & 0x08) << 9);
 
                     this.initialAddress &= 0xf3ff;
                     this.initialAddress |= (ushort)((value & 3) << 10);
@@ -396,7 +400,7 @@ namespace NesEmu.Emulator
                 case 5:
                     // address is 000PTTTTTTTT0YYY
                     this.patternAddress = (ushort)
-                        (((this.ppuControl & 0x10) << 8) | // pattern selector
+                        (backgroundPatternBase | // pattern selector
                             (this.nextTileId << 4) |
                             (this.currentAddress >> 12)); // fineY
 
@@ -612,7 +616,7 @@ namespace NesEmu.Emulator
 
                     // address is 000PTTTTTTTT0YYY
                     this.patternAddress = (ushort)
-                        (((this.ppuControl & 0x08) << 9) | // pattern selector
+                        (spritePatternBase | // pattern selector
                         (tileId << 4) |
                         tileFineY); 
                     this.sprites[this.spriteIndex].patternShiftLow = this.bus.PpuRead(this.patternAddress);
