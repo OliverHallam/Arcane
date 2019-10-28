@@ -519,7 +519,7 @@ namespace NesEmu.Emulator
 
         private void SpriteTick()
         {
-            for (var i=0; i<8; i++)
+            for (var i=0; i<this.scanlineSpriteCount; i++)
             {
                 if (this.sprites[i].X > 0)
                 {
