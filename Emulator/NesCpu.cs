@@ -72,10 +72,9 @@ namespace NesEmu.Emulator
                 return;
             }
 
-            var opCode = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            byte opCode = this.ReadProgramByte();
 
-            switch(opCode)
+            switch (opCode)
             {
                 case 0x00:
                     this.Implicit();
@@ -968,8 +967,7 @@ namespace NesEmu.Emulator
             var endAddress = address + 0x100;
             while (address != endAddress)
             {
-                var value = this.bus.CpuRead(address++);
-                this.bus.TickCpu();
+                byte value = ReadData(address++);
 
                 this.bus.DmaWrite(value);
                 this.bus.TickCpu();
@@ -978,20 +976,15 @@ namespace NesEmu.Emulator
 
         private void Jsr()
         {
-            var lowByte = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var lowByte = this.ReadProgramByte();
 
             this.bus.TickCpu();
 
-            this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC >> 8));
+            this.Push((byte)(this.PC >> 8));
+            this.Push((byte)(this.PC & 0xff));
 
-            this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC & 0xff));
-
-            var highByte = this.bus.CpuRead(this.PC);
+            var highByte = this.ReadProgramByte();
             this.PC = (ushort)(highByte << 8 | lowByte);
-            this.bus.TickCpu();
         }
 
         public void Implicit()
@@ -1001,28 +994,21 @@ namespace NesEmu.Emulator
 
         private void Immediate()
         {
-            this.value = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            this.value = this.ReadProgramByte();
         }
 
         private void Absolute()
         {
-            var lowByte = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
-
-            var highByte = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var lowByte = this.ReadProgramByte();
+            var highByte = this.ReadProgramByte();
 
             this.address = (ushort)(lowByte | highByte << 8);
         }
 
         private void AbsoluteX()
         {
-            var lowByte = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
-
-            var highByte = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var lowByte = this.ReadProgramByte();
+            var highByte = this.ReadProgramByte();
 
             this.address = (ushort)(lowByte | highByte << 8);
             this.address += this.X;
@@ -1037,11 +1023,8 @@ namespace NesEmu.Emulator
 
         private void AbsoluteY()
         {
-            var lowByte = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
-
-            var highByte = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var lowByte = this.ReadProgramByte();
+            var highByte = this.ReadProgramByte();
 
             this.address = (ushort)(lowByte | highByte << 8);
             this.address += this.Y;
@@ -1056,14 +1039,12 @@ namespace NesEmu.Emulator
 
         private void ZeroPage()
         {
-            this.address = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            this.address = this.ReadProgramByte();
         }
 
         private void ZeroPageX()
         {
-            var zpAddress = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var zpAddress = this.ReadProgramByte();
 
             zpAddress += this.X;
             this.bus.TickCpu();
@@ -1073,8 +1054,7 @@ namespace NesEmu.Emulator
 
         private void ZeroPageY()
         {
-            var zpAddress = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var zpAddress = this.ReadProgramByte();
 
             zpAddress += this.Y;
             this.bus.TickCpu();
@@ -1084,45 +1064,35 @@ namespace NesEmu.Emulator
 
         private void Relative()
         {
-            var relative = (sbyte)(this.bus.CpuRead(this.PC++));
+            var relative = (sbyte)this.ReadProgramByte();
             this.address = (ushort)(this.PC + relative);
-            this.bus.TickCpu();
         }
 
         private void AbsoluteIndirect()
         {
-            var addressLow = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
-
-            var addressHigh = this.bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var addressLow = this.ReadProgramByte();
+            var addressHigh = this.ReadProgramByte();
 
             var address = (ushort)((addressHigh << 8) | addressLow);
             
             addressLow++;
             var nextAddress = (ushort)((addressHigh << 8) | addressLow);
 
-            addressLow = this.bus.CpuRead(address);
-            this.bus.TickCpu();
-
-            addressHigh = this.bus.CpuRead(nextAddress);
+            addressLow = this.ReadData(address);
+            addressHigh = this.ReadData(nextAddress);
 
             this.address = (ushort)((addressHigh << 8) | addressLow);
         }
 
         private void IndexIndirect()
         {
-            byte indirectAddress = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            byte indirectAddress = this.ReadProgramByte();
 
             indirectAddress += this.X;
             this.bus.TickCpu();
 
-            var addressLow = this.bus.CpuRead(indirectAddress);
-            this.bus.TickCpu();
-
-            var addressHigh = this.bus.CpuRead((byte)(indirectAddress + 1));
-            this.bus.TickCpu();
+            var addressLow = this.ReadData(indirectAddress);
+            var addressHigh = this.ReadData((byte)(indirectAddress + 1));
 
             this.address = (ushort)(addressLow | addressHigh << 8);
         }
@@ -1130,14 +1100,10 @@ namespace NesEmu.Emulator
 
         private void IndirectIndex()
         {
-            ushort indirectAddress = bus.CpuRead(this.PC++);
-            this.bus.TickCpu();
+            var indirectAddress = this.ReadProgramByte();
 
-            var addressLow = this.bus.CpuRead(indirectAddress);
-            this.bus.TickCpu();
-
-            var addressHigh = this.bus.CpuRead((byte)(indirectAddress + 1));
-            this.bus.TickCpu();
+            var addressLow = this.ReadData(indirectAddress);
+            var addressHigh = this.ReadData((byte)(indirectAddress + 1));
 
             this.address = (ushort)(addressLow | addressHigh << 8);
             this.address += this.Y;
@@ -1146,16 +1112,14 @@ namespace NesEmu.Emulator
 
         private void Load()
         {
-            this.value = bus.CpuRead(this.address);
-            this.bus.TickCpu();
+            this.value = this.ReadData(this.address);
         }
 
         private void Store()
         {
             this.bus.TickCpu();
 
-            this.bus.TickCpu();
-            this.bus.CpuWrite(this.address, this.value);
+            this.Write(this.address, this.value);
         }
 
         private void LoadA()
@@ -1174,16 +1138,12 @@ namespace NesEmu.Emulator
             if (this.interruptVector != 0xfffc)
             {
                 // don't push on reset
-                this.bus.TickCpu();
-                this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC >> 8));
-
-                this.bus.TickCpu();
-                this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.PC & 0xff));
+                this.Push((byte)(this.PC >> 8));
+                this.Push((byte)(this.PC & 0xff));
 
                 var p = (byte)(this.P | 0x20);
                 p |= (byte)(this.B ? 0x10 : 0);
-                this.bus.CpuWrite((ushort)(0x100 + this.S--), p);
-                this.bus.TickCpu();
+                this.Push(p);
             }
             else
             {
@@ -1192,11 +1152,8 @@ namespace NesEmu.Emulator
                 this.bus.TickCpu();
             }
 
-            var pcLow = this.bus.CpuRead(this.interruptVector);
-            this.bus.TickCpu();
-
-            var pcHigh = this.bus.CpuRead((ushort)(this.interruptVector + 1));
-            this.bus.TickCpu();
+            var pcLow = this.ReadData(this.interruptVector);
+            var pcHigh = this.ReadData((ushort)(this.interruptVector + 1));
 
             this.PC = (ushort)((pcHigh << 8) | pcLow);
         }
@@ -1434,22 +1391,19 @@ namespace NesEmu.Emulator
 
         private void Pha()
         {
-            this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), this.A);
+            this.Push(this.A);
         }
 
         private void Php()
         {
-            this.bus.TickCpu();
-            this.bus.CpuWrite((ushort)(0x100 + this.S--), (byte)(this.P | 0x30));
+            this.Push((byte)(this.P | 0x30));
         }
 
         private void Pla()
         {
             this.bus.TickCpu();
 
-            this.A = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
+            this.A = Pop();
 
             this.SetFlags(this.A);
         }
@@ -1458,8 +1412,7 @@ namespace NesEmu.Emulator
         {
             this.bus.TickCpu();
 
-            this.P = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
+            this.P = this.Pop();
         }
 
         private void Rol()
@@ -1499,14 +1452,9 @@ namespace NesEmu.Emulator
         {
             this.bus.TickCpu();
 
-            this.P = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
-
-            var pcLow = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
-
-            var pcHigh = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
+            this.P = this.Pop();
+            var pcLow = this.Pop();
+            var pcHigh = this.Pop();
 
             this.PC = (ushort)(pcHigh << 8 | pcLow);
         }
@@ -1515,11 +1463,8 @@ namespace NesEmu.Emulator
         {
             this.bus.TickCpu();
 
-            var lowByte = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
-
-            var highByte = this.bus.CpuRead((ushort)(0x100 + ++this.S));
-            this.bus.TickCpu();
+            var lowByte = this.Pop();
+            var highByte = this.Pop();
 
             this.PC = (ushort)(((highByte << 8) | lowByte) + 1);
             this.bus.TickCpu();
@@ -1560,20 +1505,17 @@ namespace NesEmu.Emulator
 
         private void Sta()
         {
-            this.bus.TickCpu();
-            this.bus.CpuWrite(this.address, this.A);
+            this.Write(this.address, this.A);
         }
 
         private void Stx()
         {
-            this.bus.TickCpu();
-            this.bus.CpuWrite(this.address, this.X);
+            this.Write(this.address, this.X);
         }
 
         private void Sty()
         {
-            this.bus.TickCpu();
-            this.bus.CpuWrite(this.address, this.Y);
+            this.Write(this.address, this.Y);
         }
 
         private void Tax()
@@ -1637,6 +1579,39 @@ namespace NesEmu.Emulator
             this.N = (tmp & 0x80) != 0;
             this.Z = tmp == 0;
             this.C = (result & 0x100) == 0;
+        }
+
+        private byte ReadProgramByte()
+        {
+            var value = this.bus.CpuRead(this.PC++);
+            this.bus.TickCpu();
+            return value;
+        }
+
+        private byte ReadData(ushort address)
+        {
+            var value = this.bus.CpuRead(address);
+            this.bus.TickCpu();
+            return value;
+        }
+
+        private byte Pop()
+        {
+            var value = this.bus.CpuRead((ushort)(0x100 + ++this.S));
+            this.bus.TickCpu();
+            return value;
+        }
+
+        private void Write(ushort address, byte value)
+        {
+            this.bus.TickCpu();
+            this.bus.CpuWrite(address, value);
+        }
+
+        private void Push(byte value)
+        {
+            this.bus.TickCpu();
+            this.bus.CpuWrite((ushort)(0x100 + this.S--), value);
         }
     }
 }
