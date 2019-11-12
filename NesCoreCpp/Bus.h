@@ -4,19 +4,19 @@
 #include <cstdint>
 #include <memory>
 
-class Cart;
-class Controller;
-class Cpu;
-class Ppu;
+#include "Cart.h"
+#include "Controller.h"
+#include "Cpu.h"
+#include "Ppu.h"
 
 class Bus
 {
 public:
     Bus();
 
-    void Attach(std::unique_ptr<Cpu> cpu);
-    void Attach(std::unique_ptr<Ppu> ppu);
-    void Attach(std::unique_ptr<Controller> controller);
+    void Attach(Cpu* cpu);
+    void Attach(Ppu* ppu);
+    void Attach(Controller* controller);
     void Attach(std::unique_ptr<Cart> cart);
 
     void TickCpu();
@@ -32,9 +32,9 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    std::unique_ptr<Cpu> cpu_;
-    std::unique_ptr<Ppu> ppu_;
-    std::unique_ptr<Controller> controller_;
+    Cpu* cpu_;
+    Ppu* ppu_;
+    Controller* controller_;
     std::unique_ptr<Cart> cart_;
 
     std::array<uint8_t, 2048> cpuRam_;

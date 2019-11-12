@@ -10,6 +10,8 @@ class Ppu
 public:
     Ppu(Bus& bus, Display& display);
 
+    uint32_t FrameCount();
+
     void Tick();
 
     uint8_t Read(uint16_t address);
@@ -43,7 +45,7 @@ private:
     Display& display_;
 
     // approx!
-    int32_t frameCount_{};
+    uint32_t frameCount_{};
 
     uint8_t ppuStatus_{};
     uint8_t ppuControl_{};

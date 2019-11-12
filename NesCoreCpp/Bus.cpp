@@ -12,19 +12,19 @@ Bus::Bus()
     ppuRam_.fill(0xff);
 }
 
-void Bus::Attach(std::unique_ptr<Cpu> cpu)
+void Bus::Attach(Cpu* cpu)
 {
-    cpu_ = std::move(cpu);
+    cpu_ = cpu;
 }
 
-void Bus::Attach(std::unique_ptr<Ppu> ppu)
+void Bus::Attach(Ppu* ppu)
 {
-    ppu_ = std::move(ppu);
+    ppu_ = ppu;
 }
 
-void Bus::Attach(std::unique_ptr<Controller> controller)
+void Bus::Attach(Controller* controller)
 {
-    controller_ = std::move(controller);
+    controller_ = controller;
 }
 
 void Bus::Attach(std::unique_ptr<Cart> cart)

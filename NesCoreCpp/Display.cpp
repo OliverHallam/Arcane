@@ -1,8 +1,13 @@
 #include "Display.h"
 
+Display::Display()
+{
+    VBlank();
+}
+
 void Display::WritePixel(uint8_t value)
 {
-    buffer_[currentPixelAddress_++] = Pallette[value];
+    *currentPixelAddress_++ = Pallette[value];
 }
 
 void Display::HBlank()
@@ -11,7 +16,12 @@ void Display::HBlank()
 
 void Display::VBlank()
 {
-    currentPixelAddress_ = 0;
+    currentPixelAddress_ = &buffer_[0];
+}
+
+const uint32_t* Display::Buffer() const
+{
+    return &buffer_[0];
 }
 
 std::array<uint32_t, 64> Display::Pallette

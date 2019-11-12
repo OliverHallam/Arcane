@@ -9,6 +9,11 @@ Ppu::Ppu(Bus& bus, Display& display) :
 {
 }
 
+uint32_t Ppu::FrameCount()
+{
+    return frameCount_;
+}
+
 void Ppu::Tick()
 {
     if (scanlineCycle_ == 0)
