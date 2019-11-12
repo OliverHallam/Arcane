@@ -5,7 +5,8 @@
 
 Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
-    display_{ display }
+    display_{ display },
+    sprites_{ bus }
 {
 }
 
@@ -18,7 +19,7 @@ void Ppu::Tick()
 {
     if (scanlineCycle_ == 0)
     {
-        if (currentScanLine_ == 241)
+        if (currentScanline_ == 241)
         {
             display_.VBlank();
 
@@ -32,8 +33,9 @@ void Ppu::Tick()
             // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
             ppuStatus_ |= 0x80;
         }
-        else if (currentScanLine_ == -1)
+        else if (currentScanline_ == -1)
         {
+            sprites_.VReset();
             ppuStatus_ &= 0x1f;
         }
     }
@@ -45,11 +47,11 @@ void Ppu::Tick()
     }
 
 
-    if (currentScanLine_ < 240)
+    if (currentScanline_ < 240)
     {
         if (scanlineCycle_ < 256)
         {
-            if (currentScanLine_ >= 0)
+            if (currentScanline_ >= 0)
             {
                 pixelRendered_ = false;
                 currentPixel_ = palette_[0];
@@ -61,8 +63,9 @@ void Ppu::Tick()
 
                 if ((ppuMask_ & 0x10) != 0)
                 {
-                    SpriteRender();
-                    SpriteTick();
+                    auto spritePixel = sprites_.Render(pixelRendered_);
+                    if (spritePixel >= 0)
+                        currentPixel_ = palette_[spritePixel];
                 }
 
                 display_.WritePixel(currentPixel_);
@@ -72,18 +75,12 @@ void Ppu::Tick()
             {
                 BackgroundLoadTick();
                 BackgroundTick();
-                SpriteEvaluationTick();
+                sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
             }
         }
         else if (scanlineCycle_ == 256)
         {
-            scanlineSpriteCount_ = oamCopyIndex_ >> 2;
-            sprite0Visible_ = sprite0Selected_;
-            sprite0Selected_ = false;
-            oamAddress_ = 0;
-            oamCopyIndex_ = 0;
-            spriteIndex_ = 0;
-
+            sprites_.HReset();
             display_.HBlank();
 
             if ((ppuMask_ & 0x18) != 0)
@@ -96,10 +93,10 @@ void Ppu::Tick()
             if ((ppuMask_ & 0x18) != 0)
             {
                 // sprite tile loading
-                SpriteLoadTick();
+                sprites_.LoadTick(currentScanline_, scanlineCycle_);
             }
 
-            if (currentScanLine_ < 0 && (scanlineCycle_ >= 279 && scanlineCycle_ < 304))
+            if (currentScanline_ < 0 && (scanlineCycle_ >= 279 && scanlineCycle_ < 304))
             {
                 if ((ppuMask_ & 0x18) != 0)
                 {
@@ -122,11 +119,11 @@ void Ppu::Tick()
     {
         scanlineCycle_ = -1;
 
-        currentScanLine_++;
+        currentScanline_++;
 
-        if (currentScanLine_ == 261)
+        if (currentScanline_ == 261)
         {
-            currentScanLine_ = -1;
+            currentScanline_ = -1;
         }
     }
 }
@@ -139,8 +136,14 @@ uint8_t Ppu::Read(uint16_t address)
     {
         auto status = ppuStatus_;
 
-        ppuStatus_ &= 0x7f;
+        ppuStatus_ &= 0x1f;
         addressLatch_ = false;
+
+        if (sprites_.Sprite0Hit())
+            ppuStatus_ |= 0x40;
+
+        if (sprites_.SpriteOverflow())
+            ppuStatus_ |= 0x20;
 
         return status;
     }
@@ -179,7 +182,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         ppuControl_ = value;
 
         backgroundPatternBase_ = (uint16_t)((ppuControl_ & 0x10) << 8);
-        spritePatternBase_ = (uint16_t)((ppuControl_ & 0x08) << 9);
+        sprites_.BasePatternAddress((uint16_t)((ppuControl_ & 0x08) << 9));
 
         initialAddress_ &= 0xf3ff;
         initialAddress_ |= (uint16_t)((value & 3) << 10);
@@ -190,7 +193,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 3:
-        oamAddress_ = value;
+        sprites_.OamAddress(value);
         return;
 
     case 5:
@@ -263,7 +266,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
 
 void Ppu::DmaWrite(uint8_t value)
 {
-    oam_[oamAddress_++] = value;
+    sprites_.WriteOam(value);
 }
 
 void Ppu::SetFineX(uint8_t value)
@@ -400,168 +403,3 @@ void Ppu::BackgroundHReset()
     currentAddress_ |= (uint16_t)(initialAddress_ & 0x041f);
 }
 
-void Ppu::SpriteRender()
-{
-    bool drawnSprite = false;
-
-    for (auto i = 0; i < scanlineSpriteCount_; i++)
-    {
-        if (sprites_[i].X != 0)
-        {
-            continue;
-        }
-
-        uint8_t index;
-        if ((sprites_[i].attributes & 0x40) == 0)
-        {
-            index = (uint8_t)((sprites_[i].patternShiftHigh & 0x80) >> 6 | (sprites_[i].patternShiftLow & 0x80) >> 7);
-
-            sprites_[i].patternShiftHigh <<= 1;
-            sprites_[i].patternShiftLow <<= 1;
-        }
-        else
-        {
-            index = (uint8_t)((sprites_[i].patternShiftHigh & 0x01) << 1 | sprites_[i].patternShiftLow & 0x01);
-
-            sprites_[i].patternShiftHigh >>= 1;
-            sprites_[i].patternShiftLow >>= 1;
-        }
-
-        if (index != 0 && !drawnSprite)
-        {
-            drawnSprite = true;
-
-            if (pixelRendered_)
-            {
-                if (i == 0 && sprite0Visible_)
-                {
-                    ppuStatus_ |= 0x40;
-                }
-
-                if ((sprites_[i].attributes & 0x20) != 0)
-                {
-                    continue;
-                }
-            }
-
-            index |= (uint8_t)((0x04 | (sprites_[i].attributes & 0x03)) << 2); // palette
-            currentPixel_ = palette_[index];
-        }
-    }
-}
-
-void Ppu::SpriteTick()
-{
-    for (auto i = 0; i < scanlineSpriteCount_; i++)
-    {
-        if (sprites_[i].X > 0)
-        {
-            sprites_[i].X--;
-        }
-    }
-}
-
-void Ppu::SpriteEvaluationTick()
-{
-    if ((scanlineCycle_ & 1) == 0)
-    {
-        // setting up the read/write
-        return;
-    }
-
-    if (scanlineCycle_ < 64)
-    {
-        oamCopy_[scanlineCycle_ / 2] = oamData_ = 0xff;
-        return;
-    }
-
-    if (oamAddress_ >= 256)
-    {
-        return;
-    }
-
-    oamData_ = oam_[oamAddress_];
-    if (oamCopyIndex_ < 32)
-    {
-        oamCopy_[oamCopyIndex_] = oamData_;
-
-        if ((oamAddress_ & 0x03) != 0)
-        {
-            oamAddress_++;
-            oamCopyIndex_++;
-            return;
-        }
-    }
-
-    auto spriteRow = (uint32_t)(currentScanLine_ - oamData_);
-    bool visible = spriteRow < 8;
-
-    if (oamAddress_ == 0)
-    {
-        sprite0Selected_ = visible;
-    }
-
-    if (visible)
-    {
-        if (oamCopyIndex_ >= 32)
-        {
-            ppuStatus_ |= 0x20;
-            oamAddress_ += 4;
-        }
-        else
-        {
-            oamAddress_++;
-            oamCopyIndex_++;
-        }
-    }
-    else
-    {
-        oamAddress_ += 4;
-
-        // TODO: overflow bug
-    }
-}
-
-void Ppu::SpriteLoadTick()
-{
-    if (spriteIndex_ >= scanlineSpriteCount_)
-    {
-        return;
-    }
-
-    switch (scanlineCycle_ & 0x07)
-    {
-    case 5:
-    {
-        auto oamAddress = spriteIndex_ << 2;
-
-        auto attributes = oamCopy_[oamAddress + 2];
-        sprites_[spriteIndex_].attributes = attributes;
-        sprites_[spriteIndex_].X = oamCopy_[oamAddress + 3];
-
-        auto tileId = oamCopy_[oamAddress + 1];
-
-        auto tileFineY = currentScanLine_ - oamCopy_[oamAddress];
-
-        if ((attributes & 0x80) != 0)
-        {
-            tileFineY = 7 - tileFineY;
-        }
-
-        // address is 000PTTTTTTTT0YYY
-        patternAddress_ = (uint16_t)
-            (spritePatternBase_ | // pattern selector
-            (tileId << 4) |
-                tileFineY);
-        sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
-
-        break;
-    }
-
-    case 7:
-        // address is 000PTTTTTTTT1YYY
-        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
-        spriteIndex_++;
-        break;
-    }
-}

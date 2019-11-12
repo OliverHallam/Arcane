@@ -15,6 +15,7 @@
     <ClInclude Include="Cart.h" />
     <ClInclude Include="NesSystem.h" />
     <ClInclude Include="libretro.h" />
+    <ClInclude Include="PpuSprites.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -25,5 +26,6 @@
     <ClCompile Include="Cart.cpp" />
     <ClCompile Include="libretro.cpp" />
     <ClCompile Include="NesSystem.cpp" />
+    <ClCompile Include="PpuSprites.cpp" />
   </ItemGroup>
 </Project>

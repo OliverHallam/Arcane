@@ -1,5 +1,7 @@
 #pragma once
 
+#include "PpuSprites.h"
+
 #include <cstdint>
 
 class Bus;
@@ -20,14 +22,6 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    struct Sprite
-    {
-        uint8_t X;
-        uint8_t patternShiftHigh;
-        uint8_t patternShiftLow;
-        uint8_t attributes;
-    };
-
     void SetFineX(uint8_t value);
 
     void BackgroundRender();
@@ -35,11 +29,6 @@ private:
     void BackgroundTick();
     void BackgroundVReset();
     void BackgroundHReset();
-
-    void SpriteRender();
-    void SpriteTick();
-    void SpriteEvaluationTick();
-    void SpriteLoadTick();
 
     Bus& bus_;
     Display& display_;
@@ -61,7 +50,7 @@ private:
 
     uint8_t palette_[32];
 
-    int32_t currentScanLine_{ -1 };
+    int32_t currentScanline_{ -1 };
     int32_t scanlineCycle_{ -1 };
 
     uint8_t nextTileId_{};
@@ -81,18 +70,7 @@ private:
     int32_t attributeMask_{};
     int32_t attributeBitShift_{};
     uint16_t backgroundPatternBase_{};
-    uint16_t spritePatternBase_{};
     uint16_t patternAddress_{};
 
-    short oamAddress_{};
-    uint8_t oamData_{};
-    uint8_t oam_[256]{};
-    uint8_t oamCopy_[32]{};
-    uint8_t oamCopyIndex_{};
-
-    int32_t spriteIndex_{};
-    Sprite sprites_[8]{};
-    bool sprite0Selected_{};
-    bool sprite0Visible_{};
-    int32_t scanlineSpriteCount_{};
+    PpuSprites sprites_;
 };
