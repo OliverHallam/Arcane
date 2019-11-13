@@ -77,7 +77,7 @@ void Ppu::Tick()
                 display_.WritePixel(palette_[currentPixel]);
             }
 
-            if (enableBackground_ | enableForeground_)
+            if (enableRendering_)
             {
                 background_.Tick(scanlineCycle_);
                 sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
@@ -88,32 +88,32 @@ void Ppu::Tick()
             sprites_.HReset();
             display_.HBlank();
 
-            if (enableBackground_ | enableForeground_)
+            if (enableRendering_)
             {
                 background_.HReset(initialAddress_);
             }
         }
-        else if (scanlineCycle_ > 256 && scanlineCycle_ < 320)
+        else
         {
-            if (enableBackground_ | enableForeground_)
+            if (scanlineCycle_ > 256 && scanlineCycle_ < 320)
             {
-                // sprite tile loading
-                sprites_.LoadTick(currentScanline_, scanlineCycle_);
-            }
-
-            if (currentScanline_ < 0 && (scanlineCycle_ >= 279 && scanlineCycle_ < 304))
-            {
-                if (enableBackground_ | enableForeground_)
+                if (enableRendering_)
                 {
-                    background_.VReset(initialAddress_);
+                    // sprite tile loading
+                    sprites_.LoadTick(currentScanline_, scanlineCycle_);
+
+                    if (currentScanline_ < 0 && (scanlineCycle_ >= 279 && scanlineCycle_ < 304))
+                    {
+                        background_.VReset(initialAddress_);
+                    }
                 }
             }
-        }
-        else if (scanlineCycle_ >= 320 && scanlineCycle_ < 336)
-        {
-            if (enableBackground_ | enableForeground_)
+            else if (scanlineCycle_ >= 320 && scanlineCycle_ < 336)
             {
-                background_.Tick(scanlineCycle_);
+                if (enableRendering_)
+                {
+                    background_.Tick(scanlineCycle_);
+                }
             }
         }
     }
@@ -194,12 +194,13 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 1:
-        enableBackground_ = value & 0x08;
-        enableForeground_ = value & 0x10;
+        enableBackground_ = value & 0x08 != 0;
+        enableForeground_ = value & 0x10 != 0;
+        enableRendering_ = value & 0x18 != 0;
         return;
 
     case 3:
-        sprites_.OamAddress(value);
+        sprites_.SetOamAddress(value);
         return;
 
     case 5:

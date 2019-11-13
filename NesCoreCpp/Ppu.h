@@ -39,6 +39,7 @@ private:
     // PPUMASK
     bool enableBackground_{};
     bool enableForeground_{};
+    bool enableRendering_{};
 
     // PPUSTATUS
     bool inVBlank_{};

@@ -11,7 +11,7 @@ public:
 
     void SetBasePatternAddress(uint16_t address);
 
-    void OamAddress(uint8_t value);
+    void SetOamAddress(uint8_t value);
     void WriteOam(uint8_t value);
 
     void EvaluationTick(uint32_t scanline, uint32_t scanlineCycle);

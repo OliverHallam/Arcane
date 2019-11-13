@@ -97,7 +97,9 @@ void PpuBackground::Tick(int32_t scanlineCycle)
                 // move to the next row
                 if ((CurrentAddress & 0x03e0) == 0x03e0)
                 {
+                    // reset the X co-ordinate
                     CurrentAddress &= 0x7c1f;
+                    // swap the nametable Y
                     CurrentAddress ^= 0x0800;
                 }
                 else
@@ -111,7 +113,9 @@ void PpuBackground::Tick(int32_t scanlineCycle)
             // increment the x part of the address
             if ((CurrentAddress & 0x001f) == 0x001f)
             {
+                // reset the X co-ordinate
                 CurrentAddress &= 0xffe0;
+                // swap the nametable X
                 CurrentAddress ^= 0x0400;
             }
             else
