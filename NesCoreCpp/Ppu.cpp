@@ -57,7 +57,7 @@ void Ppu::Tick()
                 auto pixelRendered = false;
                 auto currentPixel = 0;
 
-                if ((ppuMask_ & 0x08) != 0)
+                if (enableBackground_)
                 {
                     auto backgroundPixel = background_.Render();
                     pixelRendered = backgroundPixel > 0;
@@ -65,7 +65,7 @@ void Ppu::Tick()
                         currentPixel = backgroundPixel;
                 }
 
-                if ((ppuMask_ & 0x10) != 0)
+                if (enableForeground_)
                 {
                     auto spritePixel = sprites_.RenderTick(pixelRendered);
                     if (spritePixel >= 0)
@@ -75,7 +75,7 @@ void Ppu::Tick()
                 display_.WritePixel(palette_[currentPixel]);
             }
 
-            if ((ppuMask_ & 0x18) != 0)
+            if (enableBackground_ | enableForeground_)
             {
                 background_.Tick(scanlineCycle_);
                 sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
@@ -86,14 +86,14 @@ void Ppu::Tick()
             sprites_.HReset();
             display_.HBlank();
 
-            if ((ppuMask_ & 0x18) != 0)
+            if (enableBackground_ | enableForeground_)
             {
                 background_.HReset(initialAddress_);
             }
         }
         else if (scanlineCycle_ >= 256 && scanlineCycle_ < 320)
         {
-            if ((ppuMask_ & 0x18) != 0)
+            if (enableBackground_ | enableForeground_)
             {
                 // sprite tile loading
                 sprites_.LoadTick(currentScanline_, scanlineCycle_);
@@ -101,7 +101,7 @@ void Ppu::Tick()
 
             if (currentScanline_ < 0 && (scanlineCycle_ >= 279 && scanlineCycle_ < 304))
             {
-                if ((ppuMask_ & 0x18) != 0)
+                if (enableBackground_ | enableForeground_)
                 {
                     background_.VReset(initialAddress_);
                 }
@@ -109,7 +109,7 @@ void Ppu::Tick()
         }
         else if (scanlineCycle_ >= 320 && scanlineCycle_ < 336)
         {
-            if ((ppuMask_ & 0x18) != 0)
+            if (enableBackground_ | enableForeground_)
             {
                 background_.Tick(scanlineCycle_);
             }
@@ -193,7 +193,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 1:
-        ppuMask_ = value;
+        enableBackground_ = value & 0x08;
+        enableForeground_ = value & 0x10;
         return;
 
     case 3:

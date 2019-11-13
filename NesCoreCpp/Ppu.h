@@ -31,10 +31,12 @@ private:
 
     uint8_t ppuStatus_{};
     uint8_t ppuControl_{};
-    uint8_t ppuMask_{};
 
     bool addressLatch_{};
     uint8_t ppuData_{};
+
+    bool enableBackground_{};
+    bool enableForeground_{};
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
     uint16_t initialAddress_{};
