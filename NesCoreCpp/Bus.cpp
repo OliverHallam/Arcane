@@ -105,7 +105,7 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     }
 }
 
-uint8_t Bus::PpuRead(uint16_t address)
+uint8_t Bus::PpuRead(uint16_t address) const
 {
     if (address < 0x2000)
         return cart_->PpuRead(address);

@@ -18,8 +18,7 @@ public:
 
     void HReset();
 
-    int8_t Render(bool pixelRendered);
-    void Tick();
+    int8_t RenderTick(bool pixelRendered);
 
     bool Sprite0Hit();
     bool SpriteOverflow();

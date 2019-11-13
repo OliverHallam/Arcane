@@ -135,6 +135,7 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="NesSystem.h" />
     <ClInclude Include="Ppu.h" />
+    <ClInclude Include="PpuBackground.h" />
     <ClInclude Include="PpuSprites.h" />
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +147,7 @@
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="NesSystem.cpp" />
     <ClCompile Include="Ppu.cpp" />
+    <ClCompile Include="PpuBackground.cpp" />
     <ClCompile Include="PpuSprites.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PpuBackground.h"
 #include "PpuSprites.h"
 
 #include <cstdint>
@@ -22,14 +23,6 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    void SetFineX(uint8_t value);
-
-    void BackgroundRender();
-    void BackgroundLoadTick();
-    void BackgroundTick();
-    void BackgroundVReset();
-    void BackgroundHReset();
-
     Bus& bus_;
     Display& display_;
 
@@ -41,36 +34,16 @@ private:
     uint8_t ppuMask_{};
 
     bool addressLatch_{};
+    uint8_t ppuData_{};
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
-    uint16_t currentAddress_{};
     uint16_t initialAddress_{};
-
-    uint8_t ppuData_{};
 
     uint8_t palette_[32];
 
     int32_t currentScanline_{ -1 };
     int32_t scanlineCycle_{ -1 };
 
-    uint8_t nextTileId_{};
-    uint8_t nextPatternByteLow_{};
-    uint8_t nextPatternByteHigh_{};
-
-    uint16_t patternShiftHigh_{};
-    uint16_t patternShiftLow_{};
-    uint32_t attributeShift_{};
-    uint16_t nextAttributeShift_{};
-    uint8_t currentPixel_{};
-    bool pixelRendered_{};
-
-    // cache for code performance
-    int32_t patternMask_{};
-    int32_t patternBitShift_{};
-    int32_t attributeMask_{};
-    int32_t attributeBitShift_{};
-    uint16_t backgroundPatternBase_{};
-    uint16_t patternAddress_{};
-
+    PpuBackground background_;
     PpuSprites sprites_;
 };

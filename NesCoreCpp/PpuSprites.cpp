@@ -84,7 +84,7 @@ void PpuSprites::EvaluationTick(uint32_t scanline, uint32_t scanlineCycle)
     }
 }
 
-int8_t PpuSprites::Render(bool pixelRendered)
+int8_t PpuSprites::RenderTick(bool pixelRendered)
 {
     uint8_t result = 0xff;
     auto drawnSprite = false;
