@@ -194,9 +194,9 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 1:
-        enableBackground_ = value & 0x08 != 0;
-        enableForeground_ = value & 0x10 != 0;
-        enableRendering_ = value & 0x18 != 0;
+        enableBackground_ = (value & 0x08) != 0;
+        enableForeground_ = (value & 0x10) != 0;
+        enableRendering_ = (value & 0x18) != 0;
         return;
 
     case 3:
