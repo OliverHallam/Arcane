@@ -33,7 +33,6 @@ void PpuSprites::EvaluationTick(uint32_t scanline, uint32_t scanlineCycle)
 
     if (scanlineCycle < 64)
     {
-        oamCopy_[scanlineCycle / 2] = oamData_ = 0xff;
         return;
     }
 
