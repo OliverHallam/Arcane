@@ -13,7 +13,7 @@ void PpuSprites::SetBasePatternAddress(uint16_t address)
     spritePatternBase_ = address;
 }
 
-void PpuSprites::OamAddress(uint8_t value)
+void PpuSprites::SetOamAddress(uint8_t value)
 {
     oamAddress_ = value;
 }
