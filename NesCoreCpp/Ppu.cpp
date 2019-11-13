@@ -34,12 +34,12 @@ void Ppu::Tick()
                 }
 
                 // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
-                ppuStatus_ |= 0x80;
+                inVBlank_ = true;
             }
             else if (currentScanline_ == -1)
             {
                 sprites_.VReset();
-                ppuStatus_ &= 0x1f;
+                inVBlank_ = false;
             }
         }
         else // scanlineCycle_ == -1
@@ -137,16 +137,21 @@ uint8_t Ppu::Read(uint16_t address)
 
     if (address == 0x02)
     {
-        auto status = ppuStatus_;
-
-        ppuStatus_ &= 0x1f;
         addressLatch_ = false;
 
+        uint8_t status = 0;
+
+        if (inVBlank_)
+        {
+            status |= 0x80;
+            inVBlank_ = false;
+        }
+
         if (sprites_.Sprite0Hit())
-            ppuStatus_ |= 0x40;
+            status |= 0x40;
 
         if (sprites_.SpriteOverflow())
-            ppuStatus_ |= 0x20;
+            status |= 0x20;
 
         return status;
     }

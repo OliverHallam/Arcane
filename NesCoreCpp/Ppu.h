@@ -29,8 +29,6 @@ private:
     // approx!
     uint32_t frameCount_{};
 
-    uint8_t ppuStatus_{};
-
     bool addressLatch_{};
     uint8_t ppuData_{};
 
@@ -41,6 +39,9 @@ private:
     // PPUMASK
     bool enableBackground_{};
     bool enableForeground_{};
+
+    // PPUSTATUS
+    bool inVBlank_{};
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
     uint16_t initialAddress_{};
