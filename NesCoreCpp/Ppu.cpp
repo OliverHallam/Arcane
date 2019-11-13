@@ -18,33 +18,35 @@ uint32_t Ppu::FrameCount()
 
 void Ppu::Tick()
 {
-    if (scanlineCycle_ == 0)
+    if (scanlineCycle_ <= 0)
     {
-        if (currentScanline_ == 241)
+        if (scanlineCycle_ == 0)
         {
-            display_.VBlank();
-
-            frameCount_++;
-
-            if ((ppuControl_ & 0x80) != 0)
+            if (currentScanline_ == 241)
             {
-                bus_.SignalNmi();
+                display_.VBlank();
+
+                frameCount_++;
+
+                if (enableVBlankInterrupt_)
+                {
+                    bus_.SignalNmi();
+                }
+
+                // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
+                ppuStatus_ |= 0x80;
             }
-
-            // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
-            ppuStatus_ |= 0x80;
+            else if (currentScanline_ == -1)
+            {
+                sprites_.VReset();
+                ppuStatus_ &= 0x1f;
+            }
         }
-        else if (currentScanline_ == -1)
+        else // scanlineCycle_ == -1
         {
-            sprites_.VReset();
-            ppuStatus_ &= 0x1f;
+            scanlineCycle_++;
+            return;
         }
-    }
-
-    if (scanlineCycle_ == -1)
-    {
-        scanlineCycle_++;
-        return;
     }
 
 
@@ -91,7 +93,7 @@ void Ppu::Tick()
                 background_.HReset(initialAddress_);
             }
         }
-        else if (scanlineCycle_ >= 256 && scanlineCycle_ < 320)
+        else if (scanlineCycle_ > 256 && scanlineCycle_ < 320)
         {
             if (enableBackground_ | enableForeground_)
             {
@@ -120,7 +122,6 @@ void Ppu::Tick()
     if (scanlineCycle_ == 340)
     {
         scanlineCycle_ = -1;
-
         currentScanline_++;
 
         if (currentScanline_ == 261)
@@ -162,15 +163,7 @@ uint8_t Ppu::Read(uint16_t address)
             data = palette_[ppuAddress & 0x1f];
         }
 
-        if ((ppuControl_ & 0x04) != 0)
-        {
-            background_.CurrentAddress += 32;
-        }
-        else
-        {
-            background_.CurrentAddress += 1;
-        }
-
+        background_.CurrentAddress += addressIncrement_;
         return data;
     }
 
@@ -183,11 +176,14 @@ void Ppu::Write(uint16_t address, uint8_t value)
     switch (address)
     {
     case 0:
-        ppuControl_ = value;
+        // PPUCTRL flags
+        enableVBlankInterrupt_ = (value & 0x80) != 0;
+        // TODO: Sprite size (value & 0x20)
+        background_.SetBasePatternAddress((uint16_t)((value & 0x10) << 8));
+        sprites_   .SetBasePatternAddress((uint16_t)((value & 0x08) << 9));
+        addressIncrement_ = (value & 0x04) != 0 ? 32 : 1;
 
-        background_.SetBasePatternAddress((uint16_t)((ppuControl_ & 0x10) << 8));
-        sprites_   .BasePatternAddress((uint16_t)((ppuControl_ & 0x08) << 9));
-
+        // set base nametable address
         initialAddress_ &= 0xf3ff;
         initialAddress_ |= (uint16_t)((value & 3) << 10);
         return;
@@ -253,14 +249,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
             bus_.PpuWrite(writeAddress, value);
         }
 
-        if ((ppuControl_ & 0x04) != 0)
-        {
-            background_.CurrentAddress += 32;
-        }
-        else
-        {
-            background_.CurrentAddress += 1;
-        }
+        background_.CurrentAddress += addressIncrement_;
         return;
     }
 

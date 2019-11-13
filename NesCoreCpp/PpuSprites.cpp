@@ -8,7 +8,7 @@ PpuSprites::PpuSprites(Bus& bus) :
 {
 }
 
-void PpuSprites::BasePatternAddress(uint16_t address)
+void PpuSprites::SetBasePatternAddress(uint16_t address)
 {
     spritePatternBase_ = address;
 }

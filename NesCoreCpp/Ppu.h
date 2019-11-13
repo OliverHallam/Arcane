@@ -30,11 +30,15 @@ private:
     uint32_t frameCount_{};
 
     uint8_t ppuStatus_{};
-    uint8_t ppuControl_{};
 
     bool addressLatch_{};
     uint8_t ppuData_{};
 
+    // PPUCTRL
+    bool enableVBlankInterrupt_{};
+    uint16_t addressIncrement_{1};
+
+    // PPUMASK
     bool enableBackground_{};
     bool enableForeground_{};
 

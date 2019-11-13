@@ -9,7 +9,7 @@ class PpuSprites
 public:
     PpuSprites(Bus& bus);
 
-    void BasePatternAddress(uint16_t address);
+    void SetBasePatternAddress(uint16_t address);
 
     void OamAddress(uint8_t value);
     void WriteOam(uint8_t value);
