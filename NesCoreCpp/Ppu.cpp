@@ -16,19 +16,19 @@ uint32_t Ppu::FrameCount()
     return frameCount_;
 }
 
-void Ppu::Tick()
+void Ppu::Tick3()
 {
-    targetCycle_++;
-    if (targetCycle_ == 340)
+    targetCycle_ += 3;
+    if (targetCycle_ >= 340)
     {
-        Sync();
-        targetCycle_ = -1;
+        Sync(340);
+        targetCycle_ -= 341;
     }
 }
 
 uint8_t Ppu::Read(uint16_t address)
 {
-    Sync();
+    Sync(targetCycle_);
 
     address &= 0x07;
 
@@ -74,7 +74,7 @@ uint8_t Ppu::Read(uint16_t address)
 
 void Ppu::Write(uint16_t address, uint8_t value)
 {
-    Sync();
+    Sync(targetCycle_);
 
     address &= 0x07;
     switch (address)
@@ -168,11 +168,11 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
-void Ppu::Sync()
+void Ppu::Sync(int32_t targetCycle)
 {
     if (currentScanline_ < 240)
     {
-        while (scanlineCycle_ < targetCycle_)
+        while (scanlineCycle_ < targetCycle)
         {
             RunTickRender();
             scanlineCycle_++;
@@ -180,7 +180,7 @@ void Ppu::Sync()
     }
     else if (currentScanline_ == 241)
     {
-        while (scanlineCycle_ < targetCycle_)
+        while (scanlineCycle_ < targetCycle)
         {
             RunTickPostRender();
             scanlineCycle_++;
@@ -188,13 +188,13 @@ void Ppu::Sync()
     }
     else if (currentScanline_ == 261)
     {
-        while (scanlineCycle_ < targetCycle_)
+        while (scanlineCycle_ < targetCycle)
         {
             RunTickPreRender();
             scanlineCycle_++;
         }
 
-        if (scanlineCycle_ == 340)
+        if (scanlineCycle_ >= 340)
         {
             // the target cycle starts at -1 which gives us our extra tick at the start of the line
             scanlineCycle_ = 0;
@@ -204,10 +204,10 @@ void Ppu::Sync()
     }
     else
     {
-        scanlineCycle_ = targetCycle_;
+        scanlineCycle_ = targetCycle;
     }
 
-    if (scanlineCycle_ == 340)
+    if (scanlineCycle_ >= 340)
     {
         // the target cycle starts at -1 which gives us our extra tick at the start of the line
         scanlineCycle_ = 0;

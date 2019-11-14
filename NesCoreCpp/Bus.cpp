@@ -35,9 +35,7 @@ void Bus::Attach(std::unique_ptr<Cart> cart)
 
 void Bus::TickCpu()
 {
-    ppu_->Tick();
-    ppu_->Tick();
-    ppu_->Tick();
+    ppu_->Tick3();
 }
 
 uint8_t Bus::CpuReadData(uint16_t address)

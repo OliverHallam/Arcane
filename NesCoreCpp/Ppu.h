@@ -15,7 +15,7 @@ public:
 
     uint32_t FrameCount();
 
-    void Tick();
+    void Tick3();
 
     uint8_t Read(uint16_t address);
     void Write(uint16_t address, uint8_t value);
@@ -23,7 +23,7 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    void Sync();
+    void Sync(int32_t targetCycle);
 
     void RunTickPreRender();
     void RunTickRender();
