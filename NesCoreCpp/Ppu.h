@@ -23,6 +23,12 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
+    void Sync();
+
+    void RunTickPreRender();
+    void RunTickRender();
+    void RunTickPostRender();
+
     Bus& bus_;
     Display& display_;
 
@@ -49,8 +55,10 @@ private:
 
     uint8_t palette_[32];
 
-    int32_t currentScanline_{ -1 };
+    int32_t currentScanline_{ 0 };
     int32_t scanlineCycle_{ -1 };
+
+    int32_t targetCycle_{ -1 };
 
     PpuBackground background_;
     PpuSprites sprites_;
