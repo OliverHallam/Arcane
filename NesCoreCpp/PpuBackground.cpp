@@ -27,7 +27,7 @@ int8_t PpuBackground::Render()
         | (patternShiftLow_ & patternMask_) >> patternBitShift_);
 
     if (index == 0)
-        return -1;
+        return 0;
 
     index |= (uint8_t)((attributeShift_ & attributeMask_) >> attributeBitShift_); // palette
     return index;

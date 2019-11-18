@@ -287,55 +287,60 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
 void Ppu::RenderScanline(int32_t targetCycle)
 {
-    if (!enableRendering_)
+    if (enableRendering_ && scanlineCycle_ < 256)
     {
-        auto bgColour = palette_[0];
-        while (scanlineCycle_ < 256)
+        auto maxIndex = std::min(256, targetCycle);
+
+        if (enableBackground_)
         {
-            display_.WritePixel(bgColour);
-
-            scanlineCycle_++;
-
-            if (scanlineCycle_ == targetCycle)
-                return;
+            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+            {
+                scanlineData_[pixelIndex] = background_.Render();
+                background_.Tick(pixelIndex);
+            }
         }
-    }
-    else
-    {
-        while (scanlineCycle_ < 256)
+        else
         {
-            auto pixelRendered = false;
-            auto currentPixel = 0;
-
-            if (enableBackground_)
+            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
             {
-                auto backgroundPixel = background_.Render();
-                pixelRendered = backgroundPixel > 0;
-                if (pixelRendered)
-                    currentPixel = backgroundPixel;
+                background_.Tick(pixelIndex);
             }
-
-            if (enableForeground_)
-            {
-                auto spritePixel = sprites_.RenderTick(pixelRendered);
-                if (spritePixel >= 0)
-                    currentPixel = spritePixel;
-            }
-
-            display_.WritePixel(palette_[currentPixel]);
-
-            background_.Tick(scanlineCycle_);
-            sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
-
-            scanlineCycle_++;
-
-            if (scanlineCycle_ == targetCycle)
-                return;
         }
+
+
+        if (enableForeground_)
+        {
+            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+            {
+                auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex] > 0);
+                if (spritePixel > 0)
+                    scanlineData_[pixelIndex] = spritePixel;
+
+                sprites_.EvaluationTick(currentScanline_, pixelIndex);
+            }
+        }
+        else
+        {
+            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+            {
+                sprites_.EvaluationTick(currentScanline_, pixelIndex);
+            }
+        }
+
+        scanlineCycle_ = maxIndex;
+        if (targetCycle_ <= 256)
+            return;
     }
 
     if (scanlineCycle_ == 256)
     {
+        for (auto pixel : scanlineData_)
+        {
+            display_.WritePixel(palette_[pixel]);
+        }
+
+        scanlineData_.fill(0);
+
         sprites_.HReset();
         display_.HBlank();
 

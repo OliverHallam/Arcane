@@ -3,6 +3,7 @@
 #include "PpuBackground.h"
 #include "PpuSprites.h"
 
+#include <array>
 #include <cstdint>
 
 class Bus;
@@ -62,4 +63,6 @@ private:
 
     PpuBackground background_;
     PpuSprites sprites_;
+
+    std::array<uint8_t, 256> scanlineData_{};
 };
