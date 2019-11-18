@@ -25,9 +25,9 @@ public:
 private:
     void Sync(int32_t targetCycle);
 
-    void RunTickPreRender();
-    void RunTickRender();
-    void RunTickPostRender();
+    void PreRenderScanline(int32_t targetCycle);
+    void RenderScanline(int32_t targetCycle);
+    void PostRenderScanline(int32_t targetCycle);
 
     Bus& bus_;
     Display& display_;

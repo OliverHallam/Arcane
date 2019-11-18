@@ -18,6 +18,8 @@ uint32_t Ppu::FrameCount()
 
 void Ppu::Tick3()
 {
+    // TODO: we need to sync the trigger for an NMI too
+
     targetCycle_ += 3;
     if (targetCycle_ >= 340)
     {
@@ -170,29 +172,20 @@ void Ppu::DmaWrite(uint8_t value)
 
 void Ppu::Sync(int32_t targetCycle)
 {
+    if (targetCycle_ <= currentScanline_)
+        return;
+
     if (currentScanline_ < 240)
     {
-        while (scanlineCycle_ < targetCycle)
-        {
-            RunTickRender();
-            scanlineCycle_++;
-        }
+        RenderScanline(targetCycle);
     }
     else if (currentScanline_ == 241)
     {
-        while (scanlineCycle_ < targetCycle)
-        {
-            RunTickPostRender();
-            scanlineCycle_++;
-        }
+        PostRenderScanline(targetCycle);
     }
     else if (currentScanline_ == 261)
     {
-        while (scanlineCycle_ < targetCycle)
-        {
-            RunTickPreRender();
-            scanlineCycle_++;
-        }
+        PreRenderScanline(targetCycle);
 
         if (scanlineCycle_ >= 340)
         {
@@ -215,7 +208,7 @@ void Ppu::Sync(int32_t targetCycle)
     }
 }
 
-void Ppu::RunTickPreRender()
+void Ppu::PreRenderScanline(int32_t targetCycle)
 {
     if (scanlineCycle_ == 0)
     {
@@ -223,15 +216,30 @@ void Ppu::RunTickPreRender()
         inVBlank_ = false;
     }
 
-    if (scanlineCycle_ < 256)
+    if (!enableRendering_)
     {
-        if (enableRendering_)
+        if (targetCycle <= 256)
+        {
+            scanlineCycle_ = targetCycle;
+            return;
+        }
+
+        scanlineCycle_ = 256;
+    }
+    else
+    {
+        while (scanlineCycle_ < 256)
         {
             background_.Tick(scanlineCycle_);
-            sprites_.EvaluationTick(-1, scanlineCycle_);
+            sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
+
+            scanlineCycle_++;
+            if (scanlineCycle_ == targetCycle)
+                return;
         }
     }
-    else if (scanlineCycle_ == 256)
+
+    if (scanlineCycle_ == 256)
     {
         sprites_.HReset();
         display_.HBlank();
@@ -240,8 +248,13 @@ void Ppu::RunTickPreRender()
         {
             background_.HReset(initialAddress_);
         }
+
+        scanlineCycle_ = 257;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
-    else if (scanlineCycle_ < 320)
+
+    while (scanlineCycle_ < 320)
     {
         if (enableRendering_)
         {
@@ -253,21 +266,43 @@ void Ppu::RunTickPreRender()
                 background_.VReset(initialAddress_);
             }
         }
+
+        scanlineCycle_++;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
-    else if (scanlineCycle_ < 336)
+
+    while (scanlineCycle_ < 336)
     {
         if (enableRendering_)
-        {
             background_.Tick(scanlineCycle_);
-        }
+
+        scanlineCycle_++;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
+
+    scanlineCycle_ = targetCycle;
 }
 
-void Ppu::RunTickRender()
+void Ppu::RenderScanline(int32_t targetCycle)
 {
-    if (scanlineCycle_ < 256)
+    if (!enableRendering_)
     {
-        if (currentScanline_ >= 0)
+        auto bgColour = palette_[0];
+        while (scanlineCycle_ < 256)
+        {
+            display_.WritePixel(bgColour);
+
+            scanlineCycle_++;
+
+            if (scanlineCycle_ == targetCycle)
+                return;
+        }
+    }
+    else
+    {
+        while (scanlineCycle_ < 256)
         {
             auto pixelRendered = false;
             auto currentPixel = 0;
@@ -288,15 +323,18 @@ void Ppu::RunTickRender()
             }
 
             display_.WritePixel(palette_[currentPixel]);
-        }
 
-        if (enableRendering_)
-        {
             background_.Tick(scanlineCycle_);
             sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
+
+            scanlineCycle_++;
+
+            if (scanlineCycle_ == targetCycle)
+                return;
         }
     }
-    else if (scanlineCycle_ == 256)
+
+    if (scanlineCycle_ == 256)
     {
         sprites_.HReset();
         display_.HBlank();
@@ -305,25 +343,36 @@ void Ppu::RunTickRender()
         {
             background_.HReset(initialAddress_);
         }
+
+        scanlineCycle_ = 257;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
-    else if (scanlineCycle_ < 320)
+
+    while (scanlineCycle_ < 320)
     {
         if (enableRendering_)
-        {
-            // sprite tile loading
             sprites_.LoadTick(currentScanline_, scanlineCycle_);
-        }
+
+        scanlineCycle_++;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
-    else if (scanlineCycle_ < 336)
+
+    while (scanlineCycle_ < 336)
     {
         if (enableRendering_)
-        {
             background_.Tick(scanlineCycle_);
-        }
+
+        scanlineCycle_++;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
+
+    scanlineCycle_ = targetCycle;
 }
 
-void Ppu::RunTickPostRender()
+void Ppu::PostRenderScanline(int32_t targetCycle)
 {
     if (scanlineCycle_ == 0)
     {
@@ -339,4 +388,6 @@ void Ppu::RunTickPostRender()
         // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
         inVBlank_ = true;
     }
+
+    scanlineCycle_ = targetCycle;
 }
