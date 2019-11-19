@@ -345,24 +345,25 @@ void Ppu::RenderScanline(int32_t targetCycle)
             return;
     }
 
-    while (scanlineCycle_ < 320)
+    if (enableRendering_)
     {
-        if (enableRendering_)
+        while (scanlineCycle_ < 320)
+        {
             sprites_.LoadTick(currentScanline_, scanlineCycle_);
 
-        scanlineCycle_++;
-        if (scanlineCycle_ == targetCycle)
-            return;
-    }
+            scanlineCycle_++;
+            if (scanlineCycle_ == targetCycle)
+                return;
+        }
 
-    while (scanlineCycle_ < 336)
-    {
-        if (enableRendering_)
+        while (scanlineCycle_ < 336)
+        {
             background_.Tick(scanlineCycle_);
 
-        scanlineCycle_++;
-        if (scanlineCycle_ == targetCycle)
-            return;
+            scanlineCycle_++;
+            if (scanlineCycle_ == targetCycle)
+                return;
+        }
     }
 
     scanlineCycle_ = targetCycle;
