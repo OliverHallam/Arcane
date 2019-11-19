@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 class Bus;
@@ -32,9 +33,12 @@ private:
 
     uint8_t nextTileId_{};
 
-    Tile loadingTile_{};
-    Tile nextTile_{};
-    Tile currentTile_{};
+    Tile loadingTile_;
+    uint32_t loadingIndex_{};
+    std::array<Tile, 32> scanlineTiles_;
+
+    uint32_t currentTileIndex_{};
+    Tile currentTile_;
 
     uint8_t fineX_{};
     int32_t patternBitShift_{};

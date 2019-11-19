@@ -34,7 +34,9 @@ void PpuBackground::Tick(int32_t scanlineCycle)
     switch (scanlineCycle & 0x07)
     {
     case 0:
-        nextTile_ = loadingTile_;
+        loadingIndex_++;
+        loadingIndex_ &= 0x1f;
+        scanlineTiles_[loadingIndex_] = loadingTile_;
 
     case 1:
     {
@@ -118,7 +120,10 @@ void PpuBackground::Tick(int32_t scanlineCycle)
     if (patternBitShift_ == 0)
     {
         patternBitShift_ = 7;
-        currentTile_ = nextTile_;
+
+        currentTileIndex_++;
+        currentTileIndex_ &= 0x1f;
+        currentTile_ = scanlineTiles_[currentTileIndex_];
     }
     else
     {
