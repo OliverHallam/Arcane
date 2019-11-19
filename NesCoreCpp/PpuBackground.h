@@ -35,10 +35,11 @@ private:
     Tile loadingTile_{};
     Tile nextTile_{};
     Tile currentTile_{};
-    
-    // cache for code performance
-    int32_t patternBitShift_{};
+
     uint8_t fineX_{};
+    int32_t patternBitShift_{};
+
+    // cache for code performance
     uint16_t backgroundPatternBase_{};
     uint16_t patternAddress_{};
 
