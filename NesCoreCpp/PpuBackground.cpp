@@ -29,7 +29,7 @@ int8_t PpuBackground::Render()
     return index;
 }
 
-void PpuBackground::Tick(int32_t scanlineCycle)
+void PpuBackground::Load(int32_t scanlineCycle)
 {
     switch (scanlineCycle & 0x07)
     {
@@ -116,7 +116,10 @@ void PpuBackground::Tick(int32_t scanlineCycle)
         }
         break;
     }
+}
 
+void PpuBackground::Tick(int32_t scanlineCycle)
+{
     if (patternBitShift_ == 0)
     {
         patternBitShift_ = 7;

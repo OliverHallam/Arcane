@@ -228,12 +228,23 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
     }
     else
     {
-        while (scanlineCycle_ < 256)
+        if (scanlineCycle_ < 256)
         {
-            background_.Tick(scanlineCycle_);
-            sprites_.EvaluationTick(currentScanline_, scanlineCycle_);
+            auto maxIndex = std::min(256, targetCycle);
 
-            scanlineCycle_++;
+            for (auto index = scanlineCycle_; index < maxIndex; index++)
+            {
+                background_.Load(index);
+            }
+
+            for (auto index = scanlineCycle_; index < maxIndex; index++)
+            {
+                background_.Tick(index);
+                sprites_.EvaluationTick(currentScanline_, index);
+
+            }
+
+            scanlineCycle_ = maxIndex;
             if (scanlineCycle_ == targetCycle)
                 return;
         }
@@ -275,7 +286,10 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
     while (scanlineCycle_ < 336)
     {
         if (enableRendering_)
+        {
+            background_.Load(scanlineCycle_);
             background_.Tick(scanlineCycle_);
+        }
 
         scanlineCycle_++;
         if (scanlineCycle_ == targetCycle)
@@ -290,6 +304,11 @@ void Ppu::RenderScanline(int32_t targetCycle)
     if (enableRendering_ && scanlineCycle_ < 256)
     {
         auto maxIndex = std::min(256, targetCycle);
+
+        for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+        {
+            background_.Load(pixelIndex);
+        }
 
         if (enableBackground_)
         {
@@ -306,7 +325,6 @@ void Ppu::RenderScanline(int32_t targetCycle)
                 background_.Tick(pixelIndex);
             }
         }
-
 
         if (enableForeground_)
         {
@@ -367,6 +385,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
         while (scanlineCycle_ < 336)
         {
+            background_.Load(scanlineCycle_);
             background_.Tick(scanlineCycle_);
 
             scanlineCycle_++;
