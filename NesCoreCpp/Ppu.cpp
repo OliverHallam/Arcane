@@ -304,21 +304,17 @@ void Ppu::RenderScanline(int32_t targetCycle)
     {
         while (scanlineCycle_ < 256)
         {
-            auto pixelRendered = false;
             auto currentPixel = 0;
 
             if (enableBackground_)
             {
-                auto backgroundPixel = background_.Render();
-                pixelRendered = backgroundPixel > 0;
-                if (pixelRendered)
-                    currentPixel = backgroundPixel;
+                currentPixel = background_.Render();
             }
 
             if (enableForeground_)
             {
-                auto spritePixel = sprites_.RenderTick(pixelRendered);
-                if (spritePixel >= 0)
+                auto spritePixel = sprites_.RenderTick(currentPixel != 0);
+                if (spritePixel > 0)
                     currentPixel = spritePixel;
             }
 

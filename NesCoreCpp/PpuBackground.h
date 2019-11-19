@@ -24,19 +24,21 @@ public:
 
 private:
     uint8_t nextTileId_{};
-    uint8_t nextPatternByteLow_{};
-    uint8_t nextPatternByteHigh_{};
+    uint8_t preloadPatternByteHigh_{};
+    uint8_t preloadPatternByteLow_{};
+    uint8_t preloadAttributeBits_{};
 
-    uint16_t patternShiftHigh_{};
-    uint16_t patternShiftLow_{};
-    uint32_t attributeShift_{};
-    uint16_t nextAttributeShift_{};
+    uint8_t nextPatternByteHigh_{};
+    uint8_t nextPatternByteLow_{};
+    uint8_t nextAttributeBits_{};
+
+    uint8_t patternByteHigh_{};
+    uint8_t patternByteLow_{};
+    uint8_t attributeBits_{};
 
     // cache for code performance
-    int32_t patternMask_{};
     int32_t patternBitShift_{};
-    int32_t attributeMask_{};
-    int32_t attributeBitShift_{};
+    uint8_t fineX_{};
     uint16_t backgroundPatternBase_{};
     uint16_t patternAddress_{};
 
