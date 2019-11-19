@@ -19,13 +19,13 @@ void PpuBackground::SetFineX(uint8_t value)
 int8_t PpuBackground::Render()
 {
     auto index = (uint8_t)(
-        ((patternByteHigh_ >> patternBitShift_) & 1) << 1) |
-        ((patternByteLow_ >> patternBitShift_) & 1);
+        ((currentTile_.PatternByteHigh >> patternBitShift_) & 1) << 1) |
+        ((currentTile_.PatternByteLow >> patternBitShift_) & 1);
 
     if (index == 0)
         return 0;
 
-    index |= attributeBits_; // palette
+    index |= currentTile_.AttributeBits; // palette
     return index;
 }
 
@@ -34,9 +34,7 @@ void PpuBackground::Tick(int32_t scanlineCycle)
     switch (scanlineCycle & 0x07)
     {
     case 0:
-        nextPatternByteHigh_ = preloadPatternByteHigh_;
-        nextPatternByteLow_ = preloadPatternByteLow_;
-        nextAttributeBits_ = preloadAttributeBits_;
+        nextTile_ = loadingTile_;
 
     case 1:
     {
@@ -60,7 +58,7 @@ void PpuBackground::Tick(int32_t scanlineCycle)
         attributes &= 0x03;
 
         // we've determined the palette index.  Lets duplicate this 8 times for the tile pixels
-        preloadAttributeBits_ = attributes;
+        loadingTile_.AttributeBits = attributes;
         break;
     }
 
@@ -71,12 +69,12 @@ void PpuBackground::Tick(int32_t scanlineCycle)
             (nextTileId_ << 4) |
                 (CurrentAddress >> 12)); // fineY
 
-        preloadPatternByteLow_ = bus_.PpuRead(patternAddress_);
+        loadingTile_.PatternByteLow = bus_.PpuRead(patternAddress_);
         break;
 
     case 7:
         // address is 000PTTTTTTTT1YYY
-        preloadPatternByteHigh_ = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+        loadingTile_.PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
 
         if (scanlineCycle == 255)
         {
@@ -121,10 +119,7 @@ void PpuBackground::Tick(int32_t scanlineCycle)
     if (patternBitShift_ == 0)
     {
         patternBitShift_ = 7;
-
-        patternByteHigh_ = nextPatternByteHigh_;
-        patternByteLow_ = nextPatternByteLow_;
-        attributeBits_ = nextAttributeBits_ << 2;
+        currentTile_ = nextTile_;
     }
     else
     {

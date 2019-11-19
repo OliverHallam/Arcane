@@ -23,19 +23,19 @@ public:
     uint16_t CurrentAddress{};
 
 private:
+    struct Tile
+    {
+        uint8_t PatternByteHigh{};
+        uint8_t PatternByteLow{};
+        uint8_t AttributeBits{};
+    };
+
     uint8_t nextTileId_{};
-    uint8_t preloadPatternByteHigh_{};
-    uint8_t preloadPatternByteLow_{};
-    uint8_t preloadAttributeBits_{};
 
-    uint8_t nextPatternByteHigh_{};
-    uint8_t nextPatternByteLow_{};
-    uint8_t nextAttributeBits_{};
-
-    uint8_t patternByteHigh_{};
-    uint8_t patternByteLow_{};
-    uint8_t attributeBits_{};
-
+    Tile loadingTile_{};
+    Tile nextTile_{};
+    Tile currentTile_{};
+    
     // cache for code performance
     int32_t patternBitShift_{};
     uint8_t fineX_{};
