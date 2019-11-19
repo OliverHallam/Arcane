@@ -13,23 +13,19 @@ void PpuBackground::SetBasePatternAddress(uint16_t address)
 
 void PpuBackground::SetFineX(uint8_t value)
 {
-    patternBitShift_ = 15 - value;
-    patternMask_ = 1 << patternBitShift_;
-
-    // 2 off since this maps to bits 2 and 3
-    attributeBitShift_ = 28 - 2 * value;
-    attributeMask_ = 3 << (attributeBitShift_ + 2);
+    fineX_ = value;
 }
 
 int8_t PpuBackground::Render()
 {
-    auto index = (uint8_t)((patternShiftHigh_ & patternMask_) >> (patternBitShift_ - 1)
-        | (patternShiftLow_ & patternMask_) >> patternBitShift_);
+    auto index = (uint8_t)(
+        ((currentTile_.PatternByteHigh >> patternBitShift_) & 1) << 1) |
+        ((currentTile_.PatternByteLow >> patternBitShift_) & 1);
 
     if (index == 0)
         return 0;
 
-    index |= (uint8_t)((attributeShift_ & attributeMask_) >> attributeBitShift_); // palette
+    index |= currentTile_.AttributeBits; // palette
     return index;
 }
 
@@ -38,10 +34,7 @@ void PpuBackground::Tick(int32_t scanlineCycle)
     switch (scanlineCycle & 0x07)
     {
     case 0:
-        patternShiftHigh_ |= nextPatternByteHigh_;
-        patternShiftLow_ |= nextPatternByteLow_;
-        attributeShift_ |= nextAttributeShift_;
-        break;
+        nextTile_ = loadingTile_;
 
     case 1:
     {
@@ -64,11 +57,7 @@ void PpuBackground::Tick(int32_t scanlineCycle)
         attributes >>= ((CurrentAddress & 0x0040) >> 4) | (CurrentAddress & 0x0002);
         attributes &= 0x03;
 
-        // we've determined the palette index.  Lets duplicate this 8 times for the tile pixels
-        nextAttributeShift_ = attributes;
-        nextAttributeShift_ |= (uint16_t)(nextAttributeShift_ << 2);
-        nextAttributeShift_ |= (uint16_t)(nextAttributeShift_ << 4);
-        nextAttributeShift_ |= (uint16_t)(nextAttributeShift_ << 8);
+        loadingTile_.AttributeBits = attributes << 2;
         break;
     }
 
@@ -79,12 +68,12 @@ void PpuBackground::Tick(int32_t scanlineCycle)
             (nextTileId_ << 4) |
                 (CurrentAddress >> 12)); // fineY
 
-        nextPatternByteLow_ = bus_.PpuRead(patternAddress_);
+        loadingTile_.PatternByteLow = bus_.PpuRead(patternAddress_);
         break;
 
     case 7:
         // address is 000PTTTTTTTT1YYY
-        nextPatternByteHigh_ = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+        loadingTile_.PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
 
         if (scanlineCycle == 255)
         {
@@ -126,15 +115,23 @@ void PpuBackground::Tick(int32_t scanlineCycle)
         break;
     }
 
-    patternShiftHigh_ <<= 1;
-    patternShiftLow_ <<= 1;
-    attributeShift_ <<= 2;
+    if (patternBitShift_ == 0)
+    {
+        patternBitShift_ = 7;
+        currentTile_ = nextTile_;
+    }
+    else
+    {
+        patternBitShift_--;
+    }
 }
 
 void PpuBackground::HReset(uint16_t initialAddress)
 {
     CurrentAddress &= 0xfbe0;
     CurrentAddress |= (uint16_t)(initialAddress & 0x041f);
+
+    patternBitShift_ =  7- fineX_;
 }
 
 void PpuBackground::VReset(uint16_t initialAddress)
