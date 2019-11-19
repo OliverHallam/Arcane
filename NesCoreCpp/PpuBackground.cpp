@@ -57,7 +57,6 @@ void PpuBackground::Tick(int32_t scanlineCycle)
         attributes >>= ((CurrentAddress & 0x0040) >> 4) | (CurrentAddress & 0x0002);
         attributes &= 0x03;
 
-        // we've determined the palette index.  Lets duplicate this 8 times for the tile pixels
         loadingTile_.AttributeBits = attributes << 2;
         break;
     }
