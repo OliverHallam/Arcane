@@ -15,7 +15,7 @@ public:
     void SetFineX(uint8_t value);
 
     int8_t Render();
-    void Load(int32_t scanlineCycle);
+    void RunLoad(int32_t startCycle, int32_t endCycle);
     void Tick(int32_t scanlineCycle);
 
     void HReset(uint16_t initialAddress);
