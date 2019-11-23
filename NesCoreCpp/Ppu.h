@@ -55,6 +55,7 @@ private:
     uint16_t initialAddress_{};
 
     uint8_t palette_[32];
+    uint32_t rgbPalette_[32];
 
     int32_t currentScanline_{ 0 };
     int32_t scanlineCycle_{ -1 };

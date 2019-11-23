@@ -145,10 +145,15 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 // zero colors are mirrored
                 palette_[writeAddress & 0x000f] = value;
                 palette_[(writeAddress & 0x000f) | 0x0010] = value;
+
+                auto rgb = display_.GetPixel(value);
+                rgbPalette_[writeAddress & 0x000f] = rgb;
+                rgbPalette_[(writeAddress & 0x000f) | 0x0010] = rgb;
             }
             else
             {
                 palette_[writeAddress & 0x001f] = value;
+                rgbPalette_[writeAddress & 0x001f] = display_.GetPixel(value);
             }
         }
         else
@@ -342,7 +347,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
     {
         for (auto pixel : scanlineData_)
         {
-            display_.WritePixel(palette_[pixel]);
+            display_.WritePixel(rgbPalette_[pixel]);
         }
 
         scanlineData_.fill(0);
