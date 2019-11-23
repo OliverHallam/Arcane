@@ -16,7 +16,7 @@ public:
 
     int8_t Render();
     void RunLoad(int32_t startCycle, int32_t endCycle);
-    void Tick(int32_t scanlineCycle);
+    void Tick();
 
     void HReset(uint16_t initialAddress);
     void VReset(uint16_t initialAddress);

@@ -23,63 +23,70 @@ void PpuSprites::WriteOam(uint8_t value)
     oam_[oamAddress_++] = value;
 }
 
-void PpuSprites::EvaluationTick(uint32_t scanline, uint32_t scanlineCycle)
+void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
+    if (scanlineCycle < 64)
+    {
+        if (64 >= targetCycle)
+            return;
+    }
+
     if ((scanlineCycle & 1) == 0)
     {
         // setting up the read/write
-        return;
+        scanlineCycle++;
     }
 
-    if (scanlineCycle < 64)
+    while (scanlineCycle < targetCycle)
     {
-        return;
-    }
-
-    if (oamAddress_ >= 256)
-    {
-        return;
-    }
-
-    oamData_ = oam_[oamAddress_];
-    if (oamCopyIndex_ < 32)
-    {
-        oamCopy_[oamCopyIndex_] = oamData_;
-
-        if ((oamAddress_ & 0x03) != 0)
+        if (oamAddress_ >= 256)
         {
-            oamAddress_++;
-            oamCopyIndex_++;
             return;
         }
-    }
 
-    auto spriteRow = (uint32_t)(scanline - oamData_);
-    bool visible = spriteRow < 8;
-
-    if (oamAddress_ == 0)
-    {
-        sprite0Selected_ = visible;
-    }
-
-    if (visible)
-    {
-        if (oamCopyIndex_ >= 32)
+        oamData_ = oam_[oamAddress_];
+        if (oamCopyIndex_ < 32)
         {
-            spriteOverflow_ = true;
-            oamAddress_ += 4;
+            oamCopy_[oamCopyIndex_] = oamData_;
+
+            if ((oamAddress_ & 0x03) != 0)
+            {
+                oamAddress_++;
+                oamCopyIndex_++;
+                scanlineCycle += 2;
+                continue;
+            }
+        }
+
+        auto spriteRow = (uint32_t)(scanline - oamData_);
+        bool visible = spriteRow < 8;
+
+        if (oamAddress_ == 0)
+        {
+            sprite0Selected_ = visible;
+        }
+
+        if (visible)
+        {
+            if (oamCopyIndex_ >= 32)
+            {
+                spriteOverflow_ = true;
+                oamAddress_ += 4;
+            }
+            else
+            {
+                oamAddress_++;
+                oamCopyIndex_++;
+            }
         }
         else
         {
-            oamAddress_++;
-            oamCopyIndex_++;
-        }
-    }
-    else
-    {
-        oamAddress_ += 4;
+            oamAddress_ += 4;
 
-        // TODO: overflow bug
+            // TODO: overflow bug
+        }
+
+        scanlineCycle += 2;
     }
 }
 

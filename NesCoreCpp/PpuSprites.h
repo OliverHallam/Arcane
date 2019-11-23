@@ -14,7 +14,7 @@ public:
     void SetOamAddress(uint8_t value);
     void WriteOam(uint8_t value);
 
-    void EvaluationTick(uint32_t scanline, uint32_t scanlineCycle);
+    void RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
 
     void HReset();
 

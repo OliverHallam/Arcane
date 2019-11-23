@@ -236,10 +236,10 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
             for (auto index = scanlineCycle_; index < maxIndex; index++)
             {
-                background_.Tick(index);
-                sprites_.EvaluationTick(currentScanline_, index);
-
+                background_.Tick();
             }
+
+            sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
 
             scanlineCycle_ = maxIndex;
             if (scanlineCycle_ == targetCycle)
@@ -285,7 +285,7 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
         if (enableRendering_)
         {
             background_.RunLoad(scanlineCycle_, scanlineCycle_ + 1);
-            background_.Tick(scanlineCycle_);
+            background_.Tick();
         }
 
         scanlineCycle_++;
@@ -309,14 +309,14 @@ void Ppu::RenderScanline(int32_t targetCycle)
             for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
             {
                 scanlineData_[pixelIndex] = background_.Render();
-                background_.Tick(pixelIndex);
+                background_.Tick();
             }
         }
         else
         {
             for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
             {
-                background_.Tick(pixelIndex);
+                background_.Tick();
             }
         }
 
@@ -327,17 +327,10 @@ void Ppu::RenderScanline(int32_t targetCycle)
                 auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex] > 0);
                 if (spritePixel > 0)
                     scanlineData_[pixelIndex] = spritePixel;
+            }
+        }
 
-                sprites_.EvaluationTick(currentScanline_, pixelIndex);
-            }
-        }
-        else
-        {
-            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
-            {
-                sprites_.EvaluationTick(currentScanline_, pixelIndex);
-            }
-        }
+        sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
 
         scanlineCycle_ = maxIndex;
         if (targetCycle_ <= 256)
@@ -380,7 +373,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
         while (scanlineCycle_ < 336)
         {
             background_.RunLoad(scanlineCycle_, scanlineCycle_);
-            background_.Tick(scanlineCycle_);
+            background_.Tick();
 
             scanlineCycle_++;
             if (scanlineCycle_ == targetCycle)
