@@ -166,7 +166,7 @@ bool PpuSprites::SpriteOverflow()
     return spriteOverflow_;
 }
 
-void PpuSprites::LoadTick(uint32_t currentScanline, uint32_t scanlineCycle)
+void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
@@ -175,37 +175,79 @@ void PpuSprites::LoadTick(uint32_t currentScanline, uint32_t scanlineCycle)
 
     switch (scanlineCycle & 0x07)
     {
-    case 5:
-    {
-        auto oamAddress = spriteIndex_ << 2;
-
-        auto attributes = oamCopy_[oamAddress + 2];
-        sprites_[spriteIndex_].attributes = attributes;
-        sprites_[spriteIndex_].X = oamCopy_[oamAddress + 3];
-
-        auto tileId = oamCopy_[oamAddress + 1];
-
-        auto tileFineY = currentScanline - oamCopy_[oamAddress];
-
-        if ((attributes & 0x80) != 0)
+        while (true)
         {
-            tileFineY = 7 - tileFineY;
-        }
+    case 0:
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
 
-        // address is 000PTTTTTTTT0YYY
-        patternAddress_ = (uint16_t)
-            (spritePatternBase_ | // pattern selector
-            (tileId << 4) |
-                tileFineY);
-        sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
+    case 1:
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
 
-        break;
-    }
+    case 2:
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
+
+    case 3:
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
+
+    case 4:
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
+
+    case 5:
+            {
+                auto oamAddress = spriteIndex_ << 2;
+
+                auto attributes = oamCopy_[oamAddress + 2];
+                sprites_[spriteIndex_].attributes = attributes;
+                sprites_[spriteIndex_].X = oamCopy_[oamAddress + 3];
+
+                auto tileId = oamCopy_[oamAddress + 1];
+
+                auto tileFineY = currentScanline - oamCopy_[oamAddress];
+
+                if ((attributes & 0x80) != 0)
+                {
+                    tileFineY = 7 - tileFineY;
+                }
+
+                // address is 000PTTTTTTTT0YYY
+                patternAddress_ = (uint16_t)
+                    (spritePatternBase_ | // pattern selector
+                    (tileId << 4) |
+                        tileFineY);
+                sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
+            }
+
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
+
+    case 6:
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
 
     case 7:
-        // address is 000PTTTTTTTT1YYY
-        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
-        spriteIndex_++;
-        break;
+            // address is 000PTTTTTTTT1YYY
+            sprites_[spriteIndex_].patternShiftHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+            spriteIndex_++;
+
+            if (spriteIndex_ >= scanlineSpriteCount_)
+                return;
+
+            scanlineCycle++;
+            if (scanlineCycle >= targetCycle)
+                return;
+
+        }
     }
 }

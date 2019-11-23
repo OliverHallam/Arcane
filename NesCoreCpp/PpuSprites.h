@@ -23,7 +23,7 @@ public:
     bool Sprite0Hit();
     bool SpriteOverflow();
 
-    void LoadTick(uint32_t scanline, uint32_t scanlineCycle);
+    void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
 
     void VReset();
 

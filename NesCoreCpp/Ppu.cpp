@@ -177,7 +177,7 @@ void Ppu::DmaWrite(uint8_t value)
 
 void Ppu::Sync(int32_t targetCycle)
 {
-    if (targetCycle_ <= currentScanline_)
+    if (targetCycle_ <= scanlineCycle_)
         return;
 
     if (currentScanline_ < 240)
@@ -221,22 +221,12 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
         inVBlank_ = false;
     }
 
-    if (!enableRendering_)
+    if (scanlineCycle_ < 256)
     {
-        if (targetCycle <= 256)
-        {
-            scanlineCycle_ = targetCycle;
-            return;
-        }
+        auto maxIndex = std::min(256, targetCycle);
 
-        scanlineCycle_ = 256;
-    }
-    else
-    {
-        if (scanlineCycle_ < 256 && scanlineCycle_ < targetCycle)
+        if (enableRendering_)
         {
-            auto maxIndex = std::min(256, targetCycle);
-
             background_.RunLoad(scanlineCycle_, maxIndex);
 
             for (auto index = scanlineCycle_; index < maxIndex; index++)
@@ -245,11 +235,11 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
             }
 
             sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
-
-            scanlineCycle_ = maxIndex;
-            if (scanlineCycle_ == targetCycle)
-                return;
         }
+
+        scanlineCycle_ = maxIndex;
+        if (scanlineCycle_ == targetCycle)
+            return;
     }
 
     if (scanlineCycle_ == 256)
@@ -267,35 +257,43 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
             return;
     }
 
-    while (scanlineCycle_ < 320)
+    if (scanlineCycle_ < 320)
     {
         if (enableRendering_)
         {
-            // sprite tile loading
-            sprites_.LoadTick(-1, scanlineCycle_);
-
-            if (scanlineCycle_ >= 279 && scanlineCycle_ < 304)
+            if (targetCycle >= 280 && scanlineCycle_ < 304)
             {
                 background_.VReset(initialAddress_);
             }
+
+            auto maxCycle = std::min(targetCycle, 320);
+
+            // sprite tile loading
+            sprites_.RunLoad(-1, scanlineCycle_, maxCycle);
+
+            scanlineCycle_ = maxCycle;
+        }
+        else
+        {
+            scanlineCycle_ = 320;
         }
 
-        scanlineCycle_++;
-        if (scanlineCycle_ == targetCycle)
+        if (scanlineCycle_ >= targetCycle)
             return;
     }
 
-    while (scanlineCycle_ < 336)
+    if (enableRendering_)
     {
-        if (enableRendering_)
-        {
-            background_.RunLoad(scanlineCycle_, scanlineCycle_ + 1);
-            background_.Tick();
-        }
+        auto maxCycle = std::min(targetCycle, 336);
 
-        scanlineCycle_++;
-        if (scanlineCycle_ == targetCycle)
-            return;
+        // sprite tile loading
+        background_.RunLoad(scanlineCycle_, maxCycle);
+
+        while (scanlineCycle_ < maxCycle)
+        {
+            background_.Tick();
+            scanlineCycle_++;
+        }
     }
 
     scanlineCycle_ = targetCycle;
@@ -303,43 +301,46 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
 void Ppu::RenderScanline(int32_t targetCycle)
 {
-    if (enableRendering_ && scanlineCycle_ < 256)
+    if (scanlineCycle_ < 256)
     {
         auto maxIndex = std::min(256, targetCycle);
 
-        background_.RunLoad(scanlineCycle_, maxIndex);
-
-        if (enableBackground_)
+        if (enableRendering_)
         {
-            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
-            {
-                auto pixel = background_.Render();
-                scanlineData_[pixelIndex] = pixel;
-                background_.Tick();
-            }
-        }
-        else
-        {
-            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
-            {
-                background_.Tick();
-            }
-        }
+            background_.RunLoad(scanlineCycle_, maxIndex);
 
-        if (enableForeground_)
-        {
-            for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+            if (enableBackground_)
             {
-                auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex]);
-                if (spritePixel > 0)
-                    scanlineData_[pixelIndex] = spritePixel;
+                for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+                {
+                    auto pixel = background_.Render();
+                    scanlineData_[pixelIndex] = pixel;
+                    background_.Tick();
+                }
             }
-        }
+            else
+            {
+                for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+                {
+                    background_.Tick();
+                }
+            }
 
-        sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
+            if (enableForeground_)
+            {
+                for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
+                {
+                    auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex]);
+                    if (spritePixel > 0)
+                        scanlineData_[pixelIndex] = spritePixel;
+                }
+            }
+
+            sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
+        }
 
         scanlineCycle_ = maxIndex;
-        if (targetCycle_ <= 256)
+        if (scanlineCycle_ >= targetCycle)
             return;
     }
 
@@ -365,25 +366,32 @@ void Ppu::RenderScanline(int32_t targetCycle)
             return;
     }
 
-    if (enableRendering_)
+    if (scanlineCycle_ < 320)
     {
-        while (scanlineCycle_ < 320)
-        {
-            sprites_.LoadTick(currentScanline_, scanlineCycle_);
+        auto maxIndex = std::min(320, targetCycle);
 
-            scanlineCycle_++;
-            if (scanlineCycle_ == targetCycle)
-                return;
+        if (enableRendering_)
+        {
+            sprites_.RunLoad(currentScanline_, scanlineCycle_, maxIndex);
         }
 
-        while (scanlineCycle_ < 336)
-        {
-            background_.RunLoad(scanlineCycle_, scanlineCycle_);
-            background_.Tick();
+        scanlineCycle_ = maxIndex;
+        if (scanlineCycle_ == targetCycle)
+            return;
+    }
 
+    if (scanlineCycle_ < 336)
+    {
+        auto maxIndex = std::min(336, targetCycle);
+        if (enableRendering_)
+        {
+            background_.RunLoad(scanlineCycle_, maxIndex);
+        }
+
+        while (scanlineCycle_ < maxIndex)
+        {
+            background_.Tick();
             scanlineCycle_++;
-            if (scanlineCycle_ == targetCycle)
-                return;
         }
     }
 
