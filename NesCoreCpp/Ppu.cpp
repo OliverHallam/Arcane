@@ -308,7 +308,8 @@ void Ppu::RenderScanline(int32_t targetCycle)
         {
             for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
             {
-                scanlineData_[pixelIndex] = background_.Render();
+                auto pixel = background_.Render();
+                scanlineData_[pixelIndex] = pixel;
                 background_.Tick();
             }
         }
@@ -324,7 +325,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
         {
             for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
             {
-                auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex] > 0);
+                auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex]);
                 if (spritePixel > 0)
                     scanlineData_[pixelIndex] = spritePixel;
             }

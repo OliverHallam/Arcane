@@ -14,7 +14,7 @@ public:
 
     void SetFineX(uint8_t value);
 
-    int8_t Render();
+    uint8_t Render();
     void RunLoad(int32_t startCycle, int32_t endCycle);
     void Tick();
 

@@ -16,17 +16,15 @@ void PpuBackground::SetFineX(uint8_t value)
     fineX_ = value;
 }
 
-int8_t PpuBackground::Render()
+uint8_t PpuBackground::Render()
 {
     auto index = (uint8_t)(
         ((currentTile_.PatternByteHigh >> patternBitShift_) & 1) << 1) |
         ((currentTile_.PatternByteLow >> patternBitShift_) & 1);
 
-    if (index == 0)
-        return 0;
-
+    // this looks inefficient but compiles to a cmov instead of a conditional jump
     index |= currentTile_.AttributeBits; // palette
-    return index;
+    return index & 3 ? index : 0;
 }
 
 void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
