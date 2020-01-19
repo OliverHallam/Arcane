@@ -35,9 +35,6 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
     case 0:
         while (true)
         {
-            loadingIndex_++;
-            loadingIndex_ &= 0x1f;
-            scanlineTiles_[loadingIndex_] = loadingTile_;
             cycle++;
             if (cycle >= endCycle)
                 return;
@@ -70,7 +67,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
                 loadingTile_.AttributeBits = attributes << 2;
             }
-            cycle ++;
+            cycle++;
 
     case 4:
             cycle++;
@@ -85,7 +82,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                     (CurrentAddress >> 12)); // fineY
 
             loadingTile_.PatternByteLow = bus_.PpuRead(patternAddress_);
-            cycle ++;
+            cycle++;
 
     case 6:
             cycle++;
@@ -95,6 +92,12 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
     case 7:
             // address is 000PTTTTTTTT1YYY
             loadingTile_.PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+
+            scanlineTiles_[loadingIndex_] = loadingTile_;
+
+            loadingIndex_++;
+            if (loadingIndex_ == 34)
+                loadingIndex_ = 0;
 
             if (cycle == 255)
             {
@@ -147,7 +150,9 @@ void PpuBackground::Tick()
         patternBitShift_ = 7;
 
         currentTileIndex_++;
-        currentTileIndex_ &= 0x1f;
+        if (currentTileIndex_ == 34)
+            currentTileIndex_ = 0;
+
         currentTile_ = scanlineTiles_[currentTileIndex_];
     }
     else
@@ -161,7 +166,7 @@ void PpuBackground::HReset(uint16_t initialAddress)
     CurrentAddress &= 0xfbe0;
     CurrentAddress |= (uint16_t)(initialAddress & 0x041f);
 
-    patternBitShift_ =  7- fineX_;
+    patternBitShift_ =  7 - fineX_;
 }
 
 void PpuBackground::VReset(uint16_t initialAddress)

@@ -35,8 +35,8 @@ private:
     uint8_t nextTileId_{};
 
     Tile loadingTile_;
-    uint32_t loadingIndex_{};
-    std::array<Tile, 32> scanlineTiles_;
+    uint32_t loadingIndex_{2};
+    std::array<Tile, 34> scanlineTiles_;
 
     uint32_t currentTileIndex_{};
     Tile currentTile_;
