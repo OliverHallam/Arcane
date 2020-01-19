@@ -16,6 +16,8 @@ public:
 
     uint8_t Render();
     void RunLoad(int32_t startCycle, int32_t endCycle);
+    void RunLoad(int32_t startCycle);
+    void RunLoad();
     void Tick();
 
     void HReset(uint16_t initialAddress);
@@ -34,7 +36,6 @@ private:
 
     uint8_t nextTileId_{};
 
-    Tile loadingTile_;
     uint32_t loadingIndex_{2};
     std::array<Tile, 34> scanlineTiles_;
 
