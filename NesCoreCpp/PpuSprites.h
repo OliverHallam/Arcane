@@ -18,7 +18,7 @@ public:
 
     void HReset();
 
-    int8_t RenderTick(bool pixelRendered);
+    void RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const std::array<uint8_t, 256>& backgroundPixels);
 
     bool Sprite0Hit();
     bool SpriteOverflow();
@@ -26,6 +26,9 @@ public:
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
 
     void VReset();
+
+    const std::array<uint8_t, 256>& ScanlineAttributes() const;
+    const std::array<uint8_t, 256>& ScanlinePixels() const;
 
 private:
     struct Sprite
@@ -55,4 +58,7 @@ private:
 
     bool sprite0Hit_{};
     bool spriteOverflow_{};
+
+    std::array<uint8_t, 256> scanlineAttributes_{};
+    std::array<uint8_t, 256> scanlineData_{};
 };

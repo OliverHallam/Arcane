@@ -33,7 +33,6 @@ private:
     Bus& bus_;
     Display& display_;
 
-    // approx!
     uint32_t frameCount_{};
 
     bool addressLatch_{};
@@ -65,5 +64,5 @@ private:
     PpuBackground background_;
     PpuSprites sprites_;
 
-    std::array<uint8_t, 256> scanlineData_{};
+    std::array<uint8_t, 256> backgroundPixels_{};
 };

@@ -314,7 +314,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
                 for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
                 {
                     auto pixel = background_.Render();
-                    scanlineData_[pixelIndex] = pixel;
+                    backgroundPixels_[pixelIndex] = pixel;
                     background_.Tick();
                 }
             }
@@ -328,12 +328,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
             if (enableForeground_)
             {
-                for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
-                {
-                    auto spritePixel = sprites_.RenderTick(scanlineData_[pixelIndex]);
-                    if (spritePixel > 0)
-                        scanlineData_[pixelIndex] = spritePixel;
-                }
+                sprites_.RunRender(scanlineCycle_, maxIndex, backgroundPixels_);
             }
 
             sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
@@ -346,12 +341,32 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
     if (scanlineCycle_ == 256)
     {
-        for (auto pixel : scanlineData_)
+        // merge the sprites and the background
+        auto& spriteAttributes = sprites_.ScanlineAttributes();
+        auto& spritePixels = sprites_.ScanlinePixels();
+
+        if (enableForeground_)
         {
-            display_.WritePixel(rgbPalette_[pixel]);
+            uint8_t pixel;
+            for (auto i = 0; i < 256; i++)
+            {
+                if (spriteAttributes[i] & 0x20)
+                    pixel = backgroundPixels_[i] ? backgroundPixels_[i] : spritePixels[i];
+                else
+                    pixel = spritePixels[i] ? spritePixels[i] : backgroundPixels_[i];
+
+                display_.WritePixel(rgbPalette_[pixel]);
+            }
+        }
+        else
+        {
+            for (auto i = 0; i < 256; i++)
+            {
+                display_.WritePixel(backgroundPixels_[i]);
+            }
         }
 
-        scanlineData_.fill(0);
+        backgroundPixels_.fill(0);
 
         sprites_.HReset();
         display_.HBlank();

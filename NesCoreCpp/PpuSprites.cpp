@@ -90,55 +90,47 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
     }
 }
 
-int8_t PpuSprites::RenderTick(bool pixelRendered)
+void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const std::array<uint8_t, 256>& backgroundPixels)
 {
-    uint8_t result = 0;
-    auto drawnSprite = false;
-
-    for (auto i = 0; i < scanlineSpriteCount_; i++)
+    // evaluate the sprites backwards to overwrite them in the right order
+    for (auto spriteIndex = scanlineSpriteCount_ - 1; spriteIndex >= 0; spriteIndex--)
     {
-        if (sprites_[i].X != 0)
+        auto& sprite = sprites_[spriteIndex];
+        auto startX = std::max((uint32_t)sprite.X, scanlineCycle);
+        auto endX = std::min((uint32_t)sprite.X + 8, targetCycle);
+
+        for (auto cycle = startX; cycle < endX; cycle++)
         {
-            sprites_[i].X--;
-            continue;
-        }
-
-        uint8_t pixel;
-        if ((sprites_[i].attributes & 0x40) == 0)
-        {
-            pixel = (uint8_t)((sprites_[i].patternShiftHigh & 0x80) >> 6 | (sprites_[i].patternShiftLow & 0x80) >> 7);
-
-            sprites_[i].patternShiftHigh <<= 1;
-            sprites_[i].patternShiftLow <<= 1;
-        }
-        else
-        {
-            pixel = (uint8_t)((sprites_[i].patternShiftHigh & 0x01) << 1 | sprites_[i].patternShiftLow & 0x01);
-
-            sprites_[i].patternShiftHigh >>= 1;
-            sprites_[i].patternShiftLow >>= 1;
-        }
-
-        if (pixel != 0 && !drawnSprite)
-        {
-            drawnSprite = true;
-
-            if (pixelRendered)
+            uint8_t pixel;
+            if ((sprite.attributes & 0x40) == 0)
             {
-                sprite0Hit_ |= i == 0 && sprite0Visible_;
+                pixel = (uint8_t)((sprite.patternShiftHigh & 0x80) >> 6 | (sprite.patternShiftLow & 0x80) >> 7);
 
-                if ((sprites_[i].attributes & 0x20) != 0)
-                {
-                    continue;
-                }
+                sprite.patternShiftHigh <<= 1;
+                sprite.patternShiftLow <<= 1;
+            }
+            else
+            {
+                pixel = (uint8_t)((sprite.patternShiftHigh & 0x01) << 1 | sprite.patternShiftLow & 0x01);
+
+                sprite.patternShiftHigh >>= 1;
+                sprite.patternShiftLow >>= 1;
             }
 
-            pixel |= (uint8_t)((0x04 | (sprites_[i].attributes & 0x03)) << 2); // palette
-            result = pixel;
+            if (pixel != 0)
+            {
+                if (spriteIndex == 0 && sprite0Visible_ && backgroundPixels[cycle])
+                {
+                    sprite0Hit_ = true;
+                }
+
+                pixel |= (uint8_t)((0x04 | (sprite.attributes & 0x03)) << 2); // palette
+
+                scanlineAttributes_[cycle] = sprite.attributes;
+                scanlineData_[cycle] = pixel;
+            }
         }
     }
-
-    return result;
 }
 
 void PpuSprites::HReset()
@@ -149,11 +141,23 @@ void PpuSprites::HReset()
     oamAddress_ = 0;
     oamCopyIndex_ = 0;
     spriteIndex_ = 0;
+    scanlineData_.fill(0);
+    scanlineAttributes_.fill(0);
 }
 
 void PpuSprites::VReset()
 {
     sprite0Hit_ = false;
+}
+
+const std::array<uint8_t, 256>& PpuSprites::ScanlineAttributes() const
+{
+    return scanlineAttributes_;
+}
+
+const std::array<uint8_t, 256>& PpuSprites::ScanlinePixels() const
+{
+    return scanlineData_;
 }
 
 bool PpuSprites::Sprite0Hit()
