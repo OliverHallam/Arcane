@@ -8,7 +8,8 @@ class Display
 public:
     Display();
 
-    void WritePixel(uint8_t pixel);
+    uint32_t GetPixel(uint8_t palleteIndex);
+    void WritePixel(uint32_t pixel);
 
     void HBlank();
     void VBlank();

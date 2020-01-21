@@ -5,9 +5,14 @@ Display::Display()
     VBlank();
 }
 
-void Display::WritePixel(uint8_t value)
+uint32_t Display::GetPixel(uint8_t palletteIndex)
 {
-    *currentPixelAddress_++ = Pallette[value];
+    return Pallette[palletteIndex];
+}
+
+void Display::WritePixel(uint32_t value)
+{
+    *currentPixelAddress_++ = value;
 }
 
 void Display::HBlank()

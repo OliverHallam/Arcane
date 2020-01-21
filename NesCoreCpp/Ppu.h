@@ -3,6 +3,7 @@
 #include "PpuBackground.h"
 #include "PpuSprites.h"
 
+#include <array>
 #include <cstdint>
 
 class Bus;
@@ -32,7 +33,6 @@ private:
     Bus& bus_;
     Display& display_;
 
-    // approx!
     uint32_t frameCount_{};
 
     bool addressLatch_{};
@@ -54,6 +54,7 @@ private:
     uint16_t initialAddress_{};
 
     uint8_t palette_[32];
+    uint32_t rgbPalette_[32];
 
     int32_t currentScanline_{ 0 };
     int32_t scanlineCycle_{ -1 };
@@ -62,4 +63,6 @@ private:
 
     PpuBackground background_;
     PpuSprites sprites_;
+
+    std::array<uint8_t, 256> backgroundPixels_{};
 };

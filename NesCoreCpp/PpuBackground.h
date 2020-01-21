@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 class Bus;
@@ -13,8 +14,11 @@ public:
 
     void SetFineX(uint8_t value);
 
-    int8_t Render();
-    void Tick(int32_t scanlineCycle);
+    uint8_t Render();
+    void RunLoad(int32_t startCycle, int32_t endCycle);
+    void RunLoad(int32_t startCycle);
+    void RunLoad();
+    void Tick();
 
     void HReset(uint16_t initialAddress);
     void VReset(uint16_t initialAddress);
@@ -32,9 +36,11 @@ private:
 
     uint8_t nextTileId_{};
 
-    Tile loadingTile_{};
-    Tile nextTile_{};
-    Tile currentTile_{};
+    uint32_t loadingIndex_{2};
+    std::array<Tile, 34> scanlineTiles_;
+
+    uint32_t currentTileIndex_{};
+    Tile currentTile_;
 
     uint8_t fineX_{};
     int32_t patternBitShift_{};
