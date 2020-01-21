@@ -229,11 +229,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
         {
             background_.RunLoad(scanlineCycle_, maxIndex);
 
-            for (auto index = scanlineCycle_; index < maxIndex; index++)
-            {
-                background_.Tick();
-            }
-
             sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
         }
 
@@ -288,12 +283,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
         // sprite tile loading
         background_.RunLoad(scanlineCycle_, maxCycle);
-
-        while (scanlineCycle_ < maxCycle)
-        {
-            background_.Tick();
-            scanlineCycle_++;
-        }
     }
 
     scanlineCycle_ = targetCycle;
@@ -311,12 +300,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
             if (enableBackground_)
             {
-                for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
-                {
-                    auto pixel = background_.Render();
-                    backgroundPixels_[pixelIndex] = pixel;
-                    background_.Tick();
-                }
+                background_.RunRender(scanlineCycle_, maxIndex);
             }
             else
             {
@@ -328,7 +312,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
             if (enableForeground_)
             {
-                sprites_.RunRender(scanlineCycle_, maxIndex, backgroundPixels_);
+                sprites_.RunRender(scanlineCycle_, maxIndex, background_.ScanlinePixels());
             }
 
             sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
@@ -342,31 +326,38 @@ void Ppu::RenderScanline(int32_t targetCycle)
     if (scanlineCycle_ == 256)
     {
         // merge the sprites and the background
+        auto& backgroundPixels = background_.ScanlinePixels();
         auto& spriteAttributes = sprites_.ScanlineAttributes();
         auto& spritePixels = sprites_.ScanlinePixels();
 
+        // TODO: handle when this is switched mid scanline.
         if (enableForeground_)
         {
             uint8_t pixel;
             for (auto i = 0; i < 256; i++)
             {
                 if (spriteAttributes[i] & 0x20)
-                    pixel = backgroundPixels_[i] ? backgroundPixels_[i] : spritePixels[i];
+                    pixel = backgroundPixels[i] ? backgroundPixels[i] : spritePixels[i];
                 else
-                    pixel = spritePixels[i] ? spritePixels[i] : backgroundPixels_[i];
+                    pixel = spritePixels[i] ? spritePixels[i] : backgroundPixels[i];
 
                 display_.WritePixel(rgbPalette_[pixel]);
+            }
+        }
+        else if (enableBackground_)
+        {
+            for (auto i = 0; i < 256; i++)
+            {
+                display_.WritePixel(backgroundPixels[i]);
             }
         }
         else
         {
             for (auto i = 0; i < 256; i++)
             {
-                display_.WritePixel(backgroundPixels_[i]);
+                display_.WritePixel(rgbPalette_[0]);
             }
         }
-
-        backgroundPixels_.fill(0);
 
         sprites_.HReset();
         display_.HBlank();

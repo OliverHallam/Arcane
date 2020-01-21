@@ -257,7 +257,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
                 return;
-
         }
     }
 }

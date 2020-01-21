@@ -27,6 +27,16 @@ uint8_t PpuBackground::Render()
     return index & 3 ? index : 0;
 }
 
+void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
+{
+    for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
+    {
+        backgroundPixels_[pixelIndex] = Render();
+        Tick();
+    }
+
+}
+
 void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 {
     if (startCycle == 0 && endCycle == 256)
@@ -227,4 +237,9 @@ void PpuBackground::VReset(uint16_t initialAddress)
 {
     CurrentAddress &= 0x041f;
     CurrentAddress |= (uint16_t)(initialAddress & 0xfbe0);
+}
+
+const std::array<uint8_t, 256>& PpuBackground::ScanlinePixels() const
+{
+    return backgroundPixels_;
 }

@@ -63,6 +63,4 @@ private:
 
     PpuBackground background_;
     PpuSprites sprites_;
-
-    std::array<uint8_t, 256> backgroundPixels_{};
 };
