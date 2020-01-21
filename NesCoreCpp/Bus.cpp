@@ -6,7 +6,10 @@
 #include "Ppu.h"
 
 
-Bus::Bus()
+Bus::Bus() :
+    cpu_(nullptr),
+    ppu_(nullptr),
+    controller_(nullptr)
 {
     cpuRam_.fill(0xff);
     ppuRam_.fill(0xff);

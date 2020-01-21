@@ -14,7 +14,6 @@
     <ClInclude Include="Controller.h" />
     <ClInclude Include="Cart.h" />
     <ClInclude Include="NesSystem.h" />
-    <ClInclude Include="libretro.h" />
     <ClInclude Include="PpuSprites.h" />
     <ClInclude Include="PpuBackground.h" />
   </ItemGroup>
@@ -25,7 +24,6 @@
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Cart.cpp" />
-    <ClCompile Include="libretro.cpp" />
     <ClCompile Include="NesSystem.cpp" />
     <ClCompile Include="PpuSprites.cpp" />
     <ClCompile Include="PpuBackground.cpp" />

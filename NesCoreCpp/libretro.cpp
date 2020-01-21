@@ -5,10 +5,6 @@
 #include <string.h>
 #include <math.h>
 
-#if defined(_WIN32) && !defined(_XBOX)
-#include <windows.h>
-#endif
-
 #include "libretro.h"
 
 #include "Cart.h"
@@ -172,7 +168,7 @@ bool retro_load_game(const struct retro_game_info* info)
     nesSystem->InsertCart(std::move(cart));
     nesSystem->Reset();
 
-    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
+    auto fmt = retro_pixel_format::RETRO_PIXEL_FORMAT_XRGB8888;
     return environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt);
 }
 
