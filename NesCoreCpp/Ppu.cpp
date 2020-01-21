@@ -290,6 +290,11 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
 void Ppu::RenderScanline(int32_t targetCycle)
 {
+    if (scanlineCycle_ == 0)
+    {
+        background_.BeginScanline();
+    }
+
     if (scanlineCycle_ < 256)
     {
         auto maxIndex = std::min(256, targetCycle);
@@ -392,12 +397,6 @@ void Ppu::RenderScanline(int32_t targetCycle)
         if (enableRendering_)
         {
             background_.RunLoad(scanlineCycle_, maxIndex);
-
-            while (scanlineCycle_ < maxIndex)
-            {
-                background_.Tick();
-                scanlineCycle_++;
-            }
         }
     }
 

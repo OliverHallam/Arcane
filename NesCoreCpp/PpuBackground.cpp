@@ -16,6 +16,12 @@ void PpuBackground::SetFineX(uint8_t value)
     fineX_ = value;
 }
 
+void PpuBackground::BeginScanline()
+{
+    currentTileIndex_ = 0;
+    currentTile_ = scanlineTiles_[0];
+}
+
 uint8_t PpuBackground::Render()
 {
     auto index = (uint8_t)(
@@ -34,7 +40,6 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
         backgroundPixels_[pixelIndex] = Render();
         Tick();
     }
-
 }
 
 void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
@@ -193,8 +198,6 @@ void PpuBackground::Tick()
         patternBitShift_ = 7;
 
         currentTileIndex_++;
-        if (currentTileIndex_ == 34)
-            currentTileIndex_ = 0;
 
         currentTile_ = scanlineTiles_[currentTileIndex_];
     }

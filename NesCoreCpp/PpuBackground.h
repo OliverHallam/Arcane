@@ -14,6 +14,8 @@ public:
 
     void SetFineX(uint8_t value);
 
+    void BeginScanline();
+
     uint8_t Render();
     void RunRender(uint32_t startCycle, uint32_t endCycle);
 
