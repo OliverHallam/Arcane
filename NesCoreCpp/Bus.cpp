@@ -38,9 +38,7 @@ void Bus::Attach(std::unique_ptr<Cart> cart)
 
 void Bus::TickCpu()
 {
-    ppu_->Tick();
-    ppu_->Tick();
-    ppu_->Tick();
+    ppu_->Tick3();
 }
 
 uint8_t Bus::CpuReadData(uint16_t address)
@@ -108,7 +106,7 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     }
 }
 
-uint8_t Bus::PpuRead(uint16_t address)
+uint8_t Bus::PpuRead(uint16_t address) const
 {
     if (address < 0x2000)
         return cart_->PpuRead(address);

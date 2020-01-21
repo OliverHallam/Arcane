@@ -1,5 +1,8 @@
 #pragma once
 
+#include "PpuBackground.h"
+#include "PpuSprites.h"
+
 #include <cstdint>
 
 class Bus;
@@ -12,7 +15,7 @@ public:
 
     uint32_t FrameCount();
 
-    void Tick();
+    void Tick3();
 
     uint8_t Read(uint16_t address);
     void Write(uint16_t address, uint8_t value);
@@ -20,26 +23,11 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    struct Sprite
-    {
-        uint8_t X;
-        uint8_t patternShiftHigh;
-        uint8_t patternShiftLow;
-        uint8_t attributes;
-    };
+    void Sync(int32_t targetCycle);
 
-    void SetFineX(uint8_t value);
-
-    void BackgroundRender();
-    void BackgroundLoadTick();
-    void BackgroundTick();
-    void BackgroundVReset();
-    void BackgroundHReset();
-
-    void SpriteRender();
-    void SpriteTick();
-    void SpriteEvaluationTick();
-    void SpriteLoadTick();
+    void PreRenderScanline(int32_t targetCycle);
+    void RenderScanline(int32_t targetCycle);
+    void PostRenderScanline(int32_t targetCycle);
 
     Bus& bus_;
     Display& display_;
@@ -47,52 +35,31 @@ private:
     // approx!
     uint32_t frameCount_{};
 
-    uint8_t ppuStatus_{};
-    uint8_t ppuControl_{};
-    uint8_t ppuMask_{};
-
     bool addressLatch_{};
+    uint8_t ppuData_{};
+
+    // PPUCTRL
+    bool enableVBlankInterrupt_{};
+    uint16_t addressIncrement_{1};
+
+    // PPUMASK
+    bool enableBackground_{};
+    bool enableForeground_{};
+    bool enableRendering_{};
+
+    // PPUSTATUS
+    bool inVBlank_{};
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
-    uint16_t currentAddress_{};
     uint16_t initialAddress_{};
-
-    uint8_t ppuData_{};
 
     uint8_t palette_[32];
 
-    int32_t currentScanLine_{ -1 };
+    int32_t currentScanline_{ 0 };
     int32_t scanlineCycle_{ -1 };
 
-    uint8_t nextTileId_{};
-    uint8_t nextPatternByteLow_{};
-    uint8_t nextPatternByteHigh_{};
+    int32_t targetCycle_{ -1 };
 
-    uint16_t patternShiftHigh_{};
-    uint16_t patternShiftLow_{};
-    uint32_t attributeShift_{};
-    uint16_t nextAttributeShift_{};
-    uint8_t currentPixel_{};
-    bool pixelRendered_{};
-
-    // cache for code performance
-    int32_t patternMask_{};
-    int32_t patternBitShift_{};
-    int32_t attributeMask_{};
-    int32_t attributeBitShift_{};
-    uint16_t backgroundPatternBase_{};
-    uint16_t spritePatternBase_{};
-    uint16_t patternAddress_{};
-
-    short oamAddress_{};
-    uint8_t oamData_{};
-    uint8_t oam_[256]{};
-    uint8_t oamCopy_[32]{};
-    uint8_t oamCopyIndex_{};
-
-    int32_t spriteIndex_{};
-    Sprite sprites_[8]{};
-    bool sprite0Selected_{};
-    bool sprite0Visible_{};
-    int32_t scanlineSpriteCount_{};
+    PpuBackground background_;
+    PpuSprites sprites_;
 };
