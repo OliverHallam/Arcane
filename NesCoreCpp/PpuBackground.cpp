@@ -100,23 +100,21 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
             scanlineTiles_[loadingIndex_].PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
 
 
-            if (loadingIndex_ != 33)
+            // increment the x part of the address
+            if ((CurrentAddress & 0x001f) == 0x001f)
             {
-                // increment the x part of the address
-                if ((CurrentAddress & 0x001f) == 0x001f)
-                {
-                    // reset the X co-ordinate
-                    CurrentAddress &= 0xffe0;
-                    // swap the nametable X
-                    CurrentAddress ^= 0x0400;
-                }
-                else
-                {
-                    CurrentAddress++;
-                }
-
-                loadingIndex_++;
+                // reset the X co-ordinate
+                CurrentAddress &= 0xffe0;
+                // swap the nametable X
+                CurrentAddress ^= 0x0400;
             }
+            else
+            {
+                CurrentAddress++;
+            }
+
+            loadingIndex_++;
+
             cycle++;
             if (cycle >= endCycle)
                 return;
@@ -156,27 +154,25 @@ void PpuBackground::RunLoad()
         // address is 000PTTTTTTTT1YYY
         scanlineTiles_[loadingIndex_].PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
 
-        if (loadingIndex_ == 33)
+        if (loadingIndex_ == 32)
         {
             return;
         }
+
+        // increment the x part of the address
+        if ((CurrentAddress & 0x001f) == 0x001f)
+        {
+            // reset the X co-ordinate
+            CurrentAddress &= 0xffe0;
+            // swap the nametable X
+            CurrentAddress ^= 0x0400;
+        }
         else
         {
-            // increment the x part of the address
-            if ((CurrentAddress & 0x001f) == 0x001f)
-            {
-                // reset the X co-ordinate
-                CurrentAddress &= 0xffe0;
-                // swap the nametable X
-                CurrentAddress ^= 0x0400;
-            }
-            else
-            {
-                CurrentAddress++;
-            }
-
-            loadingIndex_++;
+            CurrentAddress++;
         }
+
+        loadingIndex_++;
     }
 }
 
