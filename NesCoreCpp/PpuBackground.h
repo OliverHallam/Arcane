@@ -16,7 +16,6 @@ public:
 
     uint8_t Render();
     void RunLoad(int32_t startCycle, int32_t endCycle);
-    void RunLoad(int32_t startCycle);
     void RunLoad();
     void Tick();
 
