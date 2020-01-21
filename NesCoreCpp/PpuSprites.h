@@ -24,6 +24,7 @@ public:
     bool SpriteOverflow();
 
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
+    void RunLoad(uint32_t scanline);
 
     void VReset();
 
