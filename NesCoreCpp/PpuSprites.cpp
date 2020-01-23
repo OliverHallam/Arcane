@@ -160,6 +160,11 @@ const std::array<uint8_t, 256>& PpuSprites::ScanlinePixels() const
     return scanlineData_;
 }
 
+bool PpuSprites::Sprite0Visible()
+{
+    return sprite0Visible_;
+}
+
 bool PpuSprites::Sprite0Hit()
 {
     return sprite0Hit_;

@@ -30,8 +30,6 @@ void Ppu::Tick3()
 
 uint8_t Ppu::Read(uint16_t address)
 {
-    Sync(targetCycle_);
-
     address &= 0x07;
 
     if (address == 0x02)
@@ -48,6 +46,15 @@ uint8_t Ppu::Read(uint16_t address)
 
         if (sprites_.Sprite0Hit())
             status |= 0x40;
+        else if (sprites_.Sprite0Visible())
+        {
+            Sync(targetCycle_);
+
+            if (sprites_.Sprite0Hit())
+            {
+                status |= 0x40;
+            }
+        }
 
         if (sprites_.SpriteOverflow())
             status |= 0x20;
@@ -56,6 +63,7 @@ uint8_t Ppu::Read(uint16_t address)
     }
     else if (address == 0x07)
     {
+        Sync(targetCycle_);
         auto data = ppuData_;
 
         // the address is aliased with the PPU background render address, so we use that.
@@ -353,7 +361,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
         {
             for (auto i = 0; i < 256; i++)
             {
-                display_.WritePixel(backgroundPixels[i]);
+                display_.WritePixel(rgbPalette_[backgroundPixels[i]]);
             }
         }
         else

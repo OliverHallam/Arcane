@@ -20,6 +20,7 @@ public:
 
     void RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const std::array<uint8_t, 256>& backgroundPixels);
 
+    bool Sprite0Visible();
     bool Sprite0Hit();
     bool SpriteOverflow();
 
