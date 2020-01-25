@@ -1110,7 +1110,6 @@ void Cpu::LoadA()
 
 void Cpu::StoreA()
 {
-    bus_.TickCpu();
     A_ = value_;
 }
 
