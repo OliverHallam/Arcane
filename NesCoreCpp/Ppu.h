@@ -63,6 +63,10 @@ private:
     PpuBackground background_;
     PpuSprites sprites_;
 
-    // a delay for updating the background address
+    // a 3-cycle delay for updating the background address
     bool updateBaseAddress_;
+
+    // a 2-cycle delay for updating the PPU masks.
+    bool updateMask_;
+    uint8_t mask_;
 };

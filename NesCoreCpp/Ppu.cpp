@@ -26,9 +26,20 @@ void Ppu::Tick3()
         background_.CurrentAddress = initialAddress_;
         updateBaseAddress_ = false;
     }
+    else if (updateMask_)
+    {
+        // mask updates after 2 cycles
+        Sync(targetCycle_ - 1);
+
+        background_.Enable(mask_ & 0x08);
+        enableForeground_ = (mask_ & 0x10) != 0;
+        enableRendering_ = (mask_ & 0x18) != 0;
+        updateMask_ = false;
+    }
 
     if (targetCycle_ >= 340)
     {
+        // we're at the end of the scanline, so lets render the whole thing
         Sync(340);
 
         // the target cycle starts at -1 which gives us our extra tick at the start of the line
@@ -116,11 +127,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 1:
-        // these settings take one cycle to take effect so we'll run ahead slightly
-        Sync(targetCycle_ + 1);
-        background_.Enable(value & 0x08);
-        enableForeground_ = (value & 0x10) != 0;
-        enableRendering_ = (value & 0x18) != 0;
+        mask_ = value;
+        updateMask_ = true;
         return;
 
     case 3:
@@ -164,9 +172,6 @@ void Ppu::Write(uint16_t address, uint8_t value)
         }
         else
         {
-            // This write takes a couple of cycles to take effect
-            Sync(targetCycle_);
-
             initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
             // update the address in 3 cycles time.
             updateBaseAddress_ = true;
