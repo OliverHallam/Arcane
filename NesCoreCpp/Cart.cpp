@@ -80,7 +80,16 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
     if (chrEnd > end)
         return nullptr;
 
-    std::vector<uint8_t> chrData(data, chrEnd);
+    std::vector<uint8_t> chrData;
+    if (chrSize == 0)
+    {
+        chrData.resize(0x2000);
+    }
+    else
+    {
+        chrData = std::vector<uint8_t>(data, chrEnd);
+    }
+
     data = chrEnd;
 
     if (data != end)
