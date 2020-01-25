@@ -43,7 +43,6 @@ private:
     uint16_t addressIncrement_{1};
 
     // PPUMASK
-    bool enableBackground_{};
     bool enableForeground_{};
     bool enableRendering_{};
 

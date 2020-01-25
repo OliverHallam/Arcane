@@ -103,7 +103,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 1:
-        enableBackground_ = (value & 0x08) != 0;
+        background_.Enable(value & 0x08);
         enableForeground_ = (value & 0x10) != 0;
         enableRendering_ = (value & 0x18) != 0;
         return;
@@ -311,17 +311,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
         {
             background_.RunLoad(scanlineCycle_, maxIndex);
 
-            if (enableBackground_)
-            {
-                background_.RunRender(scanlineCycle_, maxIndex);
-            }
-            else
-            {
-                for (auto pixelIndex = scanlineCycle_; pixelIndex < maxIndex; pixelIndex++)
-                {
-                    background_.Tick();
-                }
-            }
+            background_.RunRender(scanlineCycle_, maxIndex);
 
             if (enableForeground_)
             {
@@ -343,33 +333,15 @@ void Ppu::RenderScanline(int32_t targetCycle)
         auto& spriteAttributes = sprites_.ScanlineAttributes();
         auto& spritePixels = sprites_.ScanlinePixels();
 
-        // TODO: handle when this is switched mid scanline.
-        if (enableForeground_)
+        uint8_t pixel;
+        for (auto i = 0; i < 256; i++)
         {
-            uint8_t pixel;
-            for (auto i = 0; i < 256; i++)
-            {
-                if (spriteAttributes[i] & 0x20)
-                    pixel = backgroundPixels[i] ? backgroundPixels[i] : spritePixels[i];
-                else
-                    pixel = spritePixels[i] ? spritePixels[i] : backgroundPixels[i];
+            if (spriteAttributes[i] & 0x20)
+                pixel = backgroundPixels[i] ? backgroundPixels[i] : spritePixels[i];
+            else
+                pixel = spritePixels[i] ? spritePixels[i] : backgroundPixels[i];
 
-                display_.WritePixel(rgbPalette_[pixel]);
-            }
-        }
-        else if (enableBackground_)
-        {
-            for (auto i = 0; i < 256; i++)
-            {
-                display_.WritePixel(rgbPalette_[backgroundPixels[i]]);
-            }
-        }
-        else
-        {
-            for (auto i = 0; i < 256; i++)
-            {
-                display_.WritePixel(rgbPalette_[0]);
-            }
+            display_.WritePixel(rgbPalette_[pixel]);
         }
 
         sprites_.HReset();
