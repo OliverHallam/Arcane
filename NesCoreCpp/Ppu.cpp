@@ -84,12 +84,11 @@ uint8_t Ppu::Read(uint16_t address)
 
 void Ppu::Write(uint16_t address, uint8_t value)
 {
-    Sync(targetCycle_);
-
     address &= 0x07;
     switch (address)
     {
     case 0:
+        Sync(targetCycle_);
         // PPUCTRL flags
         enableVBlankInterrupt_ = (value & 0x80) != 0;
         // TODO: Sprite size (value & 0x20)
@@ -103,6 +102,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 1:
+        // these settings take one cycle to take effect so we'll run ahead slightly
+        Sync(targetCycle_ + 1);
         background_.Enable(value & 0x08);
         enableForeground_ = (value & 0x10) != 0;
         enableRendering_ = (value & 0x18) != 0;
@@ -113,6 +114,12 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 5:
+        if (targetCycle_ > 256)
+        {
+            // we only need to sync if we are pending an HReset
+            Sync(targetCycle_);
+        }
+
         if (!addressLatch_)
         {
             initialAddress_ &= 0xffe0;
@@ -132,11 +139,19 @@ void Ppu::Write(uint16_t address, uint8_t value)
     case 6:
         if (!addressLatch_)
         {
+            if (targetCycle_ > 256)
+            {
+                // we only need to sync if we are pending an HReset
+                Sync(targetCycle_);
+            }
+
             initialAddress_ = (uint16_t)(((value & 0x3f) << 8) | (initialAddress_ & 0xff));
             addressLatch_ = true;
         }
         else
         {
+            Sync(targetCycle_);
+
             initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
             background_.CurrentAddress = initialAddress_;
             addressLatch_ = false;
@@ -145,6 +160,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
 
     case 7:
     {
+        Sync(targetCycle_);
+
         auto writeAddress = (uint16_t)(background_.CurrentAddress & 0x3fff);
         if (writeAddress >= 0x3f00)
         {
@@ -185,7 +202,7 @@ void Ppu::DmaWrite(uint8_t value)
 
 void Ppu::Sync(int32_t targetCycle)
 {
-    if (targetCycle_ <= scanlineCycle_)
+    if (targetCycle <= scanlineCycle_)
         return;
 
     if (currentScanline_ < 240)
