@@ -1493,6 +1493,8 @@ void Cpu::Tya()
 
 void Cpu::Jump()
 {
+    bus_.TickCpu();
+
     if ((PC_ & 0xff00) != (address_ & 0xff00))
     {
         // page crossed
