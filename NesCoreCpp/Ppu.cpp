@@ -356,6 +356,10 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
             sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
         }
+        else
+        {
+            background_.RunRender(scanlineCycle_, maxIndex);
+        }
 
         scanlineCycle_ = maxIndex;
         if (scanlineCycle_ >= targetCycle)
