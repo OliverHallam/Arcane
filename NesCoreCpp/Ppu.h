@@ -62,4 +62,7 @@ private:
 
     PpuBackground background_;
     PpuSprites sprites_;
+
+    // a delay for updating the background address
+    bool updateBaseAddress_;
 };

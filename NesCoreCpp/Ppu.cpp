@@ -20,6 +20,13 @@ void Ppu::Tick3()
 {
     targetCycle_ += 3;
 
+    if (updateBaseAddress_)
+    {
+        Sync(targetCycle_);
+        background_.CurrentAddress = initialAddress_;
+        updateBaseAddress_ = false;
+    }
+
     if (targetCycle_ >= 340)
     {
         Sync(340);
@@ -157,10 +164,12 @@ void Ppu::Write(uint16_t address, uint8_t value)
         }
         else
         {
+            // This write takes a couple of cycles to take effect
             Sync(targetCycle_);
 
             initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
-            background_.CurrentAddress = initialAddress_;
+            // update the address in 3 cycles time.
+            updateBaseAddress_ = true;
             addressLatch_ = false;
         }
         return;
