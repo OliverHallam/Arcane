@@ -108,6 +108,8 @@ private:
     void Write(uint16_t address, uint8_t value);
     void Push(uint8_t value);
 
+    void Tick();
+
     Bus& bus_;
 
     // Registers
@@ -126,4 +128,6 @@ private:
     uint8_t value_{};
 
     uint16_t interruptVector_{};
+
+    uint32_t cycleCount_;
 };
