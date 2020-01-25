@@ -77,6 +77,15 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                 auto tileAddress = (uint16_t)(0x2000 | CurrentAddress & 0x0fff);
                 nextTileId_ = bus_.PpuRead(tileAddress);
             }
+
+            // Lock this in now - if the base address changes after this it doesn't take effect until the next tile.
+
+            // address is 000PTTTTTTTT0YYY
+            patternAddress_ = (uint16_t)
+                (backgroundPatternBase_ | // pattern selector
+                (nextTileId_ << 4) |
+                    (CurrentAddress >> 12)); // fineY
+
             cycle++;
 
     case 2:
@@ -108,12 +117,6 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                 return;
 
     case 5:
-            // address is 000PTTTTTTTT0YYY
-            patternAddress_ = (uint16_t)
-                (backgroundPatternBase_ | // pattern selector
-                (nextTileId_ << 4) |
-                    (CurrentAddress >> 12)); // fineY
-
             scanlineTiles_[loadingIndex_].PatternByteLow = bus_.PpuRead(patternAddress_);
             cycle++;
 
