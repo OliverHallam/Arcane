@@ -18,13 +18,20 @@ uint32_t Ppu::FrameCount()
 
 void Ppu::Tick3()
 {
-    // TODO: we need to sync the trigger for an NMI too
-
     targetCycle_ += 3;
+
     if (targetCycle_ >= 340)
     {
         Sync(340);
+
+        // the target cycle starts at -1 which gives us our extra tick at the start of the line
         targetCycle_ -= 341;
+    }
+
+    // always sync on the post render scanline to ensure the NMI is triggered correctly.
+    else if (enableVBlankInterrupt_ && currentScanline_ == 241 && !inVBlank_)
+    {
+        PostRenderScanline(targetCycle_);
     }
 }
 
@@ -219,7 +226,6 @@ void Ppu::Sync(int32_t targetCycle)
 
         if (scanlineCycle_ >= 340)
         {
-            // the target cycle starts at -1 which gives us our extra tick at the start of the line
             scanlineCycle_ = 0;
             currentScanline_ = 0;
         }
@@ -232,7 +238,6 @@ void Ppu::Sync(int32_t targetCycle)
 
     if (scanlineCycle_ >= 340)
     {
-        // the target cycle starts at -1 which gives us our extra tick at the start of the line
         scanlineCycle_ = 0;
         currentScanline_++;
     }
