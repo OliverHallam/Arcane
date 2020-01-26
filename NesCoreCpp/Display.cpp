@@ -10,13 +10,14 @@ uint32_t Display::GetPixel(uint8_t palletteIndex)
     return Pallette[palletteIndex];
 }
 
-void Display::WritePixel(uint32_t value)
+uint32_t* Display::GetScanlinePtr()
 {
-    *currentPixelAddress_++ = value;
+    return currentPixelAddress_;
 }
 
 void Display::HBlank()
 {
+    currentPixelAddress_ += WIDTH;
 }
 
 void Display::VBlank()

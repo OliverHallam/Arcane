@@ -24,6 +24,7 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
+    // this allows the general case of Tick3 to be inlined
     __declspec(noinline) void RunDeferredUpdate();
     __declspec(noinline) void SyncScanline();
 
