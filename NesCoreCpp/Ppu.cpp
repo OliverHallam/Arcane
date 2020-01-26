@@ -499,10 +499,18 @@ void Ppu::FinishRender()
         uint8_t pixel;
         for (auto i = 0; i < 256; i++)
         {
-            if (spriteAttributes[i] & 0x20)
-                pixel = backgroundPixels[i] ? backgroundPixels[i] : spritePixels[i];
-            else
-                pixel = spritePixels[i] ? spritePixels[i] : backgroundPixels[i];
+            pixel = backgroundPixels[i];
+            auto spritePixel = spritePixels[i];
+            if (spritePixel)
+            {
+                if (spriteAttributes[i] & 0x20)
+                {
+                    if (!pixel)
+                        pixel = spritePixel;
+                }
+
+                pixel = spritePixel;
+            }
 
             display_.WritePixel(rgbPalette_[pixel]);
         }
