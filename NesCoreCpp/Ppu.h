@@ -24,6 +24,7 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
+    void RunDeferredUpdate();
     void Sync(int32_t targetCycle);
 
     void PreRenderScanline(int32_t targetCycle);
@@ -43,6 +44,7 @@ private:
     uint16_t addressIncrement_{1};
 
     // PPUMASK
+    bool enableBackground_{};
     bool enableForeground_{};
     bool enableRendering_{};
 
@@ -62,6 +64,8 @@ private:
 
     PpuBackground background_;
     PpuSprites sprites_;
+
+    bool hasDeferredUpdate_;
 
     // a 3-cycle delay for updating the background address
     bool updateBaseAddress_;

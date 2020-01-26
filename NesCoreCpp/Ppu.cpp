@@ -20,21 +20,9 @@ void Ppu::Tick3()
 {
     targetCycle_ += 3;
 
-    if (updateBaseAddress_)
+    if (hasDeferredUpdate_)
     {
-        Sync(targetCycle_);
-        background_.CurrentAddress = initialAddress_;
-        updateBaseAddress_ = false;
-    }
-    else if (updateMask_)
-    {
-        // mask updates after 2 cycles
-        Sync(targetCycle_ - 1);
-
-        background_.Enable(mask_ & 0x08);
-        enableForeground_ = (mask_ & 0x10) != 0;
-        enableRendering_ = (mask_ & 0x18) != 0;
-        updateMask_ = false;
+        RunDeferredUpdate();
     }
 
     if (targetCycle_ >= 340)
@@ -129,6 +117,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
     case 1:
         mask_ = value;
         updateMask_ = true;
+        hasDeferredUpdate_ = true;
         return;
 
     case 3:
@@ -175,6 +164,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
             initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
             // update the address in 3 cycles time.
             updateBaseAddress_ = true;
+            hasDeferredUpdate_ = true;
             addressLatch_ = false;
         }
         return;
@@ -219,6 +209,28 @@ void Ppu::Write(uint16_t address, uint8_t value)
 void Ppu::DmaWrite(uint8_t value)
 {
     sprites_.WriteOam(value);
+}
+
+void Ppu::RunDeferredUpdate()
+{
+    if (updateBaseAddress_)
+    {
+        Sync(targetCycle_);
+        background_.CurrentAddress = initialAddress_;
+        updateBaseAddress_ = false;
+    }
+    else if (updateMask_)
+    {
+        // mask updates after 2 cycles
+        Sync(targetCycle_ - 1);
+
+        enableBackground_ = (mask_ & 0x08) != 0;
+        enableForeground_ = (mask_ & 0x10) != 0;
+        enableRendering_ = (mask_ & 0x18) != 0;
+        updateMask_ = false;
+    }
+
+    hasDeferredUpdate_ = false;
 }
 
 void Ppu::Sync(int32_t targetCycle)
@@ -347,7 +359,14 @@ void Ppu::RenderScanline(int32_t targetCycle)
         {
             background_.RunLoad(scanlineCycle_, maxIndex);
 
-            background_.RunRender(scanlineCycle_, maxIndex);
+            if (enableBackground_)
+            {
+                background_.RunRender(scanlineCycle_, maxIndex);
+            }
+            else
+            {
+                background_.RunRenderDisabled(scanlineCycle_, maxIndex);
+            }
 
             if (enableForeground_)
             {
@@ -358,7 +377,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
         }
         else
         {
-            background_.RunRender(scanlineCycle_, maxIndex);
+            background_.RunRenderDisabled(scanlineCycle_, maxIndex);
         }
 
         scanlineCycle_ = maxIndex;
