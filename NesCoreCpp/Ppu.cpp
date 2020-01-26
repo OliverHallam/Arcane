@@ -27,33 +27,7 @@ void Ppu::Tick3()
 
     if (targetCycle_ >= 340)
     {
-        // we're at the end of the scanline, so lets render the whole thing
-        if (scanlineCycle_ == 0)
-        {
-            ProcessScanline();
-        }
-        else
-        {
-            Sync(340);
-        }
-
-        // the target cycle starts at -1 which gives us our extra tick at the start of the line
-        targetCycle_ -= 341;
-
-        if (currentScanline_ == 241)
-        {
-            // if we've stepped over the start of VBlank, we should sync that too.
-            if (targetCycle_> 0)
-            {
-                PostRenderScanline(targetCycle_);
-            }
-            else
-            {
-                // enter VBlank on next update
-                enterVBlank_ = true;
-                hasDeferredUpdate_ = true;
-            }
-        }
+        SyncScanline();
     }
 }
 
@@ -253,6 +227,37 @@ void Ppu::RunDeferredUpdate()
     }
 
     hasDeferredUpdate_ = false;
+}
+
+void Ppu::SyncScanline()
+{
+    // we're at the end of the scanline, so lets render the whole thing
+    if (scanlineCycle_ == 0)
+    {
+        ProcessScanline();
+    }
+    else
+    {
+        Sync(340);
+    }
+
+    // the target cycle starts at -1 which gives us our extra tick at the start of the line
+    targetCycle_ -= 341;
+
+    if (currentScanline_ == 241)
+    {
+        // if we've stepped over the start of VBlank, we should sync that too.
+        if (targetCycle_ > 0)
+        {
+            PostRenderScanline(targetCycle_);
+        }
+        else
+        {
+            // enter VBlank on next update
+            enterVBlank_ = true;
+            hasDeferredUpdate_ = true;
+        }
+    }
 }
 
 void Ppu::Sync(int32_t targetCycle)

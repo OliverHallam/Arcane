@@ -24,7 +24,8 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    void RunDeferredUpdate();
+    __declspec(noinline) void RunDeferredUpdate();
+    __declspec(noinline) void SyncScanline();
 
     void Sync(int32_t targetCycle);
     void ProcessScanline();
