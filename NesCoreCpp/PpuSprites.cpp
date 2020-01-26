@@ -102,6 +102,8 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
             continue;
         }
 
+        spritesRendered_ = true;
+
         auto startX = std::max((uint32_t)sprite.X, scanlineCycle);
         auto endX = std::min((uint32_t)sprite.X + 8, targetCycle);
 
@@ -141,7 +143,7 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
 
 bool PpuSprites::SpritesVisible()
 {
-    return scanlineSpriteCount_ > 0;
+    return spritesRendered_;
 }
 
 void PpuSprites::HReset()
@@ -152,6 +154,7 @@ void PpuSprites::HReset()
     oamAddress_ = 0;
     oamCopyIndex_ = 0;
     spriteIndex_ = 0;
+    spritesRendered_ = false;
 
     if (scanlineSpriteCount_ > 0)
     {

@@ -63,6 +63,8 @@ private:
     bool sprite0Hit_{};
     bool spriteOverflow_{};
 
+    bool spritesRendered_{};
+
     std::array<uint8_t, 256> scanlineAttributes_{};
     std::array<uint8_t, 256> scanlineData_{};
 };
