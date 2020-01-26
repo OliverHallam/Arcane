@@ -344,7 +344,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
     if (scanlineCycle_ == 256)
     {
         sprites_.HReset();
-        display_.HBlank();
 
         if (enableRendering_)
         {
@@ -514,12 +513,12 @@ void Ppu::FinishRender()
     auto& spriteAttributes = sprites_.ScanlineAttributes();
     auto& spritePixels = sprites_.ScanlinePixels();
 
+    auto scanline = display_.GetScanlinePtr();
     if (sprites_.SpritesVisible())
     {
-        uint8_t pixel;
         for (auto i = 0; i < 256; i++)
         {
-            pixel = backgroundPixels[i];
+            auto pixel = backgroundPixels[i];
             auto spritePixel = spritePixels[i];
             if (spritePixel)
             {
@@ -534,16 +533,16 @@ void Ppu::FinishRender()
                 }
             }
 
-            display_.WritePixel(rgbPalette_[pixel]);
+            scanline[i] = rgbPalette_[pixel];
         }
     }
     else
     {
-        uint8_t pixel;
         for (auto i = 0; i < 256; i++)
         {
-            pixel = backgroundPixels[i];
-            display_.WritePixel(rgbPalette_[pixel]);
+            auto pixel = backgroundPixels[i];
+            auto rgbPixel = rgbPalette_[pixel];
+            scanline[i] = rgbPixel;
         }
     }
 
