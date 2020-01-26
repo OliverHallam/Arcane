@@ -25,11 +25,18 @@ public:
 
 private:
     void RunDeferredUpdate();
+
     void Sync(int32_t targetCycle);
+    void ProcessScanline();
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
     void PostRenderScanline(int32_t targetCycle);
+
+    void RenderScanline();
+
+    void FinishRender();
+    void EnterVBlank();
 
     Bus& bus_;
     Display& display_;
