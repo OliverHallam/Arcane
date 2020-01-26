@@ -39,12 +39,21 @@ void Ppu::Tick3()
 
         // the target cycle starts at -1 which gives us our extra tick at the start of the line
         targetCycle_ -= 341;
-    }
 
-    // always sync on the post render scanline to ensure the NMI is triggered correctly.
-    else if (enableVBlankInterrupt_ && currentScanline_ == 241 && !inVBlank_)
-    {
-        PostRenderScanline(targetCycle_);
+        if (currentScanline_ == 241)
+        {
+            // if we've stepped over the start of VBlank, we should sync that too.
+            if (targetCycle_> 0)
+            {
+                PostRenderScanline(targetCycle_);
+            }
+            else
+            {
+                // enter VBlank on next update
+                enterVBlank_ = true;
+                hasDeferredUpdate_ = true;
+            }
+        }
     }
 }
 
@@ -220,6 +229,12 @@ void Ppu::DmaWrite(uint8_t value)
 
 void Ppu::RunDeferredUpdate()
 {
+    if (enterVBlank_)
+    {
+        PostRenderScanline(targetCycle_);
+        enterVBlank_ = false;
+    }
+
     if (updateBaseAddress_)
     {
         Sync(targetCycle_);

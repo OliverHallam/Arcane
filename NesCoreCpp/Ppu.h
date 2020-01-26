@@ -80,4 +80,7 @@ private:
     // a 2-cycle delay for updating the PPU masks.
     bool updateMask_;
     uint8_t mask_;
+
+    // the next tick should enter VBlank.
+    bool enterVBlank_;
 };
