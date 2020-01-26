@@ -508,8 +508,10 @@ void Ppu::FinishRender()
                     if (!pixel)
                         pixel = spritePixel;
                 }
-
-                pixel = spritePixel;
+                else
+                {
+                    pixel = spritePixel;
+                }
             }
 
             display_.WritePixel(rgbPalette_[pixel]);
