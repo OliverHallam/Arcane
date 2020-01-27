@@ -205,7 +205,7 @@ void Ppu::RunDeferredUpdate()
 {
     if (enterVBlank_)
     {
-        PostRenderScanline(targetCycle_);
+        EnterVBlank();
         enterVBlank_ = false;
     }
 
@@ -249,7 +249,7 @@ void Ppu::SyncScanline()
         // if we've stepped over the start of VBlank, we should sync that too.
         if (targetCycle_ > 0)
         {
-            PostRenderScanline(targetCycle_);
+            EnterVBlank();
         }
         else
         {
@@ -268,10 +268,6 @@ void Ppu::Sync(int32_t targetCycle)
     if (currentScanline_ < 240)
     {
         RenderScanline(targetCycle);
-    }
-    else if (currentScanline_ == 241)
-    {
-        PostRenderScanline(targetCycle);
     }
     else if (currentScanline_ == 261)
     {
@@ -301,10 +297,6 @@ void Ppu::ProcessScanline()
     if (currentScanline_ < 240)
     {
         RenderScanline();
-    }
-    else if (currentScanline_ == 241)
-    {
-        EnterVBlank();
     }
     else if (currentScanline_ == 261)
     {
@@ -541,8 +533,7 @@ void Ppu::FinishRender()
         for (auto i = 0; i < 256; i++)
         {
             auto pixel = backgroundPixels[i];
-            auto rgbPixel = rgbPalette_[pixel];
-            scanline[i] = rgbPixel;
+            scanline[i] = rgbPalette_[pixel];
         }
     }
 
@@ -553,16 +544,6 @@ void Ppu::FinishRender()
     {
         background_.HReset(initialAddress_);
     }
-}
-
-void Ppu::PostRenderScanline(int32_t targetCycle)
-{
-    if (scanlineCycle_ == 0)
-    {
-        EnterVBlank();
-    }
-
-    scanlineCycle_ = targetCycle;
 }
 
 void Ppu::EnterVBlank()
