@@ -35,11 +35,22 @@ public:
     const std::array<uint8_t, 256>& ScanlinePixels() const;
 
 private:
-    struct Tile
+    struct alignas(uint32_t) Tile
     {
         uint8_t PatternByteHigh{};
         uint8_t PatternByteLow{};
         uint8_t AttributeBits{};
+
+        bool operator == (const Tile& other)
+        {
+            return *reinterpret_cast<const uint32_t*>(this) ==
+                *reinterpret_cast<const uint32_t*>(&other);
+        }
+
+        bool operator != (const Tile& other)
+        {
+            return !(*this == other);
+        }
     };
 
     uint8_t nextTileId_{};

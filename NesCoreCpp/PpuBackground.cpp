@@ -100,30 +100,36 @@ void PpuBackground::RenderScanline()
     }
 
     // now render 31 tiles completely
+    Tile prevTile{};
+    uint64_t tileBytes{};
     for (auto tileId = 1; tileId < 32; tileId++)
     {
         tile = scanlineTiles_[tileId];
+        if (tile != prevTile)
+        {
+            uint64_t tileLowBits = tile.PatternByteLow;
+            tileLowBits = (tileLowBits | (tileLowBits << 36)) & 0x000000f0000000f0;
+            tileLowBits = (tileLowBits | (tileLowBits << 18)) & 0x00c000c000c000c0;
+            tileLowBits = (tileLowBits | (tileLowBits << 9)) & 0x8080808080808080;
 
-        uint64_t tileLowBits = tile.PatternByteLow;
-        tileLowBits = (tileLowBits | (tileLowBits << 36)) & 0x000000f0000000f0;
-        tileLowBits = (tileLowBits | (tileLowBits << 18)) & 0x00c000c000c000c0;
-        tileLowBits = (tileLowBits | (tileLowBits << 9)) & 0x8080808080808080;
+            uint64_t tileHighBits = tile.PatternByteHigh;
+            tileHighBits = (tileHighBits | (tileHighBits << 36)) & 0x000000f0000000f0;
+            tileHighBits = (tileHighBits | (tileHighBits << 18)) & 0x00c000c000c000c0;
+            tileHighBits = (tileHighBits | (tileHighBits << 9)) & 0x8080808080808080;
 
-        uint64_t tileHighBits = tile.PatternByteHigh;
-        tileHighBits = (tileHighBits | (tileHighBits << 36)) & 0x000000f0000000f0;
-        tileHighBits = (tileHighBits | (tileHighBits << 18)) & 0x00c000c000c000c0;
-        tileHighBits = (tileHighBits | (tileHighBits << 9)) & 0x8080808080808080;
+            uint64_t attributeBits = tile.AttributeBits;
+            attributeBits |= (attributeBits << 8);
+            attributeBits |= (attributeBits << 16);
+            attributeBits |= (attributeBits << 32);
 
-        uint64_t attributeBits = tile.AttributeBits;
-        attributeBits |= (attributeBits << 8);
-        attributeBits |= (attributeBits << 16);
-        attributeBits |= (attributeBits << 32);
+            uint64_t attributeMask = tileLowBits | tileHighBits;
+            attributeMask |= attributeMask >> 1;
+            attributeMask >>= 4;
 
-        uint64_t attributeMask = tileLowBits | tileHighBits;
-        attributeMask |= attributeMask >> 1;
-        attributeMask >>= 4;
+            tileBytes = ((tileHighBits >> 6) | (tileLowBits >> 7)) | (attributeBits & attributeMask);
 
-        auto tileBytes = ((tileHighBits >> 6) | (tileLowBits >> 7)) | (attributeBits & attributeMask);
+            prevTile = tile;
+        }
 
         *((uint64_t*)(&backgroundPixels_[pixelIndex])) = tileBytes;
         pixelIndex += 8;
