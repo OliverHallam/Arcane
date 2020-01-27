@@ -20,6 +20,8 @@ public:
     void RunRender(uint32_t startCycle, uint32_t endCycle);
     void RunRenderDisabled(uint32_t startCycle, uint32_t endCycle);
 
+    void RenderScanline();
+
     void RunLoad(int32_t startCycle, int32_t endCycle);
     void RunLoad();
     void Tick();

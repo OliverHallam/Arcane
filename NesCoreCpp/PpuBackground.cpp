@@ -52,6 +52,47 @@ void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
     }
 }
 
+void PpuBackground::RenderScanline()
+{
+    auto pixelIndex = 0;
+
+    // push out first tile
+    auto tile = scanlineTiles_[0];
+    for (auto patternBitShift = patternBitShift_; patternBitShift >= 0; patternBitShift--)
+    {
+        auto index = (uint8_t)(
+            ((tile.PatternByteHigh >> patternBitShift) & 1) << 1) |
+            ((tile.PatternByteLow >> patternBitShift) & 1);
+        index |= tile.AttributeBits; // palette
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    }
+
+    // now render 31 tiles completely
+    for (auto tileId = 1; tileId < 32; tileId++)
+    {
+        tile = scanlineTiles_[tileId];
+        for (auto patternBitShift = 7; patternBitShift >= 0; patternBitShift--)
+        {
+            auto index = (uint8_t)(
+                ((tile.PatternByteHigh >> patternBitShift) & 1) << 1) |
+                ((tile.PatternByteLow >> patternBitShift) & 1);
+            index |= tile.AttributeBits; // palette
+            backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        }
+    }
+
+    // and finally render the last bit of the last tile
+    tile = scanlineTiles_[32];
+    for (auto patternBitShift = 7; patternBitShift > patternBitShift_; patternBitShift--)
+    {
+        auto index = (uint8_t)(
+            ((tile.PatternByteHigh >> patternBitShift) & 1) << 1) |
+            ((tile.PatternByteLow >> patternBitShift) & 1);
+        index |= tile.AttributeBits; // palette
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    }
+}
+
 void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 {
     if (startCycle == 0 && endCycle == 256)
