@@ -33,7 +33,6 @@ private:
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
-    void PostRenderScanline(int32_t targetCycle);
 
     void RenderScanline();
 
