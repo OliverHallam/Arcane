@@ -232,14 +232,7 @@ void Ppu::RunDeferredUpdate()
 void Ppu::SyncScanline()
 {
     // we're at the end of the scanline, so lets render the whole thing
-    if (scanlineCycle_ == 0)
-    {
-        ProcessScanline();
-    }
-    else
-    {
-        Sync(340);
-    }
+    ProcessScanline();
 
     // the target cycle starts at -1 which gives us our extra tick at the start of the line
     targetCycle_ -= 341;
@@ -296,7 +289,14 @@ void Ppu::ProcessScanline()
 {
     if (currentScanline_ < 240)
     {
-        RenderScanline();
+        if (currentScanline_ == 0)
+        {
+            RenderScanline();
+        }
+        else
+        {
+            RenderScanline(340);
+        }
     }
     else if (currentScanline_ == 261)
     {
@@ -306,6 +306,7 @@ void Ppu::ProcessScanline()
         return;
     }
 
+    scanlineCycle_ = 0;
     currentScanline_++;
 }
 
