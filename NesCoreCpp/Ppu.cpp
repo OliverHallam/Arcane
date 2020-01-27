@@ -232,13 +232,23 @@ void Ppu::RunDeferredUpdate()
 void Ppu::SyncScanline()
 {
     // we're at the end of the scanline, so lets render the whole thing
-    ProcessScanline();
-
-    // the target cycle starts at -1 which gives us our extra tick at the start of the line
-    targetCycle_ -= 341;
-
-    if (currentScanline_ == 241)
+    if (currentScanline_ < 240)
     {
+        if (scanlineCycle_ == 0)
+        {
+            RenderScanline();
+        }
+        else
+        {
+            RenderScanline(340);
+        }
+    }
+    else if (currentScanline_ == 240)
+    {
+        scanlineCycle_ = 0;
+        currentScanline_ = 241;
+        targetCycle_ -= 341;
+
         // if we've stepped over the start of VBlank, we should sync that too.
         if (targetCycle_ > 0)
         {
@@ -246,11 +256,26 @@ void Ppu::SyncScanline()
         }
         else
         {
-            // enter VBlank on next update
+            // otherwise we enter VBlank on the next update
             enterVBlank_ = true;
             hasDeferredUpdate_ = true;
         }
+        return;
     }
+    else if (currentScanline_ == 261)
+    {
+        PreRenderScanline(340);
+        scanlineCycle_ = 0;
+        currentScanline_ = 0;
+        targetCycle_ -= 341;
+        return;
+    }
+
+    scanlineCycle_ = 0;
+    currentScanline_++;
+
+    // the target cycle starts at -1 which gives us our extra tick at the start of the line
+    targetCycle_ -= 341;
 }
 
 void Ppu::Sync(int32_t targetCycle)
@@ -283,31 +308,6 @@ void Ppu::Sync(int32_t targetCycle)
         scanlineCycle_ = 0;
         currentScanline_++;
     }
-}
-
-void Ppu::ProcessScanline()
-{
-    if (currentScanline_ < 240)
-    {
-        if (scanlineCycle_ == 0)
-        {
-            RenderScanline();
-        }
-        else
-        {
-            RenderScanline(340);
-        }
-    }
-    else if (currentScanline_ == 261)
-    {
-        PreRenderScanline(340);
-        scanlineCycle_ = 0;
-        currentScanline_ = 0;
-        return;
-    }
-
-    scanlineCycle_ = 0;
-    currentScanline_++;
 }
 
 void Ppu::PreRenderScanline(int32_t targetCycle)

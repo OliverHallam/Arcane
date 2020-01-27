@@ -29,7 +29,6 @@ private:
     __declspec(noinline) void SyncScanline();
 
     void Sync(int32_t targetCycle);
-    void ProcessScanline();
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
