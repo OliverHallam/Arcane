@@ -117,16 +117,20 @@ void PpuBackground::RenderScanline()
             tileHighBits = (tileHighBits | (tileHighBits << 18)) & 0x00c000c000c000c0;
             tileHighBits = (tileHighBits | (tileHighBits << 9)) & 0x8080808080808080;
 
-            uint64_t attributeBits = tile.AttributeBits;
-            attributeBits |= (attributeBits << 8);
-            attributeBits |= (attributeBits << 16);
-            attributeBits |= (attributeBits << 32);
+            tileBytes = ((tileHighBits >> 6) | (tileLowBits >> 7));
+            if (tile.AttributeBits)
+            {
+                uint64_t attributeBits = tile.AttributeBits;
+                attributeBits |= (attributeBits << 8);
+                attributeBits |= (attributeBits << 16);
+                attributeBits |= (attributeBits << 32);
 
-            uint64_t attributeMask = tileLowBits | tileHighBits;
-            attributeMask |= attributeMask >> 1;
-            attributeMask >>= 4;
+                uint64_t attributeMask = tileLowBits | tileHighBits;
+                attributeMask |= attributeMask >> 1;
+                attributeMask >>= 4;
 
-            tileBytes = ((tileHighBits >> 6) | (tileLowBits >> 7)) | (attributeBits & attributeMask);
+                tileBytes |= (attributeBits & attributeMask);
+            }
 
             prevTile = tile;
         }
