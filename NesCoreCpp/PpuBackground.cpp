@@ -56,14 +56,46 @@ void PpuBackground::RenderScanline()
 {
     auto pixelIndex = 0;
 
+    uint8_t index;
+
     // push out first tile
     auto tile = scanlineTiles_[0];
-    for (auto patternBitShift = patternBitShift_; patternBitShift >= 0; patternBitShift--)
+    auto patternHigh = tile.PatternByteHigh;
+    auto patternLow = tile.PatternByteLow;
+    auto attributeBits = tile.AttributeBits;
+
+    switch (patternBitShift_)
     {
-        auto index = (uint8_t)(
-            ((tile.PatternByteHigh >> patternBitShift) & 1) << 1) |
-            ((tile.PatternByteLow >> patternBitShift) & 1);
-        index |= tile.AttributeBits; // palette
+    case 7:
+        index = (uint8_t)(attributeBits | ((patternHigh >> 6) & 2) | ((patternLow >> 7) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 6:
+        index = (uint8_t)(attributeBits | ((patternHigh >> 5) & 2) | ((patternLow >> 6) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 5:
+        index = (uint8_t)(attributeBits | ((patternHigh >> 4) & 2) | ((patternLow >> 5) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 4:
+        index = (uint8_t)(attributeBits | ((patternHigh >> 3) & 2) | ((patternLow >> 4) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 3:
+        index = (uint8_t)(attributeBits | ((patternHigh >> 2) & 2) | ((patternLow >> 3) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 2:
+        index = (uint8_t)(attributeBits | ((patternHigh >> 1) & 2) | ((patternLow >> 2) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 1:
+        index = (uint8_t)(attributeBits | (patternHigh & 2) | ((patternLow >> 1) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    case 0:
+        index = (uint8_t)(attributeBits | ((patternHigh << 1) & 2) | (patternLow & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     }
 
@@ -71,26 +103,78 @@ void PpuBackground::RenderScanline()
     for (auto tileId = 1; tileId < 32; tileId++)
     {
         tile = scanlineTiles_[tileId];
-        for (auto patternBitShift = 7; patternBitShift >= 0; patternBitShift--)
-        {
-            auto index = (uint8_t)(
-                ((tile.PatternByteHigh >> patternBitShift) & 1) << 1) |
-                ((tile.PatternByteLow >> patternBitShift) & 1);
-            index |= tile.AttributeBits; // palette
-            backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
-        }
+        patternHigh = tile.PatternByteHigh;
+        patternLow = tile.PatternByteLow;
+        attributeBits = tile.AttributeBits;
+
+        index = (uint8_t)(attributeBits | ((patternHigh >> 6) & 2) | ((patternLow >> 7) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | ((patternHigh >> 5) & 2) | ((patternLow >> 6) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | ((patternHigh >> 4) & 2) | ((patternLow >> 5) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | ((patternHigh >> 3) & 2) | ((patternLow >> 4) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | ((patternHigh >> 2) & 2) | ((patternLow >> 3) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | ((patternHigh >> 1) & 2) | ((patternLow >> 2) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | (patternHigh & 2) | ((patternLow >> 1) & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+        index = (uint8_t)(attributeBits | ((patternHigh << 1) & 2) | (patternLow & 1));
+        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     }
 
     // and finally render the last bit of the last tile
     tile = scanlineTiles_[32];
-    for (auto patternBitShift = 7; patternBitShift > patternBitShift_; patternBitShift--)
-    {
-        auto index = (uint8_t)(
-            ((tile.PatternByteHigh >> patternBitShift) & 1) << 1) |
-            ((tile.PatternByteLow >> patternBitShift) & 1);
-        index |= tile.AttributeBits; // palette
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
-    }
+    patternHigh = tile.PatternByteHigh;
+    patternLow = tile.PatternByteLow;
+    attributeBits = tile.AttributeBits;
+
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | ((patternHigh >> 6) & 2) | ((patternLow >> 7) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | ((patternHigh >> 5) & 2) | ((patternLow >> 6) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | ((patternHigh >> 4) & 2) | ((patternLow >> 5) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | ((patternHigh >> 3) & 2) | ((patternLow >> 4) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | ((patternHigh >> 2) & 2) | ((patternLow >> 3) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | ((patternHigh >> 1) & 2) | ((patternLow >> 2) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+    if (pixelIndex == 256)
+        return;
+
+    index = (uint8_t)(attributeBits | (patternHigh & 2) | ((patternLow >> 1) & 1));
+    backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+
+    // we never need the last pixel
 }
 
 void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
