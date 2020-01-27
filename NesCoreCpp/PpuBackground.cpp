@@ -103,33 +103,30 @@ void PpuBackground::RenderScanline()
     for (auto tileId = 1; tileId < 32; tileId++)
     {
         tile = scanlineTiles_[tileId];
-        patternHigh = tile.PatternByteHigh;
-        patternLow = tile.PatternByteLow;
-        attributeBits = tile.AttributeBits;
 
-        index = (uint8_t)(attributeBits | ((patternHigh >> 6) & 2) | ((patternLow >> 7) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        uint64_t tileLowBits = tile.PatternByteLow;
+        tileLowBits = (tileLowBits | (tileLowBits << 36)) & 0x000000f0000000f0;
+        tileLowBits = (tileLowBits | (tileLowBits << 18)) & 0x00c000c000c000c0;
+        tileLowBits = (tileLowBits | (tileLowBits << 9)) & 0x8080808080808080;
 
-        index = (uint8_t)(attributeBits | ((patternHigh >> 5) & 2) | ((patternLow >> 6) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        uint64_t tileHighBits = tile.PatternByteHigh;
+        tileHighBits = (tileHighBits | (tileHighBits << 36)) & 0x000000f0000000f0;
+        tileHighBits = (tileHighBits | (tileHighBits << 18)) & 0x00c000c000c000c0;
+        tileHighBits = (tileHighBits | (tileHighBits << 9)) & 0x8080808080808080;
 
-        index = (uint8_t)(attributeBits | ((patternHigh >> 4) & 2) | ((patternLow >> 5) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        uint64_t attributeBits = tile.AttributeBits;
+        attributeBits |= (attributeBits << 8);
+        attributeBits |= (attributeBits << 16);
+        attributeBits |= (attributeBits << 32);
 
-        index = (uint8_t)(attributeBits | ((patternHigh >> 3) & 2) | ((patternLow >> 4) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        uint64_t attributeMask = tileLowBits | tileHighBits;
+        attributeMask |= attributeMask >> 1;
+        attributeMask >>= 4;
 
-        index = (uint8_t)(attributeBits | ((patternHigh >> 2) & 2) | ((patternLow >> 3) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        auto tileBytes = ((tileHighBits >> 6) | (tileLowBits >> 7)) | (attributeBits & attributeMask);
 
-        index = (uint8_t)(attributeBits | ((patternHigh >> 1) & 2) | ((patternLow >> 2) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
-
-        index = (uint8_t)(attributeBits | (patternHigh & 2) | ((patternLow >> 1) & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
-
-        index = (uint8_t)(attributeBits | ((patternHigh << 1) & 2) | (patternLow & 1));
-        backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        *((uint64_t*)(&backgroundPixels_[pixelIndex])) = tileBytes;
+        pixelIndex += 8;
     }
 
     // and finally render the last bit of the last tile
