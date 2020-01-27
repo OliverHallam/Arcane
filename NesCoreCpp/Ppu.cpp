@@ -289,7 +289,7 @@ void Ppu::ProcessScanline()
 {
     if (currentScanline_ < 240)
     {
-        if (currentScanline_ == 0)
+        if (scanlineCycle_ == 0)
         {
             RenderScanline();
         }
