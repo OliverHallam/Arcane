@@ -362,9 +362,9 @@ void PpuBackground::HReset(uint16_t initialAddress)
     if ((CurrentAddress & 0x7000) == 0)
     {
         // move to the next row
-        if ((CurrentAddress & 0x03e0) == 0x03e0)
+        if ((CurrentAddress & 0x03e0) == 0x03a0)
         {
-            // reset the X co-ordinate
+            // reset the Y co-ordinate
             CurrentAddress &= 0x7c1f;
             // swap the nametable Y
             CurrentAddress ^= 0x0800;
