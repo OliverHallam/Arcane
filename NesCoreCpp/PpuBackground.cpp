@@ -309,10 +309,11 @@ void PpuBackground::RunLoad()
             (nextTileId_ << 4) |
                 (CurrentAddress >> 12)); // fineY
 
-        scanlineTiles_[loadingIndex_].PatternByteLow = bus_.PpuRead(patternAddress_);
+        auto pattern = bus_.PpuReadChr16(patternAddress_);
+        scanlineTiles_[loadingIndex_].PatternByteLow = pattern >> 8;
 
         // address is 000PTTTTTTTT1YYY
-        scanlineTiles_[loadingIndex_].PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+        scanlineTiles_[loadingIndex_].PatternByteHigh = static_cast<uint8_t>(pattern);
 
         if (loadingIndex_ == 32)
         {

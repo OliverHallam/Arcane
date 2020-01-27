@@ -24,7 +24,12 @@ uint8_t Cart::CpuRead(uint16_t address)
 
 uint8_t Cart::PpuRead(uint16_t address)
 {
-    return chrData_[address & 0x1fff];
+    return chrData_[address];
+}
+
+uint16_t Cart::PpuReadChr16(uint16_t address)
+{
+    return (chrData_[address] << 8) | chrData_[address | 8];
 }
 
 Cart::Cart(

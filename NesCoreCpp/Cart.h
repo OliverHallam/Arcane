@@ -12,6 +12,7 @@ public:
     uint8_t CpuRead(uint16_t address);
 
     uint8_t PpuRead(uint16_t address);
+    uint16_t PpuReadChr16(uint16_t address);
 
     Cart(
         std::vector<uint8_t> prgBankA,

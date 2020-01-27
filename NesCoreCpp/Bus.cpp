@@ -125,6 +125,11 @@ uint8_t Bus::PpuRead(uint16_t address) const
     return ppuRam_[address];
 }
 
+uint16_t Bus::PpuReadChr16(uint16_t address) const
+{
+    return cart_->PpuReadChr16(address);
+}
+
 void Bus::PpuWrite(uint16_t address, uint8_t value)
 {
     if (address >= 0x2000)

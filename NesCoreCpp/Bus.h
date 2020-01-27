@@ -26,6 +26,7 @@ public:
     void CpuWrite(uint16_t address, uint8_t value);
 
     uint8_t PpuRead(uint16_t address) const;
+    uint16_t PpuReadChr16(uint16_t address) const;
     void PpuWrite(uint16_t address, uint8_t value);
 
     void SignalNmi();
