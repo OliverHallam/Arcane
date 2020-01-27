@@ -9,7 +9,7 @@ public:
     Display();
 
     uint32_t GetPixel(uint8_t palleteIndex);
-    void WritePixel(uint32_t pixel);
+    uint32_t* GetScanlinePtr();
 
     void HBlank();
     void VBlank();

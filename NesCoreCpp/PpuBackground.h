@@ -14,9 +14,13 @@ public:
 
     void SetFineX(uint8_t value);
 
+    void BeginScanline();
+
     uint8_t Render();
+    void RunRender(uint32_t startCycle, uint32_t endCycle);
+    void RunRenderDisabled(uint32_t startCycle, uint32_t endCycle);
+
     void RunLoad(int32_t startCycle, int32_t endCycle);
-    void RunLoad(int32_t startCycle);
     void RunLoad();
     void Tick();
 
@@ -25,6 +29,8 @@ public:
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
     uint16_t CurrentAddress{};
+
+    const std::array<uint8_t, 256>& ScanlinePixels() const;
 
 private:
     struct Tile
@@ -48,6 +54,8 @@ private:
     // cache for code performance
     uint16_t backgroundPatternBase_{};
     uint16_t patternAddress_{};
+
+    std::array<uint8_t, 256> backgroundPixels_{};
 
     const Bus& bus_;
 };

@@ -24,11 +24,20 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
+    // this allows the general case of Tick3 to be inlined
+    __declspec(noinline) void RunDeferredUpdate();
+    __declspec(noinline) void SyncScanline();
+
     void Sync(int32_t targetCycle);
+    void ProcessScanline();
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
-    void PostRenderScanline(int32_t targetCycle);
+
+    void RenderScanline();
+
+    void FinishRender();
+    void EnterVBlank();
 
     Bus& bus_;
     Display& display_;
@@ -64,5 +73,15 @@ private:
     PpuBackground background_;
     PpuSprites sprites_;
 
-    std::array<uint8_t, 256> backgroundPixels_{};
+    bool hasDeferredUpdate_;
+
+    // a 3-cycle delay for updating the background address
+    bool updateBaseAddress_;
+
+    // a 2-cycle delay for updating the PPU masks.
+    bool updateMask_;
+    uint8_t mask_;
+
+    // the next tick should enter VBlank.
+    bool enterVBlank_;
 };

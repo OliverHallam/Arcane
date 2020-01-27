@@ -96,6 +96,14 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
     for (auto spriteIndex = scanlineSpriteCount_ - 1; spriteIndex >= 0; spriteIndex--)
     {
         auto& sprite = sprites_[spriteIndex];
+
+        if (sprite.patternShiftLow == 0 && sprite.patternShiftHigh == 0)
+        {
+            continue;
+        }
+
+        spritesRendered_ = true;
+
         auto startX = std::max((uint32_t)sprite.X, scanlineCycle);
         auto endX = std::min((uint32_t)sprite.X + 8, targetCycle);
 
@@ -133,6 +141,11 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
     }
 }
 
+bool PpuSprites::SpritesVisible()
+{
+    return spritesRendered_;
+}
+
 void PpuSprites::HReset()
 {
     scanlineSpriteCount_ = oamCopyIndex_ >> 2;
@@ -141,8 +154,13 @@ void PpuSprites::HReset()
     oamAddress_ = 0;
     oamCopyIndex_ = 0;
     spriteIndex_ = 0;
-    scanlineData_.fill(0);
-    scanlineAttributes_.fill(0);
+    spritesRendered_ = false;
+
+    if (scanlineSpriteCount_ > 0)
+    {
+        scanlineData_.fill(0);
+        scanlineAttributes_.fill(0);
+    }
 }
 
 void PpuSprites::VReset()
@@ -160,6 +178,11 @@ const std::array<uint8_t, 256>& PpuSprites::ScanlinePixels() const
     return scanlineData_;
 }
 
+bool PpuSprites::Sprite0Visible()
+{
+    return sprite0Visible_;
+}
+
 bool PpuSprites::Sprite0Hit()
 {
     return sprite0Hit_;
@@ -172,6 +195,13 @@ bool PpuSprites::SpriteOverflow()
 
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
+    // TODO: should be 321?
+    if (scanlineCycle == 257 && targetCycle == 320)
+    {
+        RunLoad(currentScanline);
+        return;
+    }
+
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
         return;
@@ -226,8 +256,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 // address is 000PTTTTTTTT0YYY
                 patternAddress_ = (uint16_t)
                     (spritePatternBase_ | // pattern selector
-                    (tileId << 4) |
-                        tileFineY);
+                    (tileId << 4) | tileFineY);
                 sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
             }
 
@@ -251,7 +280,37 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
                 return;
-
         }
+    }
+}
+
+void PpuSprites::RunLoad(uint32_t currentScanline)
+{
+    while (spriteIndex_ < scanlineSpriteCount_)
+    {
+        auto oamAddress = spriteIndex_ << 2;
+
+        auto attributes = oamCopy_[oamAddress + 2];
+        sprites_[spriteIndex_].attributes = attributes;
+        sprites_[spriteIndex_].X = oamCopy_[oamAddress + 3];
+
+        auto tileId = oamCopy_[oamAddress + 1];
+
+        auto tileFineY = currentScanline - oamCopy_[oamAddress];
+
+        if ((attributes & 0x80) != 0)
+        {
+            tileFineY = 7 - tileFineY;
+        }
+
+        // address is 000PTTTTTTTT0YYY
+        patternAddress_ = (uint16_t)
+            (spritePatternBase_ | // pattern selector
+            (tileId << 4) | tileFineY);
+        sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
+
+        // address is 000PTTTTTTTT1YYY
+        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+        spriteIndex_++;
     }
 }

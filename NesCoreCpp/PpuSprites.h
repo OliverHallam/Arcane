@@ -20,10 +20,14 @@ public:
 
     void RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const std::array<uint8_t, 256>& backgroundPixels);
 
+    bool SpritesVisible();
+
+    bool Sprite0Visible();
     bool Sprite0Hit();
     bool SpriteOverflow();
 
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
+    void RunLoad(uint32_t scanline);
 
     void VReset();
 
@@ -58,6 +62,8 @@ private:
 
     bool sprite0Hit_{};
     bool spriteOverflow_{};
+
+    bool spritesRendered_{};
 
     std::array<uint8_t, 256> scanlineAttributes_{};
     std::array<uint8_t, 256> scanlineData_{};
