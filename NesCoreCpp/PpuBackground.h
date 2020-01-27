@@ -51,6 +51,9 @@ private:
         {
             return !(*this == other);
         }
+
+    private:
+        uint8_t Padding{};
     };
 
     uint8_t nextTileId_{};
