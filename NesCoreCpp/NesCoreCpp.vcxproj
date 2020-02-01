@@ -129,6 +129,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Apu.h" />
+    <ClInclude Include="ApuEnvelope.h" />
+    <ClInclude Include="ApuFrameCounter.h" />
+    <ClInclude Include="ApuLengthCounter.h" />
+    <ClInclude Include="ApuPulse.h" />
+    <ClInclude Include="ApuSweep.h" />
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Cart.h" />
     <ClInclude Include="Controller.h" />
@@ -140,6 +146,12 @@
     <ClInclude Include="PpuSprites.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Apu.cpp" />
+    <ClCompile Include="ApuEnvelope.cpp" />
+    <ClCompile Include="ApuFrameCounter.cpp" />
+    <ClCompile Include="ApuLengthCounter.cpp" />
+    <ClCompile Include="ApuPulse.cpp" />
+    <ClCompile Include="ApuSweep.cpp" />
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cart.cpp" />
     <ClCompile Include="Controller.cpp" />

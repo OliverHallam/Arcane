@@ -8,6 +8,7 @@
 #include "Controller.h"
 #include "Cpu.h"
 #include "Ppu.h"
+#include "Apu.h"
 
 class Bus
 {
@@ -16,6 +17,7 @@ public:
 
     void Attach(Cpu* cpu);
     void Attach(Ppu* ppu);
+    void Attach(Apu* apu);
     void Attach(Controller* controller);
     void Attach(std::unique_ptr<Cart> cart);
 
@@ -32,9 +34,12 @@ public:
     void SignalNmi();
     void DmaWrite(uint8_t value);
 
+    void OnFrame();
+
 private:
     Cpu* cpu_;
     Ppu* ppu_;
+    Apu* apu_;
     Controller* controller_;
     std::unique_ptr<Cart> cart_;
 

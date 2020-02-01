@@ -5,10 +5,12 @@ NesSystem::NesSystem()
     bus_{},
     ppu_{ bus_, display_ },
     cpu_{ bus_ },
+    apu_{},
     controller_{}
 {
     bus_.Attach(&ppu_);
     bus_.Attach(&cpu_);
+    bus_.Attach(&apu_);
     bus_.Attach(&controller_);
 }
 
@@ -20,6 +22,11 @@ Controller& NesSystem::Controller()
 const Display& NesSystem::Display() const
 {
     return display_;
+}
+
+const Apu& NesSystem::Apu() const
+{
+    return apu_;
 }
 
 void NesSystem::InsertCart(std::unique_ptr<Cart> cart)

@@ -1,0 +1,88 @@
+#include "ApuPulse.h"
+
+ApuPulse::ApuPulse()
+{
+}
+
+void ApuPulse::Tick()
+{
+    if (!timer_)
+    {
+        timer_ = sweep_.Period();
+        sequence_--;
+        sequence_ &= 0x7;
+    }
+    else
+    {
+        timer_--;
+    }
+}
+
+void ApuPulse::TickQuarterFrame()
+{
+    envelope_.Tick();
+}
+
+void ApuPulse::TickHalfFrame()
+{
+    envelope_.Tick();
+    sweep_.Tick();
+    lengthCounter_.Tick();
+}
+
+void ApuPulse::Enable(bool enabled)
+{
+    lengthCounter_.SetEnabled(enabled);
+}
+
+void ApuPulse::Write(uint8_t address, uint8_t value)
+{
+    switch (address)
+    {
+    case 0:
+        dutyLookup_ = GetDutyLookup(value >> 6);
+        lengthCounter_.SetHalt(value & 0x20);
+        envelope_.SetConstantVolume(value & 0x10);
+        envelope_.SetEnvelope(value & 0x0f);
+        break;
+
+    case 1:
+        sweep_.SetSweep(value);
+        break;
+
+    case 2:
+        sweep_.SetPeriodLow(value);
+        break;
+
+    case 3:
+        lengthCounter_.SetLength((value * 0xf8) >> 3);
+        sweep_.SetPeriodHigh(value & 0x07);
+        sequence_ = 0;
+        envelope_.Start();
+        break;
+    }
+}
+
+uint8_t ApuPulse::Sample()
+{
+    return (lengthCounter_.IsOutputEnabled() && 
+        sweep_.IsOutputEnabled() &&
+        GetSequenceOutput())
+        ? envelope_.Sample() : 0;
+}
+
+uint8_t ApuPulse::GetDutyLookup(uint8_t duty)
+{
+    switch (duty)
+    {
+    case 0: return 0x01;
+    case 1: return 0x03;
+    case 2: return 0x0f;
+    case 3: return 0xfc;
+    }
+}
+
+bool ApuPulse::GetSequenceOutput()
+{
+    return (dutyLookup_ << sequence_) & 0x80;
+}

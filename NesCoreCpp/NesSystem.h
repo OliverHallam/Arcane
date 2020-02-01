@@ -5,6 +5,7 @@
 #include "Bus.h"
 #include "Cpu.h"
 #include "Ppu.h"
+#include "Apu.h"
 #include "Display.h"
 #include "Controller.h"
 
@@ -15,6 +16,7 @@ public:
 
     Controller& Controller();
     const Display& Display() const;
+    const Apu& Apu() const;
 
     void InsertCart(std::unique_ptr<Cart> cart);
 
@@ -26,6 +28,7 @@ private:
     Bus bus_;
     Cpu cpu_;
     Ppu ppu_;
+    ::Apu apu_;
     ::Display display_;
     ::Controller controller_;
 };
