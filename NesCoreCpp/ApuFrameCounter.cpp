@@ -3,7 +3,8 @@
 #include "Apu.h"
 
 ApuFrameCounter::ApuFrameCounter(Apu& apu)
-    : apu_{ apu }
+    : apu_{ apu },
+    cycleCount_{0}
 {
 }
 
@@ -17,6 +18,7 @@ void ApuFrameCounter::Tick()
         break;
 
     case 14913:
+        apu_.QuarterFrame();
         apu_.HalfFrame();
         break;
 
@@ -25,6 +27,7 @@ void ApuFrameCounter::Tick()
         break;
 
     case 29829:
+        apu_.QuarterFrame();
         apu_.HalfFrame();
         cycleCount_ = 0;
         break;

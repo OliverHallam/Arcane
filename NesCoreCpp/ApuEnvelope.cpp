@@ -36,7 +36,7 @@ void ApuEnvelope::SetConstantVolume(bool constantVolume)
     constantVolume_ = constantVolume;
 }
 
-void ApuEnvelope::SetEnvelope(uint8_t envelope)
+void ApuEnvelope::SetValue(uint8_t envelope)
 {
     envelope_ = envelope;
 }

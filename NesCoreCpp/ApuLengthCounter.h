@@ -16,8 +16,8 @@ private:
     uint8_t GetLinearLength(uint8_t length);
 
     bool enabled_{};
-    bool halt_;
-    uint8_t length_;
+    bool halt_{};
+    uint8_t length_{};
 
-    bool outputEnabled_;
+    bool outputEnabled_{};
 };

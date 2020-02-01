@@ -3,6 +3,7 @@
 #include "ApuEnvelope.h"
 #include "ApuFrameCounter.h"
 #include "ApuPulse.h"
+#include "ApuNoise.h"
 
 #include <array>
 #include <cstdint>
@@ -29,12 +30,11 @@ private:
 
     ApuPulse pulse1_;
     ApuPulse pulse2_;
+    ApuNoise noise_;
 
     std::array<int16_t, SAMPLES_PER_FRAME> frameBuffer_;
 
     int currentSample_;
-
     int cycleCount_;
-
     int nextSampleCycle_;
 };

@@ -22,6 +22,7 @@
     <ClInclude Include="ApuFrameCounter.h" />
     <ClInclude Include="ApuLengthCounter.h" />
     <ClInclude Include="ApuSweep.h" />
+    <ClInclude Include="ApuNoise.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -39,5 +40,6 @@
     <ClCompile Include="ApuEnvelope.cpp" />
     <ClCompile Include="ApuLengthCounter.cpp" />
     <ClCompile Include="ApuSweep.cpp" />
+    <ClCompile Include="ApuNoise.cpp" />
   </ItemGroup>
 </Project>

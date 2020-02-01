@@ -3,7 +3,8 @@
 #include "Bus.h"
 
 Cpu::Cpu(Bus& bus) :
-    bus_{ bus }
+    bus_{ bus },
+    cycleCount_{0}
 {
 }
 

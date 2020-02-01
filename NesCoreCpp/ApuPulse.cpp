@@ -25,7 +25,6 @@ void ApuPulse::TickQuarterFrame()
 
 void ApuPulse::TickHalfFrame()
 {
-    envelope_.Tick();
     sweep_.Tick();
     lengthCounter_.Tick();
 }
@@ -43,7 +42,7 @@ void ApuPulse::Write(uint8_t address, uint8_t value)
         dutyLookup_ = GetDutyLookup(value >> 6);
         lengthCounter_.SetHalt(value & 0x20);
         envelope_.SetConstantVolume(value & 0x10);
-        envelope_.SetEnvelope(value & 0x0f);
+        envelope_.SetValue(value & 0x0f);
         break;
 
     case 1:
@@ -55,7 +54,7 @@ void ApuPulse::Write(uint8_t address, uint8_t value)
         break;
 
     case 3:
-        lengthCounter_.SetLength((value * 0xf8) >> 3);
+        lengthCounter_.SetLength((value & 0xf8) >> 3);
         sweep_.SetPeriodHigh(value & 0x07);
         sequence_ = 0;
         envelope_.Start();

@@ -18,7 +18,7 @@ public:
 private:
     void UpdateTargetPeriod();
 
-    uint16_t period_;
+    uint16_t period_{};
 
     bool enabled_{};
     uint_fast8_t divide_{};

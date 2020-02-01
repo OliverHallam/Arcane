@@ -8,7 +8,7 @@ public:
     void Tick();
 
     void SetConstantVolume(bool constantVolume);
-    void SetEnvelope(uint8_t envelope);
+    void SetValue(uint8_t envelope);
     void Start();
 
     uint8_t Sample();

@@ -133,6 +133,7 @@
     <ClInclude Include="ApuEnvelope.h" />
     <ClInclude Include="ApuFrameCounter.h" />
     <ClInclude Include="ApuLengthCounter.h" />
+    <ClInclude Include="ApuNoise.h" />
     <ClInclude Include="ApuPulse.h" />
     <ClInclude Include="ApuSweep.h" />
     <ClInclude Include="Bus.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="ApuEnvelope.cpp" />
     <ClCompile Include="ApuFrameCounter.cpp" />
     <ClCompile Include="ApuLengthCounter.cpp" />
+    <ClCompile Include="ApuNoise.cpp" />
     <ClCompile Include="ApuPulse.cpp" />
     <ClCompile Include="ApuSweep.cpp" />
     <ClCompile Include="Bus.cpp" />
