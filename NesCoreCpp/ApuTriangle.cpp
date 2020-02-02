@@ -46,10 +46,8 @@ void ApuTriangle::Tick()
     }
 }
 
-void ApuTriangle::TickHalfFrame()
+void ApuTriangle::TickQuarterFrame()
 {
-    lengthCounter_.Tick();
-
     if (linearCounterReload_)
     {
         linearCounter_ = linearCounterReloadValue_;
@@ -66,6 +64,11 @@ void ApuTriangle::TickHalfFrame()
     {
         linearCounterReload_ = false;
     }
+}
+
+void ApuTriangle::TickHalfFrame()
+{
+    lengthCounter_.Tick();
 }
 
 int8_t ApuTriangle::Sample()

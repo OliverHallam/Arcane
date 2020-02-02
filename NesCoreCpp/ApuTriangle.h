@@ -9,6 +9,7 @@ public:
     void Write(uint16_t address, uint8_t value);
 
     void Tick();
+    void TickQuarterFrame();
     void TickHalfFrame();
 
     int8_t Sample();
