@@ -96,6 +96,11 @@ void Apu::Write(uint16_t address, uint8_t value)
         triangle_.Enable(value & 0x04);
         noise_.Enable(value & 0x08);
         break;
+
+    case 0x4017:
+        // TODO: interrupt mask
+        frameCounter_.SetMode(value >> 7);
+        break;
     }
 }
 
