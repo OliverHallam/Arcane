@@ -17,7 +17,7 @@ public:
     void TickQuarterFrame();
     void TickHalfFrame();
 
-    uint8_t Sample();
+    int8_t Sample();
 
 private:
     uint_fast16_t LookupPeriod(uint8_t period);

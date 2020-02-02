@@ -63,9 +63,12 @@ void ApuNoise::TickHalfFrame()
     lengthCounter_.Tick();
 }
 
-uint8_t ApuNoise::Sample()
+int8_t ApuNoise::Sample()
 {
-    return (lengthCounter_.IsOutputEnabled() && GetSequenceOutput()) ? envelope_.Sample() : 0;
+    if (lengthCounter_.IsOutputEnabled())
+        return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
+
+    return 0;
 }
 
 uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)

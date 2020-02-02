@@ -23,6 +23,7 @@
     <ClInclude Include="ApuLengthCounter.h" />
     <ClInclude Include="ApuSweep.h" />
     <ClInclude Include="ApuNoise.h" />
+    <ClInclude Include="ApuTriangle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -41,5 +42,6 @@
     <ClCompile Include="ApuLengthCounter.cpp" />
     <ClCompile Include="ApuSweep.cpp" />
     <ClCompile Include="ApuNoise.cpp" />
+    <ClCompile Include="ApuTriangle.cpp" />
   </ItemGroup>
 </Project>

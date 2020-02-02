@@ -62,12 +62,12 @@ void ApuPulse::Write(uint8_t address, uint8_t value)
     }
 }
 
-uint8_t ApuPulse::Sample()
+int8_t ApuPulse::Sample()
 {
-    return (lengthCounter_.IsOutputEnabled() && 
-        sweep_.IsOutputEnabled() &&
-        GetSequenceOutput())
-        ? envelope_.Sample() : 0;
+    if (lengthCounter_.IsOutputEnabled() && sweep_.IsOutputEnabled())
+        return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
+
+    return 0;
 }
 
 uint8_t ApuPulse::GetDutyLookup(uint8_t duty)

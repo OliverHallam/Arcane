@@ -18,7 +18,7 @@ public:
     void TickQuarterFrame();
     void TickHalfFrame();
 
-    uint8_t Sample();
+    int8_t Sample();
 
 private:
     uint8_t GetDutyLookup(uint8_t duty);

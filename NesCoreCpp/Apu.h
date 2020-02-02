@@ -2,8 +2,9 @@
 
 #include "ApuEnvelope.h"
 #include "ApuFrameCounter.h"
-#include "ApuPulse.h"
 #include "ApuNoise.h"
+#include "ApuPulse.h"
+#include "ApuTriangle.h"
 
 #include <array>
 #include <cstdint>
@@ -30,6 +31,7 @@ private:
 
     ApuPulse pulse1_;
     ApuPulse pulse2_;
+    ApuTriangle triangle_;
     ApuNoise noise_;
 
     std::array<int16_t, SAMPLES_PER_FRAME> frameBuffer_;

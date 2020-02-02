@@ -136,6 +136,7 @@
     <ClInclude Include="ApuNoise.h" />
     <ClInclude Include="ApuPulse.h" />
     <ClInclude Include="ApuSweep.h" />
+    <ClInclude Include="ApuTriangle.h" />
     <ClInclude Include="Bus.h" />
     <ClInclude Include="Cart.h" />
     <ClInclude Include="Controller.h" />
@@ -154,6 +155,7 @@
     <ClCompile Include="ApuNoise.cpp" />
     <ClCompile Include="ApuPulse.cpp" />
     <ClCompile Include="ApuSweep.cpp" />
+    <ClCompile Include="ApuTriangle.cpp" />
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="Cart.cpp" />
     <ClCompile Include="Controller.cpp" />
