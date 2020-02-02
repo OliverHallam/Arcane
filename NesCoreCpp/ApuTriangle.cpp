@@ -78,7 +78,7 @@ int8_t ApuTriangle::Sample()
         if (waveformCycle_ < 16)
             return 15 - waveformCycle_ * 2;
         else
-            return waveformCycle_ * 2 - 15;
+            return waveformCycle_ * 2 - 47;
     }
 
     return 0;
