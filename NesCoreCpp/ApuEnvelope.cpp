@@ -28,7 +28,11 @@ void ApuEnvelope::Tick()
             }
         }
     }
+}
 
+void ApuEnvelope::SetLoop(bool loop)
+{
+    loop_ = loop;
 }
 
 void ApuEnvelope::SetConstantVolume(bool constantVolume)

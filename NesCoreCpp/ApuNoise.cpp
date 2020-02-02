@@ -91,6 +91,8 @@ uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)
     case 0x0d: return 1016;
     case 0x0e: return 2034;
     case 0x0f: return 4068;
+
+    default: return 0;
     }
 }
 

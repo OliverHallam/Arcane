@@ -76,6 +76,8 @@ uint8_t ApuLengthCounter::GetLinearLength(uint8_t length)
     case 0x1b: return 26;
     case 0x1d: return 28;
     case 0x1f: return 30;
+
+    default: return 0;
     }
 }
 

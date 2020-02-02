@@ -7,6 +7,7 @@ class ApuEnvelope
 public:
     void Tick();
 
+    void SetLoop(bool loop);
     void SetConstantVolume(bool constantVolume);
     void SetValue(uint8_t envelope);
     void Start();
