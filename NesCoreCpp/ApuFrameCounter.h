@@ -13,10 +13,11 @@ public:
 
     void Tick();
 
-    uint8_t Mode();
-
 private:
-    uint_fast16_t cycleCount_{};
+    void Activate();
+
+    uint_fast16_t counter_;
+    uint_fast8_t phase_;
 
     uint8_t mode_{};
 

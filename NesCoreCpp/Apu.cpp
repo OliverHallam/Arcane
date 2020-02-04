@@ -11,11 +11,11 @@ Apu::Apu() :
 
 void Apu::Tick()
 {
-    frameCounter_.Tick();
+    cycleCount_++;
 
+    frameCounter_.Tick();
     triangle_.Tick();
 
-    cycleCount_++;
     if ((cycleCount_ & 1))
     {
         pulse1_.Tick();
@@ -95,6 +95,7 @@ void Apu::Write(uint16_t address, uint8_t value)
         pulse2_.Enable(value & 0x02);
         triangle_.Enable(value & 0x04);
         noise_.Enable(value & 0x08);
+        status_ = value & 0x1f;
         break;
 
     case 0x4017:
@@ -102,6 +103,15 @@ void Apu::Write(uint16_t address, uint8_t value)
         frameCounter_.SetMode(value >> 7);
         break;
     }
+}
+
+uint8_t Apu::Read(uint16_t address)
+{
+    if (address == 0x4015)
+    {
+        return status_;
+    }
+
 }
 
 const std::array<int16_t, Apu::SAMPLES_PER_FRAME>& Apu::Samples() const

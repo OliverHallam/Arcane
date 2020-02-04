@@ -3,7 +3,9 @@
 #include "Apu.h"
 
 ApuFrameCounter::ApuFrameCounter(Apu& apu)
-    : apu_{ apu }
+    : apu_{ apu },
+    counter_{ 7457 },
+    phase_{ 0 }
 {
 }
 
@@ -12,47 +14,65 @@ void ApuFrameCounter::SetMode(uint8_t mode)
     mode_ = mode;
 
     // we will reset in 3/4 cycles time so lets do this by jumping to the end 
-    if (cycleCount_ & 1)
-        cycleCount_ = 37277;
+    phase_ = 4;
+    if (counter_ & 1)
+        counter_ = 4;
     else
-        cycleCount_ = 37278;
+        counter_ = 3;
 }
 
 void ApuFrameCounter::Tick()
 {
-    // MODE 0:
-    switch (cycleCount_++)
+    if (!counter_--)
     {
-    case 7457:
+        Activate();
+    }
+}
+
+void ApuFrameCounter::Activate()
+{
+    switch (phase_)
+    {
+    case 0:
         apu_.QuarterFrame();
+        phase_ = 1;
+        counter_ = 7456;
         break;
 
-    case 14913:
+    case 1:
         apu_.QuarterFrame();
         apu_.HalfFrame();
+        phase_ = 2;
+        counter_ = 7458;
         break;
 
-    case 22371:
+    case 2:
         apu_.QuarterFrame();
+        phase_ = 3;
+        counter_ = 7458;
         break;
 
-    case 29829:
+    case 3:
         if (mode_ == 0)
         {
-            // TODO: interrupt
             apu_.QuarterFrame();
             apu_.HalfFrame();
-            cycleCount_ = 0;
+            phase_ = 0;
+            counter_ = 7458;
+            break;
         }
-        break;
-
-    case 37281:
-        if (mode_ == 1)
+        else
         {
-            apu_.QuarterFrame();
-            apu_.HalfFrame();
-            cycleCount_ = 0;
+            phase_ = 4;
+            counter_ = 7452;
+            break;
         }
+
+    case 4:
+        apu_.QuarterFrame();
+        apu_.HalfFrame();
+        phase_ = 0;
+        counter_ = 7458;
         break;
     }
 }
