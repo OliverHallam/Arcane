@@ -23,10 +23,13 @@ public:
     void SyncFrame();
 
     void Write(uint16_t address, uint8_t value);
+    uint8_t Read(uint16_t address);
 
     const std::array<int16_t, SAMPLES_PER_FRAME>& Samples() const;
 
 private:
+    void Sync();
+
     ApuFrameCounter frameCounter_;
 
     ApuPulse pulse1_;
@@ -39,4 +42,9 @@ private:
     int currentSample_;
     int cycleCount_;
     int nextSampleCycle_;
+
+    uint32_t currentCycle_;
+    uint32_t targetCycle_;
+
+    uint8_t status_;
 };

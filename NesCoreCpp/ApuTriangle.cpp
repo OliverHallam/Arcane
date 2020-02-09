@@ -73,6 +73,7 @@ void ApuTriangle::TickHalfFrame()
 
 int8_t ApuTriangle::Sample()
 {
+    // the original hardware outputs from 0 - 15, I've scaled this to -15 - 15
     if (linearCounter_ && lengthCounter_.IsOutputEnabled())
     {
         if (waveformCycle_ < 16)

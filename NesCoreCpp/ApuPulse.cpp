@@ -10,7 +10,6 @@ void ApuPulse::Tick()
     {
         timer_ = sweep_.Period();
         sequence_--;
-        sequence_ &= 0x7;
     }
     else
     {
@@ -86,5 +85,5 @@ uint8_t ApuPulse::GetDutyLookup(uint8_t duty)
 
 bool ApuPulse::GetSequenceOutput()
 {
-    return (dutyLookup_ << sequence_) & 0x80;
+    return (dutyLookup_ << (sequence_ & 0x07)) & 0x80;
 }
