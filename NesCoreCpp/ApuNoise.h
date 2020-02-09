@@ -20,7 +20,7 @@ public:
     int8_t Sample();
 
 private:
-    __declspec(noinline) void StepSequencer();
+    void StepSequencer();
 
     uint_fast16_t LookupPeriod(uint8_t period);
 
