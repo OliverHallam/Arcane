@@ -28,7 +28,7 @@ public:
     const std::array<int16_t, SAMPLES_PER_FRAME>& Samples() const;
 
 private:
-    void Sync();
+    void Sample();
 
     ApuFrameCounter frameCounter_;
 

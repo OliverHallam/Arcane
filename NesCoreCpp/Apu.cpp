@@ -25,18 +25,8 @@ void Apu::Tick()
         odd_ = false;
     }
 
-
-    if (!sampleCounter_)
-    {
-        frameBuffer_[currentSample_++] =
-            (pulse1_.Sample() << 7) +
-            (pulse2_.Sample() << 7) +
-            (triangle_.Sample() << 6) +
-            (noise_.Sample() << 7);
-        auto nextSampleCycle = (29780 * (currentSample_ + 1)) / SAMPLES_PER_FRAME;
-        sampleCounter_ = nextSampleCycle - lastSampleCycle_;
-        lastSampleCycle_ = nextSampleCycle;
-    }
+    if (!sampleCounter_--)
+        Sample();
 }
 
 void Apu::QuarterFrame()
@@ -121,4 +111,16 @@ uint8_t Apu::Read(uint16_t address)
 const std::array<int16_t, Apu::SAMPLES_PER_FRAME>& Apu::Samples() const
 {
     return frameBuffer_;
+}
+
+void Apu::Sample()
+{
+    frameBuffer_[currentSample_++] =
+        (pulse1_.Sample() << 7) +
+        (pulse2_.Sample() << 7) +
+        (triangle_.Sample() << 6) +
+        (noise_.Sample() << 7);
+    auto nextSampleCycle = (29780 * (currentSample_ + 1)) / SAMPLES_PER_FRAME;
+    sampleCounter_ = nextSampleCycle - lastSampleCycle_;
+    lastSampleCycle_ = nextSampleCycle;
 }
