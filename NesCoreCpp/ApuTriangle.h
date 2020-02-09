@@ -15,6 +15,8 @@ public:
     int8_t Sample();
 
 private:
+    void StepSequencer();
+
     ApuLengthCounter lengthCounter_;
 
     uint16_t period_{};

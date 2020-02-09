@@ -24,9 +24,7 @@ void ApuFrameCounter::SetMode(uint8_t mode)
 void ApuFrameCounter::Tick()
 {
     if (!counter_--)
-    {
         Activate();
-    }
 }
 
 void ApuFrameCounter::Activate()

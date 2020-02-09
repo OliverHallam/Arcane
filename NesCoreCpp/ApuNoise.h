@@ -20,6 +20,8 @@ public:
     int8_t Sample();
 
 private:
+    void StepSequencer();
+
     uint_fast16_t LookupPeriod(uint8_t period);
 
     bool GetSequenceOutput();

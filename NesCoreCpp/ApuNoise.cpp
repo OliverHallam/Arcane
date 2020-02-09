@@ -38,15 +38,7 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
 void ApuNoise::Tick()
 {
     if (!timer_--)
-    {
-        auto feedback = mode_ ? shifter_ >> 6 : shifter_ >> 1;
-        feedback ^= shifter_;
-        feedback &= 0x0001;
-        shifter_ >>= 1;
-        shifter_ |= feedback << 14;
-
-        timer_ = period_;
-    }
+        StepSequencer();
 }
 
 void ApuNoise::TickQuarterFrame()
@@ -65,6 +57,17 @@ int8_t ApuNoise::Sample()
         return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
 
     return 0;
+}
+
+void ApuNoise::StepSequencer()
+{
+    auto feedback = mode_ ? shifter_ >> 6 : shifter_ >> 1;
+    feedback ^= shifter_;
+    feedback &= 0x0001;
+    shifter_ >>= 1;
+    shifter_ |= feedback << 14;
+
+    timer_ = period_;
 }
 
 uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)

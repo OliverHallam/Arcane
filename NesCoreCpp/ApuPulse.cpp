@@ -7,10 +7,7 @@ ApuPulse::ApuPulse()
 void ApuPulse::Tick()
 {
     if (!timer_--)
-    {
-        timer_ = sweep_.Period();
-        sequence_--;
-    }
+        StepSequencer();
 }
 
 void ApuPulse::TickQuarterFrame()
@@ -64,6 +61,12 @@ int8_t ApuPulse::Sample()
         return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
 
     return 0;
+}
+
+void ApuPulse::StepSequencer()
+{
+    timer_ = sweep_.Period();
+    sequence_--;
 }
 
 uint8_t ApuPulse::GetDutyLookup(uint8_t duty)

@@ -21,6 +21,8 @@ public:
     int8_t Sample();
 
 private:
+    void StepSequencer();
+
     uint8_t GetDutyLookup(uint8_t duty);
     bool GetSequenceOutput();
 
