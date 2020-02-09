@@ -1,7 +1,7 @@
 #include "ApuNoise.h"
 
 ApuNoise::ApuNoise()
-    : mode_{},
+    : modeShift_{1},
     period_{},
     timer_{},
     shifter_{1}
@@ -24,7 +24,7 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
         break;
 
     case 2:
-        mode_ = value >> 7;
+        modeShift_ = value >> 7 ? 6 : 1;
         period_ = LookupPeriod(value & 0x0f);
         break;
 
@@ -61,7 +61,7 @@ int8_t ApuNoise::Sample()
 
 void ApuNoise::StepSequencer()
 {
-    auto feedback = mode_ ? shifter_ >> 6 : shifter_ >> 1;
+    auto feedback = shifter_ >> modeShift_;
     feedback ^= shifter_;
     feedback &= 0x0001;
     shifter_ >>= 1;
