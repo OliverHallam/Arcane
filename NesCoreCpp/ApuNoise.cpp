@@ -37,7 +37,7 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
 
 void ApuNoise::Tick()
 {
-    if (!timer_)
+    if (!timer_--)
     {
         auto feedback = mode_ ? shifter_ >> 6 : shifter_ >> 1;
         feedback ^= shifter_;
@@ -46,10 +46,6 @@ void ApuNoise::Tick()
         shifter_ |= feedback << 14;
 
         timer_ = period_;
-    }
-    else
-    {
-        timer_--;
     }
 }
 

@@ -31,7 +31,7 @@ void ApuTriangle::Write(uint16_t address, uint8_t value)
 
 void ApuTriangle::Tick()
 {
-    if (timer_ == 0)
+    if (!timer_--)
     {
         if (linearCounter_ && lengthCounter_.IsOutputEnabled())
         {
@@ -39,10 +39,6 @@ void ApuTriangle::Tick()
             waveformCycle_ &= 0x1f;
         }
         timer_ = period_;
-    }
-    else
-    {
-        timer_--;
     }
 }
 

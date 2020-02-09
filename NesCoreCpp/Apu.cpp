@@ -4,33 +4,38 @@ Apu::Apu() :
     frameCounter_{*this},
     frameBuffer_{},
     currentSample_(0),
-    cycleCount_(0),
-    nextSampleCycle_(29780 / SAMPLES_PER_FRAME)
+    sampleCounter_(29780 / SAMPLES_PER_FRAME)
 {
 }
 
 void Apu::Tick()
 {
-    cycleCount_++;
-
     frameCounter_.Tick();
     triangle_.Tick();
 
-    if ((cycleCount_ & 1))
+    if (!odd_)
     {
         pulse1_.Tick();
         pulse2_.Tick();
         noise_.Tick();
+        odd_ = true;
+    }
+    else
+    {
+        odd_ = false;
     }
 
-    if (cycleCount_ == nextSampleCycle_)
+
+    if (!sampleCounter_)
     {
         frameBuffer_[currentSample_++] =
             (pulse1_.Sample() << 7) +
             (pulse2_.Sample() << 7) +
             (triangle_.Sample() << 6) +
             (noise_.Sample() << 7);
-        nextSampleCycle_ = (29780 * (currentSample_ + 1)) / SAMPLES_PER_FRAME;
+        auto nextSampleCycle = (29780 * (currentSample_ + 1)) / SAMPLES_PER_FRAME;
+        sampleCounter_ = nextSampleCycle - lastSampleCycle_;
+        lastSampleCycle_ = nextSampleCycle;
     }
 }
 
@@ -54,8 +59,7 @@ void Apu::SyncFrame()
 {
     frameBuffer_.back() = pulse1_.Sample();
     currentSample_ = 0;
-    cycleCount_ = 0;
-    nextSampleCycle_ = 29780 / SAMPLES_PER_FRAME;
+    lastSampleCycle_ = sampleCounter_ = 29780 / SAMPLES_PER_FRAME;
 }
 
 void Apu::Write(uint16_t address, uint8_t value)

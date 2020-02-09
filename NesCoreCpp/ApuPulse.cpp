@@ -6,14 +6,10 @@ ApuPulse::ApuPulse()
 
 void ApuPulse::Tick()
 {
-    if (!timer_)
+    if (!timer_--)
     {
         timer_ = sweep_.Period();
         sequence_--;
-    }
-    else
-    {
-        timer_--;
     }
 }
 

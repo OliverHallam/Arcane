@@ -40,8 +40,10 @@ private:
     std::array<int16_t, SAMPLES_PER_FRAME> frameBuffer_;
 
     int currentSample_;
-    int cycleCount_;
-    int nextSampleCycle_;
+    int lastSampleCycle_;
+    int sampleCounter_;
+
+    bool odd_;
 
     uint32_t currentCycle_;
     uint32_t targetCycle_;
