@@ -11,26 +11,20 @@ Apu::Apu() :
 void Apu::Tick()
 {
     frameCounter_.Tick();
-    triangle_.Tick();
 
-    if (!odd_)
-    {
-        pulse1_.Tick();
-        pulse2_.Tick();
-        noise_.Tick();
-        odd_ = true;
-    }
-    else
-    {
-        odd_ = false;
-    }
+    pendingCycles_++;
 
-    if (!sampleCounter_--)
+    if (!--sampleCounter_)
+    {
+        Sync();
         Sample();
+    }
 }
 
 void Apu::QuarterFrame()
 {
+    Sync();
+
     pulse1_.TickQuarterFrame();
     pulse2_.TickQuarterFrame();
     triangle_.TickQuarterFrame();
@@ -39,6 +33,8 @@ void Apu::QuarterFrame()
 
 void Apu::HalfFrame()
 {
+    Sync();
+
     pulse1_.TickHalfFrame();
     pulse2_.TickHalfFrame();
     triangle_.TickHalfFrame();
@@ -47,6 +43,8 @@ void Apu::HalfFrame()
 
 void Apu::SyncFrame()
 {
+    Sync();
+
     frameBuffer_.back() = pulse1_.Sample();
     currentSample_ = 0;
     lastSampleCycle_ = sampleCounter_ = 29780 / SAMPLES_PER_FRAME;
@@ -54,6 +52,8 @@ void Apu::SyncFrame()
 
 void Apu::Write(uint16_t address, uint8_t value)
 {
+    Sync();
+
     switch (address)
     {
     case 0x4000:
@@ -113,12 +113,22 @@ const std::array<int16_t, Apu::SAMPLES_PER_FRAME>& Apu::Samples() const
     return frameBuffer_;
 }
 
+void Apu::Sync()
+{
+    pulse1_.Run(pendingCycles_);
+    pulse2_.Run(pendingCycles_);
+    triangle_.Run(pendingCycles_);
+    noise_.Run(pendingCycles_);
+
+    pendingCycles_ = 0;
+}
+
 void Apu::Sample()
 {
     frameBuffer_[currentSample_++] =
         (pulse1_.Sample() << 7) +
         (pulse2_.Sample() << 7) +
-        (triangle_.Sample() << 6) +
+        (triangle_.Sample() << 7) +
         (noise_.Sample() << 7);
     auto nextSampleCycle = (29780 * (currentSample_ + 1)) / SAMPLES_PER_FRAME;
     sampleCounter_ = nextSampleCycle - lastSampleCycle_;

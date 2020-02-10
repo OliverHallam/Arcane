@@ -8,19 +8,19 @@ public:
     void Enable(bool enabled);
     void Write(uint16_t address, uint8_t value);
 
-    void Tick();
+    void Run(uint32_t cycles);
+
     void TickQuarterFrame();
     void TickHalfFrame();
 
     int8_t Sample();
 
 private:
-    void StepSequencer();
-
     ApuLengthCounter lengthCounter_;
 
     uint16_t period_{};
-    uint16_t timer_{};
+    uint16_t period2_{1};
+    int32_t timer_{};
 
     int waveformCycle_{};
 

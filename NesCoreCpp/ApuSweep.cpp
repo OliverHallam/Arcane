@@ -4,6 +4,7 @@ void ApuSweep::SetPeriodLow(uint8_t value)
 {
     period_ &= 0x0700;
     period_ |= value;
+    period2_ = period_ * 2 + 2;
     UpdateTargetPeriod();
 }
 
@@ -24,6 +25,7 @@ void ApuSweep::Tick()
         if (enabled_ && IsOutputEnabled())
         {
             period_ = targetPeriod_;
+            period2_ = period_ * 2 + 2;
             UpdateTargetPeriod();
         }
 
@@ -43,7 +45,7 @@ void ApuSweep::Tick()
 
 uint16_t ApuSweep::Period()
 {
-    return period_;
+    return period2_;
 }
 
 bool ApuSweep::IsOutputEnabled()
@@ -66,5 +68,6 @@ void ApuSweep::SetPeriodHigh(uint8_t value)
 {
     period_ &= 0x00ff;
     period_ |= value << 8;
+    period2_ = period_ * 2 + 2;
     UpdateTargetPeriod();
 }

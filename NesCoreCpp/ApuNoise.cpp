@@ -35,10 +35,14 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
     }
 }
 
-void ApuNoise::Tick()
+void ApuNoise::Run(uint32_t cycles)
 {
-    if (!timer_--)
+    timer_ -= cycles;
+    while (timer_ <= 0)
+    {
         StepSequencer();
+        timer_ += period_ * 2 + 1;
+    }
 }
 
 void ApuNoise::TickQuarterFrame()
@@ -66,8 +70,6 @@ void ApuNoise::StepSequencer()
     feedback &= 0x0001;
     shifter_ >>= 1;
     shifter_ |= feedback << 14;
-
-    timer_ = period_;
 }
 
 uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)

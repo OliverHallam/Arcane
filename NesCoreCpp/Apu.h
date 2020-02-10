@@ -28,6 +28,7 @@ public:
     const std::array<int16_t, SAMPLES_PER_FRAME>& Samples() const;
 
 private:
+    void Sync();
     void Sample();
 
     ApuFrameCounter frameCounter_;
@@ -39,14 +40,11 @@ private:
 
     std::array<int16_t, SAMPLES_PER_FRAME> frameBuffer_;
 
-    int currentSample_;
-    int lastSampleCycle_;
-    int sampleCounter_;
+    uint32_t currentSample_;
+    uint32_t lastSampleCycle_;
+    uint32_t sampleCounter_;
 
-    bool odd_;
-
-    uint32_t currentCycle_;
-    uint32_t targetCycle_;
+    uint32_t pendingCycles_{};
 
     uint8_t status_;
 };

@@ -13,7 +13,8 @@ public:
     void Enable(bool enabled);
     void Write(uint16_t address, uint8_t value);
 
-    void Tick();
+    void Run(uint32_t cycles);
+
     void TickQuarterFrame();
     void TickHalfFrame();
 
@@ -29,7 +30,7 @@ private:
     uint_fast16_t modeShift_;
     uint_fast16_t period_;
 
-    uint_fast16_t timer_;
+    int32_t timer_;
     uint_fast16_t shifter_;
 
     ApuEnvelope envelope_;

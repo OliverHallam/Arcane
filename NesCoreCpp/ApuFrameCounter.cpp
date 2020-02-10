@@ -4,7 +4,7 @@
 
 ApuFrameCounter::ApuFrameCounter(Apu& apu)
     : apu_{ apu },
-    counter_{ 7457 },
+    counter_{ 7458 },
     phase_{ 0 }
 {
 }
@@ -16,14 +16,14 @@ void ApuFrameCounter::SetMode(uint8_t mode)
     // we will reset in 3/4 cycles time so lets do this by jumping to the end 
     phase_ = 4;
     if (counter_ & 1)
-        counter_ = 4;
-    else
         counter_ = 3;
+    else
+        counter_ = 4;
 }
 
 void ApuFrameCounter::Tick()
 {
-    if (!counter_--)
+    if (!--counter_)
         Activate();
 }
 

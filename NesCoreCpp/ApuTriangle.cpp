@@ -18,21 +18,40 @@ void ApuTriangle::Write(uint16_t address, uint8_t value)
     case 2:
         period_ &= 0x0700;
         period_ |= value;
+        period2_ = period_ + 1;
         break;
 
     case 3:
         lengthCounter_.SetLength(value >> 3);
         period_ &= 0x00ff;
         period_ |= (value & 0x07) << 8;
+        period2_ = period_ + 1;
         linearCounterReload_ = true;
         break;
     }
 }
 
-void ApuTriangle::Tick()
+void ApuTriangle::Run(uint32_t cycles)
 {
-    if (!timer_--)
-        StepSequencer();
+    timer_ -= cycles;
+
+    if (linearCounter_ && lengthCounter_.IsOutputEnabled())
+    {
+        while (timer_ <= 0)
+        {
+            waveformCycle_++;
+            timer_ += period2_;
+        }
+
+        waveformCycle_ &= 0x1f;
+    }
+    else
+    {
+        while (timer_ <= 0)
+        {
+            timer_ += period2_;
+        }
+    }
 }
 
 void ApuTriangle::TickQuarterFrame()
@@ -72,14 +91,4 @@ int8_t ApuTriangle::Sample()
     }
 
     return 0;
-}
-
-void ApuTriangle::StepSequencer()
-{
-    if (linearCounter_ && lengthCounter_.IsOutputEnabled())
-    {
-        waveformCycle_++;
-        waveformCycle_ &= 0x1f;
-    }
-    timer_ = period_;
 }
