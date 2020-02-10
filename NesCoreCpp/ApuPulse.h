@@ -9,7 +9,7 @@
 class ApuPulse
 {
 public:
-    ApuPulse();
+    ApuPulse(bool pulse1);
 
     void Enable(bool enabled);
     void Write(uint8_t address, uint8_t value);
@@ -31,5 +31,5 @@ private:
 
     ApuEnvelope envelope_{};
     ApuLengthCounter lengthCounter_{};
-    ApuSweep sweep_{};
+    ApuSweep sweep_;
 };

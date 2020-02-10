@@ -59,9 +59,14 @@ void ApuSweep::UpdateTargetPeriod()
     if (negate_)
     {
         // TODO: pulse 2 doesn't subtract 1
-        delta = -delta - 1;
+        delta = -delta - negatedDeltaOffset_;
     }
     targetPeriod_ = period_ + delta;
+}
+
+ApuSweep::ApuSweep(bool pulse1)
+{
+    negatedDeltaOffset_ = pulse1 ? 1 : 0;
 }
 
 void ApuSweep::SetPeriodHigh(uint8_t value)

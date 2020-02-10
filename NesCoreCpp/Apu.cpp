@@ -4,7 +4,9 @@ Apu::Apu() :
     frameCounter_{*this},
     frameBuffer_{},
     currentSample_(0),
-    sampleCounter_(29780 / SAMPLES_PER_FRAME)
+    sampleCounter_(29780 / SAMPLES_PER_FRAME),
+    pulse1_{true},
+    pulse2_{false}
 {
 }
 

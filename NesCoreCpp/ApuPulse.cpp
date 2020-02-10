@@ -1,6 +1,7 @@
 #include "ApuPulse.h"
 
-ApuPulse::ApuPulse()
+ApuPulse::ApuPulse(bool pulse1)
+    : sweep_{pulse1}
 {
 }
 
