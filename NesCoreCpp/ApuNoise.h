@@ -29,6 +29,7 @@ private:
 
     uint_fast16_t modeShift_;
     uint_fast16_t period_;
+    uint32_t period2_;
 
     int32_t timer_;
     uint_fast16_t shifter_;

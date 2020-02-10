@@ -3,6 +3,7 @@
 ApuNoise::ApuNoise()
     : modeShift_{1},
     period_{},
+    period2_{2},
     timer_{},
     shifter_{1}
 {
@@ -26,6 +27,7 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
     case 2:
         modeShift_ = value >> 7 ? 6 : 1;
         period_ = LookupPeriod(value & 0x0f);
+        period2_ = period_ * 2 + 2;
         break;
 
     case 3:
@@ -41,7 +43,7 @@ void ApuNoise::Run(uint32_t cycles)
     while (timer_ <= 0)
     {
         StepSequencer();
-        timer_ += period_ * 2 + 1;
+        timer_ += period2_;
     }
 }
 
