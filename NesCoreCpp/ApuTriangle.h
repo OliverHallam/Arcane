@@ -19,7 +19,7 @@ private:
     ApuLengthCounter lengthCounter_;
 
     uint16_t period_{};
-    uint16_t period2_{1};
+    uint16_t period2_{2};
     int32_t timer_{};
 
     int waveformCycle_{};

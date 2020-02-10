@@ -19,7 +19,7 @@ private:
     void UpdateTargetPeriod();
 
     uint16_t period_{};
-    uint16_t period2_{1};
+    uint16_t period2_{2};
 
     bool enabled_{};
     uint_fast8_t divide_{};
