@@ -16,7 +16,6 @@ void Apu::Tick()
 
     if (!--sampleCounter_)
     {
-        Sync();
         Sample();
     }
 }
@@ -45,7 +44,11 @@ void Apu::SyncFrame()
 {
     Sync();
 
-    frameBuffer_.back() = pulse1_.Sample();
+    frameBuffer_.back() = (pulse1_.Sample() << 7) +
+        (pulse2_.Sample() << 7) +
+        (triangle_.Sample() << 7) +
+        (noise_.Sample() << 7);
+
     currentSample_ = 0;
     lastSampleCycle_ = sampleCounter_ = 29780 / SAMPLES_PER_FRAME;
 }
@@ -125,6 +128,8 @@ void Apu::Sync()
 
 void Apu::Sample()
 {
+    Sync();
+
     frameBuffer_[currentSample_++] =
         (pulse1_.Sample() << 7) +
         (pulse2_.Sample() << 7) +
