@@ -26,8 +26,8 @@ private:
     bool GetSequenceOutput();
 
     int32_t timer_{};
-    uint8_t sequence_{};
-    uint8_t dutyLookup_{};
+    uint32_t sequence_{};
+    uint32_t dutyLookup_{};
 
     ApuEnvelope envelope_{};
     ApuLengthCounter lengthCounter_{};
