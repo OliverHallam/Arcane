@@ -67,11 +67,8 @@ int8_t ApuNoise::Sample()
 
 void ApuNoise::StepSequencer()
 {
-    auto feedback = shifter_ >> modeShift_;
-    feedback ^= shifter_;
-    feedback &= 0x0001;
-    shifter_ >>= 1;
-    shifter_ |= feedback << 14;
+    auto feedback = (shifter_ ^ (shifter_ >> modeShift_)) & 0x0001;
+    shifter_ = (shifter_ >> 1) | (feedback << 14);
 }
 
 uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)
