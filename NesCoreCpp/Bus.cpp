@@ -9,6 +9,7 @@
 Bus::Bus() :
     cpu_(nullptr),
     ppu_(nullptr),
+    apu_(nullptr),
     controller_(nullptr)
 {
     cpuRam_.fill(0xff);
@@ -25,6 +26,11 @@ void Bus::Attach(Ppu* ppu)
     ppu_ = ppu;
 }
 
+void Bus::Attach(Apu* apu)
+{
+    apu_ = apu;
+}
+
 void Bus::Attach(Controller* controller)
 {
     controller_ = controller;
@@ -35,9 +41,9 @@ void Bus::Attach(std::unique_ptr<Cart> cart)
     cart_ = std::move(cart);
 }
 
-
 void Bus::TickCpu()
 {
+    apu_->Tick();
     ppu_->Tick3();
 }
 
@@ -103,6 +109,8 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
             cpu_->RunDma(value);
         else if (address == 0x4016)
             controller_->Write(value);
+        else
+            apu_->Write(address, value);
     }
 }
 
@@ -157,4 +165,9 @@ void Bus::SignalNmi()
 void Bus::DmaWrite(uint8_t value)
 {
     ppu_->DmaWrite(value);
+}
+
+void Bus::OnFrame()
+{
+    apu_->SyncFrame();
 }

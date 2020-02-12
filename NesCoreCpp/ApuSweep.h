@@ -1,0 +1,35 @@
+#pragma once
+
+#include <cstdint>
+
+class ApuSweep
+{
+public:
+    ApuSweep(bool pulse1);
+
+    void SetPeriodHigh(uint8_t value);
+    void SetPeriodLow(uint8_t value);
+    void SetSweep(uint8_t value);
+
+    void Tick();
+
+    uint16_t Period();
+
+    bool IsOutputEnabled();
+
+private:
+    void UpdateTargetPeriod();
+
+    uint16_t period_{};
+    uint16_t period2_{2} ;
+
+    bool enabled_{};
+    uint_fast8_t divide_{};
+    bool negate_{};
+    uint_fast8_t shift_{};
+    bool reload_{};
+    uint_fast8_t divideCounter_{};
+    uint16_t targetPeriod_{};
+
+    uint16_t negatedDeltaOffset_{};
+};

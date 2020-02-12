@@ -28,6 +28,8 @@ static void fallback_log(enum retro_log_level level, const char* fmt, ...)
 
 static retro_environment_t environ_cb;
 static retro_video_refresh_t video_cb;
+static retro_audio_sample_batch_t audio_batch_cb;
+static retro_audio_sample_t audio_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
 
@@ -70,7 +72,7 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
     info->geometry.aspect_ratio = 0.0;
 
     info->timing.fps = 60.0;
-    info->timing.sample_rate = 0.0;
+    info->timing.sample_rate = 44100.0;
 }
 
 void retro_set_environment(retro_environment_t cb)
@@ -94,10 +96,12 @@ void retro_set_environment(retro_environment_t cb)
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
 {
+    audio_cb = cb;
 }
 
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
 {
+    audio_batch_cb = cb;
 }
 
 void retro_set_input_poll(retro_input_poll_t cb)
@@ -153,8 +157,29 @@ void retro_run(void)
     nesSystem->RunFrame();
 
     const auto& display = nesSystem->Display();
-
     video_cb(display.Buffer(), Display::WIDTH, Display::HEIGHT, Display::WIDTH * sizeof(uint32_t));
+
+    //static std::array<int16_t, Apu::SAMPLES_PER_FRAME * 2> audioFrame;
+    //auto i = 0;
+    //for (auto sample : nesSystem->Apu().Samples())
+    //{
+    //    audioFrame[i++] = sample;
+    //    audioFrame[i++] = sample;
+    //}
+
+    //audio_batch_cb(&audioFrame[0], Apu::SAMPLES_PER_FRAME);
+
+    //for (unsigned i = 0; i < 44100 / 60; i++, phase++)
+    //{
+    //    int16_t val = 0x800 * sinf(2.0f * 3.1415926535 * phase * 300.0f / 30000.0f);
+    //    audio_cb(val, val);
+    //}
+
+    for (auto sample : nesSystem->Apu().Samples())
+    {
+        audio_cb(sample, sample);
+    }
+
 }
 
 bool retro_load_game(const struct retro_game_info* info)

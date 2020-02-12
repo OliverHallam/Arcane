@@ -549,6 +549,7 @@ void Ppu::EnterVBlank()
 {
     display_.VBlank();
 
+    bus_.OnFrame();
     frameCount_++;
 
     if (enableVBlankInterrupt_)

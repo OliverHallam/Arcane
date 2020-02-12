@@ -16,6 +16,14 @@
     <ClInclude Include="NesSystem.h" />
     <ClInclude Include="PpuSprites.h" />
     <ClInclude Include="PpuBackground.h" />
+    <ClInclude Include="Apu.h" />
+    <ClInclude Include="ApuPulse.h" />
+    <ClInclude Include="ApuEnvelope.h" />
+    <ClInclude Include="ApuFrameCounter.h" />
+    <ClInclude Include="ApuLengthCounter.h" />
+    <ClInclude Include="ApuSweep.h" />
+    <ClInclude Include="ApuNoise.h" />
+    <ClInclude Include="ApuTriangle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -27,5 +35,13 @@
     <ClCompile Include="NesSystem.cpp" />
     <ClCompile Include="PpuSprites.cpp" />
     <ClCompile Include="PpuBackground.cpp" />
+    <ClCompile Include="Apu.cpp" />
+    <ClCompile Include="ApuPulse.cpp" />
+    <ClCompile Include="ApuFrameCounter.cpp" />
+    <ClCompile Include="ApuEnvelope.cpp" />
+    <ClCompile Include="ApuLengthCounter.cpp" />
+    <ClCompile Include="ApuSweep.cpp" />
+    <ClCompile Include="ApuNoise.cpp" />
+    <ClCompile Include="ApuTriangle.cpp" />
   </ItemGroup>
 </Project>

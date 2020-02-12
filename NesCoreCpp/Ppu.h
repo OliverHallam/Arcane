@@ -72,15 +72,15 @@ private:
     PpuBackground background_;
     PpuSprites sprites_;
 
-    bool hasDeferredUpdate_;
+    bool hasDeferredUpdate_{};
 
     // a 3-cycle delay for updating the background address
-    bool updateBaseAddress_;
+    bool updateBaseAddress_{};
 
     // a 2-cycle delay for updating the PPU masks.
-    bool updateMask_;
-    uint8_t mask_;
+    bool updateMask_{};
+    uint8_t mask_{};
 
     // the next tick should enter VBlank.
-    bool enterVBlank_;
+    bool enterVBlank_{};
 };
