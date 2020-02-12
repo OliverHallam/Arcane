@@ -18,14 +18,14 @@ public:
 private:
     ApuLengthCounter lengthCounter_;
 
-    uint16_t period_{};
-    uint16_t period2_{2};
+    uint32_t period_{};
+    uint32_t period2_{2};
     int32_t timer_{};
 
     int waveformCycle_{};
 
-    uint16_t linearCounter_{};
+    uint32_t linearCounter_{};
     bool linearCounterReload_{};
-    uint16_t linearCounterReloadValue_{};
+    uint32_t linearCounterReloadValue_{};
     bool control_{};
 };
