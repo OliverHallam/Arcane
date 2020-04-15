@@ -75,9 +75,6 @@ bool D3DRenderer::RenderFrame(const uint32_t* buffer)
 
     deviceContext_->Unmap(frameBuffer_.Get(), 0);
 
-    const float teal[] = { 0.098f, 0.439f, 0.439f, 1.000f };
-    deviceContext_->ClearRenderTargetView(renderTargetView_.Get(), teal);
-
     deviceContext_->DrawIndexed(6, 0, 0);
 
     hr = swapChain_->Present(1, 0);
