@@ -67,53 +67,58 @@ int WINAPI WinMain(
     ShowWindow(wnd, nCmdShow);
     UpdateWindow(wnd);
 
-    D3DRenderer d3d{ Display::WIDTH, Display::HEIGHT };
-
-    if (!d3d.Initialize(wnd))
-        return -1;
-
-    d3d.PrepareRenderState();
-
-    WasapiRenderer wasapi{};
-    wasapi.Initialize();
-
-    auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
-    auto Frames = 10000;
-
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    std::vector<char> buffer(size);
-    if (!file.read(buffer.data(), size))
+    try
     {
-        return -1;
+        D3DRenderer d3d{ Display::WIDTH, Display::HEIGHT };
+
+        d3d.Initialize(wnd);
+        d3d.PrepareRenderState();
+
+        WasapiRenderer wasapi{};
+        wasapi.Initialize();
+
+        auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
+        auto Frames = 10000;
+
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<char> buffer(size);
+        if (!file.read(buffer.data(), size))
+        {
+            return -1;
+        }
+
+        auto system = std::make_unique<NesSystem>();
+
+        auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
+
+        system->InsertCart(std::move(cart));
+        system->Reset();
+
+        while (true)
+        {
+            MSG msg;
+            if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
+            {
+                if (msg.message == WM_QUIT)
+                    return 0;
+
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            else
+            {
+                system->RunFrame();
+
+                d3d.RenderFrame(system->Display().Buffer());
+            }
+        }
     }
-
-    auto system = std::make_unique<NesSystem>();
-
-    auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
-
-    system->InsertCart(std::move(cart));
-    system->Reset();
-
-    while (true)
+    catch (const winrt::hresult_error& e)
     {
-        MSG msg;
-        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
-        {
-            if (msg.message == WM_QUIT)
-                return 0;
-
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
-        {
-            system->RunFrame();
-
-            d3d.RenderFrame(system->Display().Buffer());
-        }
+        MessageBox(wnd, e.message().c_str(), L"Unexpected error", MB_ICONERROR | MB_OK);
     }
 }
 

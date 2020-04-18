@@ -11,18 +11,18 @@ D3DRenderer::D3DRenderer(uint32_t width, uint32_t height)
 {
 }
 
-bool D3DRenderer::Initialize(HWND window)
+void D3DRenderer::Initialize(HWND window)
 {
-    return CreateDevice()
-        && CreateSwapChain(window)
-        && CreateRenderTarget()
-        && CreateVertexBuffer()
-        && CreateIndexBuffer()
-        && CreateFrameBuffer()
-        && CreateShaders()
-        && CreateInputLayout()
-        && CreateShaderParameters()
-        && CreateRasterizerState();
+    CreateDevice();
+    CreateSwapChain(window);
+    CreateRenderTarget();
+    CreateVertexBuffer();
+    CreateIndexBuffer();
+    CreateFrameBuffer();
+    CreateShaders();
+    CreateInputLayout();
+    CreateShaderParameters();
+    CreateRasterizerState();
 }
 
 
@@ -55,12 +55,11 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->OMSetRenderTargets(1, renderTargetViews, nullptr);
 }
 
-bool D3DRenderer::RenderFrame(const uint32_t* buffer)
+void D3DRenderer::RenderFrame(const uint32_t* buffer)
 {
     D3D11_MAPPED_SUBRESOURCE resource;
     auto hr = deviceContext_->Map(frameBuffer_.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-    if (FAILED(hr))
-        return false;
+    winrt::check_hresult(hr);
 
     auto src = reinterpret_cast<const uint8_t*>(buffer);
     auto srcPitch = width_ * 4;
@@ -80,13 +79,10 @@ bool D3DRenderer::RenderFrame(const uint32_t* buffer)
     deviceContext_->DrawIndexed(6, 0, 0);
 
     hr = swapChain_->Present(1, 0);
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateDevice()
+void D3DRenderer::CreateDevice()
 {
     D3D_FEATURE_LEVEL featureLevels[] = {
         D3D_FEATURE_LEVEL_9_1,
@@ -119,18 +115,14 @@ bool D3DRenderer::CreateDevice()
         &featureLevel,
         deviceContext_.put());
 
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateSwapChain(HWND window)
+void D3DRenderer::CreateSwapChain(HWND window)
 {
     winrt::com_ptr<IDXGIAdapter> adapter;
     auto hr = device_.as<IDXGIDevice>()->GetAdapter(adapter.put());
-    if (FAILED(hr))
-        return false;
+    winrt::check_hresult(hr);
 
     winrt::com_ptr<IDXGIFactory> factory;
     adapter->GetParent(IID_PPV_ARGS(factory.put()));
@@ -154,22 +146,17 @@ bool D3DRenderer::CreateSwapChain(HWND window)
         device_.get(),
         &swapChainDesc,
         swapChain_.put());
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateRenderTarget()
+void D3DRenderer::CreateRenderTarget()
 {
     winrt::com_ptr<ID3D11Texture2D> backBuffer;
     auto hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(backBuffer.put()));
-    if (FAILED(hr))
-        return false;
+    winrt::check_hresult(hr);
 
     hr = device_->CreateRenderTargetView(backBuffer.get(), nullptr, renderTargetView_.put());
-    if (FAILED(hr))
-        return false;
+    winrt::check_hresult(hr);
 
     D3D11_TEXTURE2D_DESC backBufferDesc;
     backBuffer->GetDesc(&backBufferDesc);
@@ -182,11 +169,9 @@ bool D3DRenderer::CreateRenderTarget()
     viewport.MaxDepth = 1;
 
     deviceContext_->RSSetViewports(1, &viewport);
-
-    return true;
 }
 
-bool D3DRenderer::CreateVertexBuffer()
+void D3DRenderer::CreateVertexBuffer()
 {
     const Vertex vertices[4] = {
         { -1.0f, 1.0f },
@@ -208,13 +193,10 @@ bool D3DRenderer::CreateVertexBuffer()
     resourceData.pSysMem = vertices;
 
     auto hr = device_->CreateBuffer(&bufferDesc, &resourceData, vertexBuffer_.put());
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateIndexBuffer()
+void D3DRenderer::CreateIndexBuffer()
 {
     const uint16_t indices[6] = {
         0, 1, 2,
@@ -234,13 +216,10 @@ bool D3DRenderer::CreateIndexBuffer()
     resourceData.pSysMem = indices;
 
     auto hr = device_->CreateBuffer(&bufferDesc, &resourceData, indexBuffer_.put());
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateFrameBuffer()
+void D3DRenderer::CreateFrameBuffer()
 {
     D3D11_TEXTURE2D_DESC frameBufferDesc;
     ZeroMemory(&frameBufferDesc, sizeof(D3D11_TEXTURE2D_DESC));
@@ -257,22 +236,17 @@ bool D3DRenderer::CreateFrameBuffer()
     frameBufferDesc.MiscFlags = 0;
 
     auto hr = device_->CreateTexture2D(&frameBufferDesc, nullptr, frameBuffer_.put());
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateShaders()
+void D3DRenderer::CreateShaders()
 {
     auto hr = device_->CreateVertexShader(
         VertexShaderBytecode,
         _countof(VertexShaderBytecode),
         nullptr,
         vertexShader_.put());
-
-    if (FAILED(hr))
-        return false;
+    winrt::check_hresult(hr);
 
     winrt::com_ptr<ID3D11PixelShader> pixelShader;
     hr = device_->CreatePixelShader(
@@ -280,14 +254,10 @@ bool D3DRenderer::CreateShaders()
         _countof(PixelShaderBytecode),
         nullptr,
         pixelShader_.put());
-
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateInputLayout()
+void D3DRenderer::CreateInputLayout()
 {
     D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
@@ -299,14 +269,10 @@ bool D3DRenderer::CreateInputLayout()
         VertexShaderBytecode,
         _countof(VertexShaderBytecode),
         inputLayout_.put());
-
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateShaderParameters()
+void D3DRenderer::CreateShaderParameters()
 {
     D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
     ZeroMemory(&shaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -319,8 +285,7 @@ bool D3DRenderer::CreateShaderParameters()
         frameBuffer_.get(),
         &shaderResourceViewDesc,
         frameBufferShaderResourceView_.put());
-    if (FAILED(hr))
-        return false;
+    winrt::check_hresult(hr);
 
     D3D11_SAMPLER_DESC samplerDesc;
     ZeroMemory(&samplerDesc, sizeof(samplerDesc));
@@ -339,13 +304,10 @@ bool D3DRenderer::CreateShaderParameters()
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     hr = device_->CreateSamplerState(&samplerDesc, samplerState_.put());
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }
 
-bool D3DRenderer::CreateRasterizerState()
+void D3DRenderer::CreateRasterizerState()
 {
     D3D11_RASTERIZER_DESC rasterizerDesc;
     ZeroMemory(&rasterizerDesc, sizeof(ID3D11RasterizerState));
@@ -361,8 +323,5 @@ bool D3DRenderer::CreateRasterizerState()
     rasterizerDesc.AntialiasedLineEnable = FALSE;
 
     auto hr = device_->CreateRasterizerState(&rasterizerDesc, rasterizerState_.put());
-    if (FAILED(hr))
-        return false;
-
-    return true;
+    winrt::check_hresult(hr);
 }

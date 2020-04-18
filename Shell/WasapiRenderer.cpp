@@ -2,11 +2,15 @@
 
 #include "WasapiRenderer.h"
 
-#include <mmdeviceapi.h>
 
 void WasapiRenderer::Initialize()
 {
-    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+    auto deviceEnumerator = winrt::create_instance<IMMDeviceEnumerator>(__uuidof(MMDeviceEnumerator));
+
+    auto hr = deviceEnumerator->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eMultimedia, endpoint_.put());
+    winrt::check_hresult(hr);
 
 
 }

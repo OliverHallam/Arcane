@@ -10,23 +10,23 @@ class D3DRenderer
 public:
     D3DRenderer(uint32_t width, uint32_t height);
 
-    bool Initialize(HWND window);
+    void Initialize(HWND window);
 
     void PrepareRenderState();
 
-    bool RenderFrame(const uint32_t* buffer);
+    void RenderFrame(const uint32_t* buffer);
 
 private:
-    bool CreateDevice();
-    bool CreateSwapChain(HWND window);
-    bool CreateRenderTarget();
-    bool CreateVertexBuffer();
-    bool CreateIndexBuffer();
-    bool CreateFrameBuffer();
-    bool CreateShaders();
-    bool CreateInputLayout();
-    bool CreateShaderParameters();
-    bool CreateRasterizerState();
+    void CreateDevice();
+    void CreateSwapChain(HWND window);
+    void CreateRenderTarget();
+    void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void CreateFrameBuffer();
+    void CreateShaders();
+    void CreateInputLayout();
+    void CreateShaderParameters();
+    void CreateRasterizerState();
 
     uint32_t width_;
     uint32_t height_;
