@@ -1,15 +1,13 @@
-#define WIN32_LEAN_AND_MEAN
+#include "pch.h"
 
-#include <Windows.h>
 #include <fstream>
 #include <iostream>
 
 #include "resource.h"
 
 #include "D3DRenderer.h"
+#include "WasapiRenderer.h"
 #include "../NesCoreCpp/NesSystem.h"
-
-D3DRenderer renderer{ Display::WIDTH, Display::HEIGHT };
 
 LRESULT CALLBACK WindowProc(
     HWND hWnd,
@@ -69,10 +67,15 @@ int WINAPI WinMain(
     ShowWindow(wnd, nCmdShow);
     UpdateWindow(wnd);
 
-    if (!renderer.Initialize(wnd))
+    D3DRenderer d3d{ Display::WIDTH, Display::HEIGHT };
+
+    if (!d3d.Initialize(wnd))
         return -1;
 
-    renderer.PrepareRenderState();
+    d3d.PrepareRenderState();
+
+    WasapiRenderer wasapi{};
+    wasapi.Initialize();
 
     auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
     auto Frames = 10000;
@@ -109,7 +112,7 @@ int WINAPI WinMain(
         {
             system->RunFrame();
 
-            renderer.RenderFrame(system->Display().Buffer());
+            d3d.RenderFrame(system->Display().Buffer());
         }
     }
 }
