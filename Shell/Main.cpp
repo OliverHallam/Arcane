@@ -83,7 +83,8 @@ int WINAPI WinMain(
             return -1;
         }
 
-        auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
+        //auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
+        auto path = R"(c:\roms\NESRoms\World\Donkey Kong (JU).nes)";
         auto Frames = 10000;
 
         std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -119,6 +120,7 @@ int WINAPI WinMain(
                 system->RunFrame();
 
                 d3d.RenderFrame(system->Display().Buffer());
+                wasapi.WriteSamples(system->Apu().Samples(), system->Apu().SamplesPerFrame());
             }
         }
     }

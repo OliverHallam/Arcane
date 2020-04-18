@@ -47,10 +47,37 @@ bool WasapiRenderer::Initialize()
     hr = client_->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, bufferDuration, 0, &desiredFormat, NULL);
     winrt::check_hresult(hr);
 
+    hr = client_->GetBufferSize(&bufferSize_);
+    winrt::check_hresult(hr);
+
+    hr = client_->GetService(__uuidof(IAudioRenderClient), audioRenderClient_.put_void());
+    winrt::check_hresult(hr);
+
+    // clear the buffer
+    BYTE* data;
+    hr = audioRenderClient_->GetBuffer(samplesPerFrame, &data);
+    winrt::check_hresult(hr);
+
+    audioRenderClient_->ReleaseBuffer(samplesPerFrame, AUDCLNT_BUFFERFLAGS_SILENT);
+
+    hr = client_->Start();
+    winrt::check_hresult(hr);
+
     return true;
 }
 
 uint32_t WasapiRenderer::SampleRate()
 {
     return sampleRate_;
+}
+
+void WasapiRenderer::WriteSamples(const int16_t* samples, int sampleCount)
+{
+    BYTE* data;
+    auto hr = audioRenderClient_->GetBuffer(sampleCount, &data);
+    winrt::check_hresult(hr);
+
+    memcpy(data, samples, sampleCount * sizeof(uint16_t));
+
+    audioRenderClient_->ReleaseBuffer(sampleCount, 0);
 }
