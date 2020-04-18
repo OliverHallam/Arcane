@@ -5,6 +5,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <shellapi.h>
+
 #include "resource.h"
 
 #include "D3DRenderer.h"
@@ -17,12 +19,32 @@ LRESULT CALLBACK WindowProc(
     WPARAM wParam,
     LPARAM lParam);
 
+std::unique_ptr<NesSystem> System;
+
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPSTR lpCmdLine,
     _In_ int nCmdShow)
 {
+    int argCount;
+    auto args = CommandLineToArgvW(GetCommandLine(), &argCount);
+
+    if (argCount == 1)
+    {
+        MessageBox(NULL, L"Please specify the ROM to load on the command line", L"No ROM Specified", MB_ICONINFORMATION | MB_OK);
+        return 0;
+    }
+    else if (argCount != 2)
+    {
+        MessageBox(NULL, L"The command line parameters were invalid", L"Invalid command line parameters", MB_ICONERROR | MB_OK);
+        return 0;
+    }
+
+    std::wstring romPath{ args[1] };
+
+    LocalFree(args);
+
     auto icon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON));
 
     auto className = L"NES";
@@ -83,11 +105,7 @@ int WINAPI WinMain(
             return -1;
         }
 
-        //auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
-        auto path = R"(c:\roms\NESRoms\World\Donkey Kong (JU).nes)";
-        auto Frames = 10000;
-
-        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        std::ifstream file(romPath, std::ios::binary | std::ios::ate);
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
 
@@ -97,12 +115,12 @@ int WINAPI WinMain(
             return -1;
         }
 
-        auto system = std::make_unique<NesSystem>(wasapi.SampleRate());
+        System = std::make_unique<NesSystem>(wasapi.SampleRate());
 
         auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
 
-        system->InsertCart(std::move(cart));
-        system->Reset();
+        System->InsertCart(std::move(cart));
+        System->Reset();
 
         while (true)
         {
@@ -117,10 +135,10 @@ int WINAPI WinMain(
             }
             else
             {
-                system->RunFrame();
+                System->RunFrame();
 
-                d3d.RenderFrame(system->Display().Buffer());
-                wasapi.WriteSamples(system->Apu().Samples(), system->Apu().SamplesPerFrame());
+                d3d.RenderFrame(System->Display().Buffer());
+                wasapi.WriteSamples(System->Apu().Samples(), System->Apu().SamplesPerFrame());
             }
         }
     }
@@ -135,6 +153,46 @@ int WINAPI WinMain(
     }
 }
 
+bool ProcessKey(WPARAM key, bool down)
+{
+    switch (key)
+    {
+    case VK_UP:
+        System->Controller().Up(down);
+        return true;
+
+    case VK_DOWN:
+        System->Controller().Down(down);
+        return true;
+
+    case VK_LEFT:
+        System->Controller().Left(down);
+        return true;
+
+    case VK_RIGHT:
+        System->Controller().Right(down);
+        return true;
+
+    case 'Z':
+        System->Controller().B(down);
+        return true;
+
+    case 'X':
+        System->Controller().A(down);
+        return true;
+
+    case VK_RETURN:
+        System->Controller().Start(down);
+        return true;
+
+    case VK_SHIFT:
+        System->Controller().Select(down);
+        return true;
+    }
+
+    return false;
+}
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -142,6 +200,16 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+
+    case WM_KEYDOWN:
+        if (ProcessKey(wParam, true))
+            return 0;
+        break;
+
+    case WM_KEYUP:
+        if (ProcessKey(wParam, false))
+            return 0;
+        break;
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
