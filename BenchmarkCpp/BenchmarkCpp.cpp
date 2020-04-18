@@ -21,7 +21,7 @@ int main()
         return -1;
     }
 
-    auto system = std::make_unique<NesSystem>();
+    auto system = std::make_unique<NesSystem>(44100);
 
     auto cart = TryLoadCart(reinterpret_cast<uint8_t *>(&buffer[0]), buffer.size());
 

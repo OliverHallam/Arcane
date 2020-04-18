@@ -1,7 +1,9 @@
 #include "pch.h"
 
+#include <string>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "resource.h"
 
@@ -75,7 +77,11 @@ int WINAPI WinMain(
         d3d.PrepareRenderState();
 
         WasapiRenderer wasapi{};
-        wasapi.Initialize();
+        if (!wasapi.Initialize())
+        {
+            // failed to negotiate a sample rate.
+            return -1;
+        }
 
         auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
         auto Frames = 10000;
@@ -90,7 +96,7 @@ int WINAPI WinMain(
             return -1;
         }
 
-        auto system = std::make_unique<NesSystem>();
+        auto system = std::make_unique<NesSystem>(wasapi.SampleRate());
 
         auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
 
@@ -118,7 +124,12 @@ int WINAPI WinMain(
     }
     catch (const winrt::hresult_error& e)
     {
-        MessageBox(wnd, e.message().c_str(), L"Unexpected error", MB_ICONERROR | MB_OK);
+        std::wstringstream ss;
+        ss << L"HRESULT: 0x" << std::hex << e.code() << L"\n" << e.message().c_str();
+
+        MessageBox(wnd, ss.str().c_str(), L"Unexpected error", MB_ICONERROR | MB_OK);
+
+        return -1;
     }
 }
 
