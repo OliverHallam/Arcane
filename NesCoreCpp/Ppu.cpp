@@ -166,20 +166,23 @@ void Ppu::Write(uint16_t address, uint8_t value)
         auto writeAddress = (uint16_t)(background_.CurrentAddress & 0x3fff);
         if (writeAddress >= 0x3f00)
         {
+            writeAddress &= 0x000f;
+            value &= 0x3f;
+
             if ((writeAddress & 0x03) == 0)
             {
                 // zero colors are mirrored
-                palette_[writeAddress & 0x000f] = value;
-                palette_[(writeAddress & 0x000f) | 0x0010] = value;
+                palette_[writeAddress] = value;
+                palette_[writeAddress | 0x0010] = value;
 
                 auto rgb = display_.GetPixel(value);
-                rgbPalette_[writeAddress & 0x000f] = rgb;
-                rgbPalette_[(writeAddress & 0x000f) | 0x0010] = rgb;
+                rgbPalette_[writeAddress] = rgb;
+                rgbPalette_[writeAddress | 0x0010] = rgb;
             }
             else
             {
-                palette_[writeAddress & 0x001f] = value;
-                rgbPalette_[writeAddress & 0x001f] = display_.GetPixel(value);
+                palette_[writeAddress] = value;
+                rgbPalette_[writeAddress] = display_.GetPixel(value);
             }
         }
         else
