@@ -17,10 +17,15 @@ void WasapiRenderer::Initialize()
     hr = device_->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, client_.put_void());
     winrt::check_hresult(hr);
 
-    WAVEFORMATEX* mixFormat;
-    hr = client_->GetMixFormat(&mixFormat);
+    WAVEFORMATEXTENSIBLE* mixFormat;
+    hr = client_->GetMixFormat(reinterpret_cast<WAVEFORMATEX **>(&mixFormat));
     winrt::check_hresult(hr);
-    sampleRate_ = mixFormat->nSamplesPerSec;
+
+    sampleRate_ = mixFormat->Format.nSamplesPerSec;
+    outputChannels_ = mixFormat->Format.nChannels;
+    channelMask_ = mixFormat->dwChannelMask;
+
+    CoTaskMemFree(mixFormat);
 
     // sanity check - all real life sample rates are.
     if (sampleRate_ % 60 != 0)
@@ -30,27 +35,44 @@ void WasapiRenderer::Initialize()
         throw Error(ss.str());
     }
 
-    WAVEFORMATEX desiredFormat;
-    ZeroMemory(&desiredFormat, sizeof(desiredFormat));
-    desiredFormat.wFormatTag = WAVE_FORMAT_PCM; // TODO: use floats?
-    desiredFormat.nChannels = 1;
-    desiredFormat.nSamplesPerSec = sampleRate_;
-    desiredFormat.nAvgBytesPerSec = sampleRate_ * sizeof(uint16_t);
-    desiredFormat.nBlockAlign = sizeof(uint16_t);
-    desiredFormat.wBitsPerSample = 16;
-    desiredFormat.cbSize = 0;
+    WAVEFORMATEXTENSIBLE desiredFormat;
+    ZeroMemory(&desiredFormat, sizeof(WAVEFORMATEXTENSIBLE));
+    desiredFormat.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE; // TODO: use floats?
+    desiredFormat.Format.nChannels = outputChannels_;
+    desiredFormat.Format.nSamplesPerSec = sampleRate_;
+    desiredFormat.Format.nAvgBytesPerSec = sampleRate_ * outputChannels_ * sizeof(uint16_t);
+    desiredFormat.Format.nBlockAlign = static_cast<WORD>(sizeof(uint16_t) * outputChannels_);
+    desiredFormat.Format.wBitsPerSample = 16;
+    desiredFormat.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
+    desiredFormat.Samples.wValidBitsPerSample = 16;
+    desiredFormat.dwChannelMask = channelMask_;
+    desiredFormat.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
 
-    WAVEFORMATEX* closestFormat;
-    hr = client_->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &desiredFormat, &closestFormat);
+    WAVEFORMATEXTENSIBLE* closestFormat;
+    hr = client_->IsFormatSupported(
+        AUDCLNT_SHAREMODE_SHARED,
+        &desiredFormat.Format,
+        reinterpret_cast<WAVEFORMATEX**>(&closestFormat));
+    CoTaskMemFree(closestFormat);
     winrt::check_hresult(hr);
     if (hr != S_OK)
         throw Error(L"Failed to negotiate wave format");
+
+    if (((channelMask_ & KSAUDIO_SPEAKER_STEREO) != KSAUDIO_SPEAKER_STEREO)
+        && ((channelMask_ & SPEAKER_FRONT_CENTER) != SPEAKER_FRONT_CENTER))
+        throw Error(L"Unsupported speaker configuration");
 
     // we write one frame while the previous one is playing - so we'll store a buffer big enough for two
     auto samplesPerFrame = sampleRate_ / 60;
     auto bufferDuration = (uint64_t)samplesPerFrame * 10000 * 2;
 
-    hr = client_->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, bufferDuration, 0, &desiredFormat, NULL);
+    hr = client_->Initialize(
+        AUDCLNT_SHAREMODE_SHARED,
+        0,
+        bufferDuration,
+        0,
+        reinterpret_cast<const WAVEFORMATEX*>(&desiredFormat),
+        NULL);
     winrt::check_hresult(hr);
 
     hr = client_->GetBufferSize(&bufferSize_);
@@ -81,7 +103,35 @@ void WasapiRenderer::WriteSamples(const int16_t* samples, int sampleCount)
     auto hr = audioRenderClient_->GetBuffer(sampleCount, &data);
     winrt::check_hresult(hr);
 
-    memcpy(data, samples, sampleCount * sizeof(uint16_t));
+    auto inSampleMono = samples;
+
+    if ((channelMask_ & SPEAKER_FRONT_CENTER) != 0)
+    {
+        auto centreOffset = (channelMask_ & KSAUDIO_SPEAKER_STEREO) == KSAUDIO_SPEAKER_STEREO ? 2 : 0;
+
+        ZeroMemory(data, static_cast<size_t>(sampleCount) * sizeof(uint16_t) * outputChannels_);
+
+        auto outSample = reinterpret_cast<uint16_t *>(data) + centreOffset;
+        for (auto i = sampleCount; i >= 0; i--)
+        {
+            auto monoSample = *inSampleMono++;
+            *outSample = monoSample;
+            outSample += outputChannels_;
+        }
+    }
+    else
+    {
+        ZeroMemory(data, static_cast<size_t>(sampleCount) * sizeof(uint16_t) * outputChannels_);
+
+        auto outSample = reinterpret_cast<uint16_t*>(data);
+        for (auto i = sampleCount; i >= 0; i--)
+        {
+            auto monoSample = *inSampleMono++;
+            *outSample = monoSample;
+            *(outSample + 1) = monoSample;
+            outSample += outputChannels_;
+        }
+    }
 
     audioRenderClient_->ReleaseBuffer(sampleCount, 0);
 }
