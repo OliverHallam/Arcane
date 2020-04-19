@@ -6,15 +6,13 @@
 #include "ApuPulse.h"
 #include "ApuTriangle.h"
 
-#include <array>
+#include <memory>
 #include <cstdint>
 
 class Apu
 {
 public:
-    static const int SAMPLES_PER_FRAME = 735; // 44100 Hz
-
-    Apu();
+    Apu(uint32_t samplesPerFrame);
 
     void Tick();
     void QuarterFrame();
@@ -25,7 +23,8 @@ public:
     void Write(uint16_t address, uint8_t value);
     uint8_t Read(uint16_t address);
 
-    const std::array<int16_t, SAMPLES_PER_FRAME>& Samples() const;
+    uint32_t SamplesPerFrame() const;
+    const int16_t* Samples() const;
 
 private:
     void Sync();
@@ -38,8 +37,9 @@ private:
     ApuTriangle triangle_;
     ApuNoise noise_;
 
-    std::array<int16_t, SAMPLES_PER_FRAME> frameBuffer_;
+    std::unique_ptr<int16_t[]> frameBuffer_;
 
+    uint32_t samplesPerFrame_;
     uint32_t currentSample_;
     uint32_t lastSampleCycle_;
     uint32_t sampleCounter_;

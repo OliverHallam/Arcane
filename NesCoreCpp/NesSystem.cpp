@@ -1,11 +1,11 @@
 #include "NesSystem.h"
 
-NesSystem::NesSystem()
+NesSystem::NesSystem(uint32_t audioSampleRate)
     : display_{},
     bus_{},
     ppu_{ bus_, display_ },
     cpu_{ bus_ },
-    apu_{},
+    apu_{ audioSampleRate / 60 },
     controller_{}
 {
     bus_.Attach(&ppu_);

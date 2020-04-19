@@ -37,7 +37,7 @@ static std::unique_ptr<NesSystem> nesSystem;
 
 void retro_init(void)
 {
-    nesSystem = std::make_unique<NesSystem>();
+    nesSystem = std::make_unique<NesSystem>(44100);
 }
 
 void retro_deinit(void)
@@ -175,8 +175,12 @@ void retro_run(void)
     //    audio_cb(val, val);
     //}
 
-    for (auto sample : nesSystem->Apu().Samples())
+    auto& apu = nesSystem->Apu();
+    auto samplesPerFrame = apu.SamplesPerFrame();
+    auto samples = apu.Samples();
+    for (auto sampleIndex = 0u; sampleIndex < samplesPerFrame; sampleIndex++)
     {
+        auto sample = samples[sampleIndex];
         audio_cb(sample, sample);
     }
 

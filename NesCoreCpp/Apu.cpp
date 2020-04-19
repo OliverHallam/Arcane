@@ -1,12 +1,15 @@
 #include "Apu.h"
 
-Apu::Apu() :
+Apu::Apu(uint32_t samplesPerFrame) :
     frameCounter_{*this},
-    frameBuffer_{},
+    frameBuffer_{new int16_t[samplesPerFrame]},
     currentSample_(0),
-    sampleCounter_(29780 / SAMPLES_PER_FRAME),
+    samplesPerFrame_(samplesPerFrame),
+    lastSampleCycle_(0),
+    sampleCounter_(29780 / samplesPerFrame),
     pulse1_{true},
-    pulse2_{false}
+    pulse2_{false},
+    status_{0}
 {
 }
 
@@ -46,13 +49,13 @@ void Apu::SyncFrame()
 {
     Sync();
 
-    frameBuffer_.back() = (pulse1_.Sample() << 7) +
+    frameBuffer_[samplesPerFrame_ - 1] = (pulse1_.Sample() << 7) +
         (pulse2_.Sample() << 7) +
         (triangle_.Sample() << 7) +
         (noise_.Sample() << 7);
 
     currentSample_ = 0;
-    lastSampleCycle_ = sampleCounter_ = 29780 / SAMPLES_PER_FRAME;
+    lastSampleCycle_ = sampleCounter_ = 29780 / samplesPerFrame_;
 }
 
 void Apu::Write(uint16_t address, uint8_t value)
@@ -113,9 +116,14 @@ uint8_t Apu::Read(uint16_t address)
 
 }
 
-const std::array<int16_t, Apu::SAMPLES_PER_FRAME>& Apu::Samples() const
+uint32_t Apu::SamplesPerFrame() const
 {
-    return frameBuffer_;
+    return samplesPerFrame_;
+}
+
+const int16_t* Apu::Samples() const
+{
+    return frameBuffer_.get();
 }
 
 void Apu::Sync()
@@ -137,7 +145,7 @@ void Apu::Sample()
         (pulse2_.Sample() << 7) +
         (triangle_.Sample() << 7) +
         (noise_.Sample() << 7);
-    auto nextSampleCycle = (29780 * (currentSample_ + 1)) / SAMPLES_PER_FRAME;
+    auto nextSampleCycle = (29780 * (currentSample_ + 1)) / samplesPerFrame_;
     sampleCounter_ = nextSampleCycle - lastSampleCycle_;
     lastSampleCycle_ = nextSampleCycle;
 }
