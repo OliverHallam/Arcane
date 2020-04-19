@@ -1,23 +1,18 @@
 #include "pch.h"
 
+#include "resource.h"
+
+#include "Main.h"
+
+#include "CommandLine.h"
+#include "D3DRenderer.h"
+#include "Error.h"
+#include "WasapiRenderer.h"
+
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
-#include <shellapi.h>
-
-#include "resource.h"
-
-#include "D3DRenderer.h"
-#include "WasapiRenderer.h"
-#include "../NesCoreCpp/NesSystem.h"
-
-LRESULT CALLBACK WindowProc(
-    HWND hWnd,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam);
 
 std::unique_ptr<NesSystem> System;
 
@@ -27,98 +22,77 @@ int WINAPI WinMain(
     _In_ LPSTR lpCmdLine,
     _In_ int nCmdShow)
 {
-    int argCount;
-    auto args = CommandLineToArgvW(GetCommandLine(), &argCount);
-
-    if (argCount == 1)
-    {
-        MessageBox(NULL, L"Please specify the ROM to load on the command line", L"No ROM Specified", MB_ICONINFORMATION | MB_OK);
-        return 0;
-    }
-    else if (argCount != 2)
-    {
-        MessageBox(NULL, L"The command line parameters were invalid", L"Invalid command line parameters", MB_ICONERROR | MB_OK);
-        return 0;
-    }
-
-    std::wstring romPath{ args[1] };
-
-    LocalFree(args);
-
-    auto icon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON));
-
-    auto className = L"NES";
-
-    WNDCLASS wndClass;
-    wndClass.style = 0;
-    wndClass.lpfnWndProc = WindowProc;
-    wndClass.cbClsExtra = 0;
-    wndClass.cbWndExtra = 0;
-    wndClass.hInstance = hInstance;
-    wndClass.hIcon = icon;
-    wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wndClass.lpszMenuName = NULL;
-    wndClass.lpszClassName = className;
-
-    if (!RegisterClass(&wndClass))
-        return -1;
-
-    const int defaultWidth = 1024;
-    const int defaultHeight = 960;
-
-    RECT rc;
-    SetRect(&rc, 0, 0, defaultWidth, defaultHeight);
-
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
-
-    auto wnd = CreateWindow(
-        className,
-        L"NES",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        rc.right - rc.left,
-        rc.bottom - rc.top,
-        NULL,
-        NULL,
-        hInstance,
-        0);
-
-    if (wnd == NULL)
-        return -1;
-
-    ShowWindow(wnd, nCmdShow);
-    UpdateWindow(wnd);
-
+    HWND wnd = NULL;
     try
     {
-        D3DRenderer d3d{ Display::WIDTH, Display::HEIGHT };
-
-        d3d.Initialize(wnd);
-        d3d.PrepareRenderState();
-
-        WasapiRenderer wasapi{};
-        if (!wasapi.Initialize())
+        std::wstring romPath;
+        try
         {
-            // failed to negotiate a sample rate.
+            CommandLine commandLine{};
+            commandLine.Parse();
+            romPath = commandLine.RomPath();
+        }
+        catch (const Error& e)
+        {
+            ReportError(wnd, L"Invalid command line parameters", e);
             return -1;
         }
 
-        std::ifstream file(romPath, std::ios::binary | std::ios::ate);
-        std::streamsize size = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        std::vector<char> buffer(size);
-        if (!file.read(buffer.data(), size))
+        try
         {
+            wnd = InitializeWindow(hInstance, nCmdShow);
+        }
+        catch (Error& e)
+        {
+            ReportError(wnd, L"Error initializing window", e);
+            return -1;
+        }
+
+        D3DRenderer d3d{ Display::WIDTH, Display::HEIGHT };
+        try
+        {
+            d3d.Initialize(wnd);
+            d3d.PrepareRenderState();
+        }
+        catch (const winrt::hresult_error& e)
+        {
+            ReportError(wnd, L"Error initializing renderer", e);
+            return -1;
+        }
+
+        WasapiRenderer wasapi{};
+        try
+        {
+            wasapi.Initialize();
+        }
+        catch (const Error& e)
+        {
+            ReportError(wnd, L"Error initializing audio", e);
+            return -1;
+        }
+        catch (const winrt::hresult_error& e)
+        {
+            ReportError(wnd, L"Error initializing audio", e);
+            return -1;
+        }
+
+        std::unique_ptr<Cart> cart;
+        try
+        {
+            cart = LoadCart(romPath);
+        }
+        catch (const Error& e)
+        {
+            ReportError(wnd, L"Error loading cartridge", e);
+            return -1;
+        }
+        catch (const winrt::hresult_error& e)
+        {
+            ReportError(wnd, L"Error loading cartridge", e);
             return -1;
         }
 
         System = std::make_unique<NesSystem>(wasapi.SampleRate());
-
-        auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
-
         System->InsertCart(std::move(cart));
         System->Reset();
 
@@ -142,15 +116,28 @@ int WINAPI WinMain(
             }
         }
     }
-    catch (const winrt::hresult_error& e)
+    catch (const Error& e)
     {
-        std::wstringstream ss;
-        ss << L"HRESULT: 0x" << std::hex << e.code() << L"\n" << e.message().c_str();
-
-        MessageBox(wnd, ss.str().c_str(), L"Unexpected error", MB_ICONERROR | MB_OK);
-
+        ReportError(wnd, L"Unexpected error", e);
         return -1;
     }
+    catch (const winrt::hresult_error& e)
+    {
+        ReportError(wnd, L"Unexpected error", e);
+        return -1;
+    }
+}
+
+void ReportError(HWND window, const wchar_t* title, const Error& error)
+{
+    MessageBox(window, error.Message().c_str(), title, MB_ICONERROR | MB_OK);
+}
+
+void ReportError(HWND window, const wchar_t* title, const winrt::hresult_error& error)
+{
+    std::wstringstream ss;
+    ss << L"HRESULT: 0x" << std::hex << error.code() << L"\n" << error.message().c_str();
+    MessageBox(window, ss.str().c_str(), title, MB_ICONERROR | MB_OK);
 }
 
 bool ProcessKey(WPARAM key, bool down)
@@ -191,6 +178,103 @@ bool ProcessKey(WPARAM key, bool down)
     }
 
     return false;
+}
+
+HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
+{
+    auto icon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON));
+
+    auto className = L"NES";
+
+    WNDCLASS wndClass;
+    wndClass.style = 0;
+    wndClass.lpfnWndProc = WindowProc;
+    wndClass.cbClsExtra = 0;
+    wndClass.cbWndExtra = 0;
+    wndClass.hInstance = hInstance;
+    wndClass.hIcon = icon;
+    wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wndClass.lpszMenuName = NULL;
+    wndClass.lpszClassName = className;
+
+    if (!RegisterClass(&wndClass))
+        throw Error(L"Failed to register window class");
+
+    const int defaultWidth = 1024;
+    const int defaultHeight = 960;
+
+    RECT rc;
+    SetRect(&rc, 0, 0, defaultWidth, defaultHeight);
+
+    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
+
+    auto wnd = CreateWindow(
+        className,
+        L"NES",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        rc.right - rc.left,
+        rc.bottom - rc.top,
+        NULL,
+        NULL,
+        hInstance,
+        0);
+
+    if (wnd == NULL)
+        throw Error(L"Failed to create window");
+
+    ShowWindow(wnd, nCmdShow);
+    UpdateWindow(wnd);
+
+    return wnd;
+}
+
+std::unique_ptr<Cart> LoadCart(const std::wstring& romPath)
+{
+    winrt::file_handle hFile {
+        CreateFile(
+            romPath.c_str(),
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            NULL) };
+    winrt::check_bool(bool{ hFile });
+
+    LARGE_INTEGER fileSize;
+    if (GetFileSizeEx(hFile.get(), &fileSize) == FALSE)
+        winrt::throw_last_error();
+
+    // maximum size of 4mb for security reassons
+    const uint32_t maxFileSize = 4 * 1024 * 1024;
+    if (fileSize.QuadPart > maxFileSize)
+        throw Error(L"ROM File is suspiciously large!");
+
+    winrt::handle mapping {
+        CreateFileMapping(
+            hFile.get(),
+            NULL,
+            PAGE_READONLY,
+            0,
+            0,
+            NULL) };
+    winrt::check_bool(bool{ mapping });
+
+    auto data = MapViewOfFile(mapping.get(), FILE_MAP_READ, 0, 0, 0);
+    if (data == NULL)
+        winrt::throw_last_error();
+
+    auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(data), fileSize.LowPart);
+
+    UnmapViewOfFile(data);
+
+    if (!cart)
+        throw Error(L"Unsupported or invalid ROM file: " + romPath);
+
+    return std::move(cart);
 }
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

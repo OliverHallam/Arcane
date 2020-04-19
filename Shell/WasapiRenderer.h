@@ -6,7 +6,7 @@
 class WasapiRenderer
 {
 public:
-    bool Initialize();
+    void Initialize();
 
     uint32_t SampleRate();
 

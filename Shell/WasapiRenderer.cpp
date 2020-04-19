@@ -1,9 +1,11 @@
 #include "pch.h"
 
+#include "Error.h"
 #include "WasapiRenderer.h"
 
+#include <sstream>
 
-bool WasapiRenderer::Initialize()
+void WasapiRenderer::Initialize()
 {
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -22,7 +24,11 @@ bool WasapiRenderer::Initialize()
 
     // sanity check - all real life sample rates are.
     if (sampleRate_ % 60 != 0)
-        return false;
+    {
+        std::wstringstream ss;
+        ss << L"Unsupported sample rate: " << sampleRate_ << "Hz";
+        throw Error(ss.str());
+    }
 
     WAVEFORMATEX desiredFormat;
     ZeroMemory(&desiredFormat, sizeof(desiredFormat));
@@ -38,7 +44,7 @@ bool WasapiRenderer::Initialize()
     hr = client_->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &desiredFormat, &closestFormat);
     winrt::check_hresult(hr);
     if (hr != S_OK)
-        return false;
+        throw Error(L"Failed to negotiate wave format");
 
     // we write one frame while the previous one is playing - so we'll store a buffer big enough for two
     auto samplesPerFrame = sampleRate_ / 60;
@@ -62,8 +68,6 @@ bool WasapiRenderer::Initialize()
 
     hr = client_->Start();
     winrt::check_hresult(hr);
-
-    return true;
 }
 
 uint32_t WasapiRenderer::SampleRate()

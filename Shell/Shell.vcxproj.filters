@@ -5,6 +5,9 @@
     <ClCompile Include="D3DRenderer.cpp" />
     <ClCompile Include="WasapiRenderer.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Error.cpp" />
+    <ClCompile Include="CommandLine.cpp" />
+    <ClCompile Include="MappedFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -16,6 +19,11 @@
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="WasapiRenderer.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Error.h" />
+    <ClInclude Include="Shell.h" />
+    <ClInclude Include="CommandLine.h" />
+    <ClInclude Include="Main.h" />
+    <ClInclude Include="MappedFile.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
