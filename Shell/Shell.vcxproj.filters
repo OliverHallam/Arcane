@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="D3DRenderer.cpp" />
+    <ClCompile Include="WasapiRenderer.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Error.cpp" />
+    <ClCompile Include="CommandLine.cpp" />
+    <ClCompile Include="MappedFile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="nes.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="D3DRenderer.h" />
+    <ClInclude Include="VertexShader.h" />
+    <ClInclude Include="PixelShader.h" />
+    <ClInclude Include="WasapiRenderer.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Error.h" />
+    <ClInclude Include="Shell.h" />
+    <ClInclude Include="CommandLine.h" />
+    <ClInclude Include="Main.h" />
+    <ClInclude Include="MappedFile.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl" />
+    <FxCompile Include="PixelShader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

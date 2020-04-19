@@ -12,7 +12,7 @@
 class NesSystem
 {
 public:
-    NesSystem();
+    NesSystem(uint32_t audioSampleRate);
 
     Controller& Controller();
     const Display& Display() const;
