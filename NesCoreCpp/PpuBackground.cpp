@@ -378,7 +378,13 @@ void PpuBackground::HReset(uint16_t initialAddress)
     CurrentAddress &= 0xfbe0;
     CurrentAddress |= (uint16_t)(initialAddress & 0x041f);
 
-    patternBitShift_ =  7 - fineX_;
+    patternBitShift_ = 7 - fineX_;
+    loadingIndex_ = 0;
+}
+
+void PpuBackground::HResetRenderDisabled()
+{
+    patternBitShift_ = 7 - fineX_;
     loadingIndex_ = 0;
 }
 

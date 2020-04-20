@@ -27,6 +27,7 @@ public:
     void Tick();
 
     void HReset(uint16_t initialAddress);
+    void HResetRenderDisabled();
     void VReset(uint16_t initialAddress);
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX

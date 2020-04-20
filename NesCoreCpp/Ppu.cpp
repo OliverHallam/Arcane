@@ -320,6 +320,7 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 {
     if (scanlineCycle_ == 0)
     {
+        background_.BeginScanline();
         sprites_.VReset();
         inVBlank_ = false;
     }
@@ -345,9 +346,9 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
         sprites_.HReset();
 
         if (enableRendering_)
-        {
             background_.HReset(initialAddress_);
-        }
+        else
+            background_.HResetRenderDisabled();
 
         scanlineCycle_ = 257;
         if (scanlineCycle_ == targetCycle)
@@ -548,9 +549,9 @@ void Ppu::FinishRender()
     display_.HBlank();
 
     if (enableRendering_)
-    {
         background_.HReset(initialAddress_);
-    }
+    else
+        background_.HResetRenderDisabled();
 }
 
 void Ppu::EnterVBlank()
