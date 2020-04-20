@@ -1,5 +1,7 @@
 #include "Apu.h"
 
+#include <assert.h>
+
 Apu::Apu(uint32_t samplesPerFrame) :
     frameCounter_{*this},
     frameBuffer_{new int16_t[samplesPerFrame]},
@@ -139,6 +141,8 @@ void Apu::Sync()
 void Apu::Sample()
 {
     Sync();
+
+    assert(currentSample_ < samplesPerFrame_);
 
     frameBuffer_[currentSample_++] =
         (pulse1_.Sample() << 7) +

@@ -50,14 +50,14 @@ private:
     uint16_t spritePatternBase_{};
     uint16_t patternAddress_{};
 
-    short oamAddress_{};
+    uint8_t oamAddress_{};
     uint8_t oamData_{};
-    uint8_t oam_[256]{};
-    uint8_t oamCopy_[32]{};
+    std::array<uint8_t, 256> oam_{};
+    std::array<uint8_t, 32> oamCopy_{};
     uint8_t oamCopyIndex_{};
 
     int32_t spriteIndex_{};
-    Sprite sprites_[8]{};
+    std::array<Sprite, 8> sprites_{};
     bool sprite0Selected_{};
     bool sprite0Visible_{};
     int32_t scanlineSpriteCount_{};
