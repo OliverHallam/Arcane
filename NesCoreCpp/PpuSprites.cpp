@@ -245,7 +245,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     case 5:
             {
-                auto oamAddress = spriteIndex_ << 2;
+                auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
 
                 auto attributes = oamCopy_[oamAddress + 2];
                 sprites_[spriteIndex_].attributes = attributes;
@@ -312,7 +312,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 {
     while (spriteIndex_ < scanlineSpriteCount_)
     {
-        auto oamAddress = spriteIndex_ << 2;
+        auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
 
         auto attributes = oamCopy_[oamAddress + 2];
         sprites_[spriteIndex_].attributes = attributes;
