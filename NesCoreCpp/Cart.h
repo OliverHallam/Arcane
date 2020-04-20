@@ -49,8 +49,8 @@ private:
     uint32_t prgBank_;
 
     uint32_t chrMode_;
-    uint16_t chrBank0_;
-    uint16_t chrBank1_;
+    uint32_t chrBank0_;
+    uint32_t chrBank1_;
 };
 
 std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length);

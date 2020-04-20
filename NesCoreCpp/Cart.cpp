@@ -162,7 +162,7 @@ void Cart::UpdateChrMap()
     {
     case 0:
     {
-        auto chrBank = chrBank0_ & 0xe000;
+        auto chrBank = static_cast<size_t>(chrBank0_) & 0x1e000;
         ppuBanks_[0] = &chrData_[chrBank];
         ppuBanks_[1] = &chrData_[chrBank + 0x1000];
         break;
