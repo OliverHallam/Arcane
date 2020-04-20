@@ -468,6 +468,8 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
 void Ppu::RenderScanline()
 {
+    background_.BeginScanline();
+
     // TODO: we can optimize the disabled case here
     if (enableRendering_)
     {
