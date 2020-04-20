@@ -9,6 +9,7 @@ class PpuSprites
 public:
     PpuSprites(Bus& bus);
 
+    void SetLargeSprites(bool enabled);
     void SetBasePatternAddress(uint16_t address);
 
     void SetOamAddress(uint8_t value);
@@ -45,6 +46,7 @@ private:
 
     Bus& bus_;
 
+    bool largeSprites_{};
     uint16_t spritePatternBase_{};
     uint16_t patternAddress_{};
 

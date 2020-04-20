@@ -94,7 +94,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         Sync(targetCycle_);
         // PPUCTRL flags
         enableVBlankInterrupt_ = (value & 0x80) != 0;
-        // TODO: Sprite size (value & 0x20)
+        sprites_.SetLargeSprites((value & 0x20) != 0);
         background_.SetBasePatternAddress((uint16_t)((value & 0x10) << 8));
         sprites_   .SetBasePatternAddress((uint16_t)((value & 0x08) << 9));
         addressIncrement_ = (value & 0x04) != 0 ? 32 : 1;

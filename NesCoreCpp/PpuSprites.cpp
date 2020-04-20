@@ -8,6 +8,11 @@ PpuSprites::PpuSprites(Bus& bus) :
 {
 }
 
+void PpuSprites::SetLargeSprites(bool enabled)
+{
+    largeSprites_ = enabled;
+}
+
 void PpuSprites::SetBasePatternAddress(uint16_t address)
 {
     spritePatternBase_ = address;
@@ -37,6 +42,8 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
         scanlineCycle++;
     }
 
+    auto spriteSize = largeSprites_ ? 16u : 8u;
+
     while (scanlineCycle < targetCycle)
     {
         if (oamAddress_ >= 256)
@@ -59,7 +66,7 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
         }
 
         auto spriteRow = (uint32_t)(scanline - oamData_);
-        bool visible = spriteRow < 8;
+        bool visible = spriteRow < spriteSize;
 
         if (oamAddress_ == 0)
         {
@@ -250,13 +257,30 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
                 if ((attributes & 0x80) != 0)
                 {
-                    tileFineY = 7 - tileFineY;
+                    if (largeSprites_)
+                        tileFineY = 15 - tileFineY;
+                    else
+                        tileFineY = 7 - tileFineY;
                 }
 
-                // address is 000PTTTTTTTT0YYY
-                patternAddress_ = (uint16_t)
-                    (spritePatternBase_ | // pattern selector
-                    (tileId << 4) | tileFineY);
+                if (largeSprites_)
+                {
+                    // address is 000PTTTTTTTY0YYY
+                    auto bankAddress = (tileId & 1) << 12;
+                    tileId &= 0xfe;
+                    tileId |= tileFineY >> 3;
+                    tileFineY &= 0x07;
+                    patternAddress_ = (uint16_t)
+                        (bankAddress | (tileId & 0xfe) << 4 | tileFineY);
+                }
+                else
+                {
+                    // address is 000PTTTTTTTT0YYY
+                    patternAddress_ = (uint16_t)
+                        (spritePatternBase_ | // pattern selector
+                            (tileId << 4) | tileFineY);
+                }
+
                 sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
             }
 
@@ -300,13 +324,30 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 
         if ((attributes & 0x80) != 0)
         {
-            tileFineY = 7 - tileFineY;
+            if (largeSprites_)
+                tileFineY = 15 - tileFineY;
+            else
+                tileFineY = 7 - tileFineY;
         }
 
-        // address is 000PTTTTTTTT0YYY
-        patternAddress_ = (uint16_t)
-            (spritePatternBase_ | // pattern selector
-            (tileId << 4) | tileFineY);
+        if (largeSprites_)
+        {
+            // address is 000PTTTTTTTY0YYY
+            auto bankAddress = (tileId & 1) << 12;
+            tileId &= 0xfe;
+            tileId |= tileFineY >> 3;
+            tileFineY &= 0x07;
+            patternAddress_ = (uint16_t)
+                (bankAddress | (tileId << 4) | tileFineY);
+        }
+        else
+        {
+            // address is 000PTTTTTTTT0YYY
+            patternAddress_ = (uint16_t)
+                (spritePatternBase_ | // pattern selector
+                    (tileId << 4) | tileFineY);
+        }
+
         sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
 
         // address is 000PTTTTTTTT1YYY
