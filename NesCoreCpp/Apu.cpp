@@ -51,10 +51,7 @@ void Apu::SyncFrame()
 {
     Sync();
 
-    frameBuffer_[samplesPerFrame_ - 1] = (pulse1_.Sample() << 7) +
-        (pulse2_.Sample() << 7) +
-        (triangle_.Sample() << 7) +
-        (noise_.Sample() << 7);
+    assert(currentSample_ == samplesPerFrame_);
 
     currentSample_ = 0;
     lastSampleCycle_ = sampleCounter_ = 29780 / samplesPerFrame_;
@@ -116,6 +113,7 @@ uint8_t Apu::Read(uint16_t address)
         return status_;
     }
 
+    return 0;
 }
 
 uint32_t Apu::SamplesPerFrame() const

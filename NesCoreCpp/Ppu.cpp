@@ -207,6 +207,11 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
+void Ppu::Sync()
+{
+    Sync(targetCycle_);
+}
+
 void Ppu::RunDeferredUpdate()
 {
     if (enterVBlank_)
@@ -296,23 +301,11 @@ void Ppu::Sync(int32_t targetCycle)
     else if (currentScanline_ == 261)
     {
         PreRenderScanline(targetCycle);
-
-        if (scanlineCycle_ >= 340)
-        {
-            scanlineCycle_ = 0;
-            currentScanline_ = 0;
-        }
         return;
     }
     else
     {
         scanlineCycle_ = targetCycle;
-    }
-
-    if (scanlineCycle_ >= 340)
-    {
-        scanlineCycle_ = 0;
-        currentScanline_++;
     }
 }
 
