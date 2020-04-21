@@ -345,14 +345,14 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
     if (scanlineCycle_ < 320)
     {
+        auto maxCycle = std::min(targetCycle, 320);
+
         if (enableRendering_)
         {
             if (targetCycle >= 280 && scanlineCycle_ < 304)
             {
                 background_.VReset(initialAddress_);
             }
-
-            auto maxCycle = std::min(targetCycle, 320);
 
             // sprite tile loading
             sprites_.RunLoad(-1, scanlineCycle_, maxCycle);
@@ -361,7 +361,7 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
         }
         else
         {
-            scanlineCycle_ = 320;
+            scanlineCycle_ = maxCycle;
         }
 
         if (scanlineCycle_ >= targetCycle)
