@@ -76,12 +76,15 @@ void Controller::CaptureState()
         state_ |= 0x20;
     if (start_)
         state_ |= 0x10;
-    if (up_)
+
+    // we prevent inputs that are supposed to be impossible from a NES controller here - this can cause horrible
+    // crashes in some games, e.g. Burger Time
+    if (up_ && !down_)
         state_ |= 0x08;
-    if (down_)
+    if (down_ && !up_)
         state_ |= 0x04;
-    if (left_)
+    if (left_ && !right_)
         state_ |= 0x02;
-    if (right_)
+    if (right_ && !left_)
         state_ |= 0x01;
 }
