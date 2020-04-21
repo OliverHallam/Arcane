@@ -1092,7 +1092,12 @@ void Cpu::IndirectIndex()
 
     address_ = (uint16_t)(addressLow | addressHigh << 8);
     address_ += Y_;
-    Tick();
+
+    if ((address_ >> 8) != addressHigh)
+    {
+        // page crossed
+        Tick();
+    }
 }
 
 void Cpu::Load()
