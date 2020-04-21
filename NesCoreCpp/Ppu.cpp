@@ -207,11 +207,6 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
-void Ppu::Sync()
-{
-    Sync(targetCycle_);
-}
-
 void Ppu::RunDeferredUpdate()
 {
     if (enterVBlank_)

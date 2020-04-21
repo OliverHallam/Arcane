@@ -7,7 +7,7 @@ Apu::Apu(uint32_t samplesPerFrame) :
     frameBuffer_{new int16_t[samplesPerFrame]},
     currentSample_(0),
     samplesPerFrame_(samplesPerFrame),
-    lastSampleCycle_(0),
+    lastSampleCycle_(29780 / samplesPerFrame),
     sampleCounter_(29780 / samplesPerFrame),
     pulse1_{true},
     pulse2_{false},

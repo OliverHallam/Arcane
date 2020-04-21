@@ -64,10 +64,10 @@ private:
     uint8_t palette_[32];
     uint32_t rgbPalette_[32];
 
-    int32_t currentScanline_{ 0 };
-    int32_t scanlineCycle_{ -1 };
+    int32_t currentScanline_{ 241 };
+    int32_t scanlineCycle_{ 0 };
 
-    int32_t targetCycle_{ -1 };
+    int32_t targetCycle_{ 0 };
 
     PpuBackground background_;
     PpuSprites sprites_;
