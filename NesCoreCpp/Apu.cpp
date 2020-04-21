@@ -92,10 +92,10 @@ void Apu::Write(uint16_t address, uint8_t value)
         break;
 
     case 0x4015:
-        pulse1_.Enable(value & 0x01);
-        pulse2_.Enable(value & 0x02);
-        triangle_.Enable(value & 0x04);
-        noise_.Enable(value & 0x08);
+        pulse1_.Enable((value & 0x01) != 0);
+        pulse2_.Enable((value & 0x02) != 0);
+        triangle_.Enable((value & 0x04) != 0);
+        noise_.Enable((value & 0x08) != 0);
         status_ = value & 0x1f;
         break;
 
