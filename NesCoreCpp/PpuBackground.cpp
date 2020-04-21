@@ -14,6 +14,7 @@ void PpuBackground::SetBasePatternAddress(uint16_t address)
 void PpuBackground::SetFineX(uint8_t value)
 {
     fineX_ = value;
+    patternBitShift_ = 7 - fineX_;
 }
 
 void PpuBackground::BeginScanline()
@@ -378,13 +379,11 @@ void PpuBackground::HReset(uint16_t initialAddress)
     CurrentAddress &= 0xfbe0;
     CurrentAddress |= (uint16_t)(initialAddress & 0x041f);
 
-    patternBitShift_ = 7 - fineX_;
     loadingIndex_ = 0;
 }
 
 void PpuBackground::HResetRenderDisabled()
 {
-    patternBitShift_ = 7 - fineX_;
     loadingIndex_ = 0;
 }
 
