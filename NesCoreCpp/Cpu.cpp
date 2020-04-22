@@ -94,7 +94,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x11:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         Ora();
         return;
@@ -118,19 +118,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0x19:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Ora();
         return;
 
     case 0x1d:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Ora();
         return;
 
     case 0x1e:
-        AbsoluteX();
+        AbsoluteXWrite();
         Load();
         Asl();
         Store();
@@ -208,7 +208,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x31:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         And();
         return;
@@ -232,19 +232,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0x39:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         And();
         return;
 
     case 0x3d:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         And();
         return;
 
     case 0x3e:
-        AbsoluteX();
+        AbsoluteXWrite();
         Load();
         Rol();
         Store();
@@ -315,7 +315,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x51:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         Eor();
         return;
@@ -339,19 +339,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0x59:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Eor();
         return;
 
     case 0x5d:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Eor();
         return;
 
     case 0x5e:
-        AbsoluteX();
+        AbsoluteXWrite();
         Load();
         Lsr();
         Store();
@@ -422,7 +422,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x71:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         Adc();
         return;
@@ -446,19 +446,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0x79:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Adc();
         return;
 
     case 0x7d:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Adc();
         return;
 
     case 0x7e:
-        AbsoluteX();
+        AbsoluteXWrite();
         Load();
         Ror();
         Store();
@@ -515,7 +515,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x91:
-        IndirectIndex();
+        IndirectIndexWrite();
         Sta();
         return;
 
@@ -541,7 +541,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x99:
-        AbsoluteY();
+        AbsoluteYWrite();
         Load();
         Sta();
         return;
@@ -552,7 +552,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x9d:
-        AbsoluteX();
+        AbsoluteXWrite();
         Sta();
         return;
 
@@ -629,7 +629,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0xb1:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         Lda();
         return;
@@ -658,7 +658,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0xb9:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Lda();
         return;
@@ -669,19 +669,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0xbc:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Ldy();
         return;
 
     case 0xbd:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Lda();
         return;
 
     case 0xbe:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Ldx();
         return;
@@ -756,7 +756,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0xd1:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         Cmp();
         return;
@@ -780,19 +780,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0xd9:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Cmp();
         return;
 
     case 0xdd:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Cmp();
         return;
 
     case 0xde:
-        AbsoluteX();
+        AbsoluteXWrite();
         Load();
         Dec();
         Store();
@@ -868,7 +868,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0xf1:
-        IndirectIndex();
+        IndirectIndexRead();
         Load();
         Sbc();
         return;
@@ -892,19 +892,19 @@ void Cpu::RunInstruction()
         return;
 
     case 0xf9:
-        AbsoluteY();
+        AbsoluteYRead();
         Load();
         Sbc();
         return;
 
     case 0xfd:
-        AbsoluteX();
+        AbsoluteXRead();
         Load();
         Sbc();
         return;
 
     case 0xfe:
-        AbsoluteX();
+        AbsoluteXWrite();
         Load();
         Inc();
         Store();
@@ -991,7 +991,7 @@ void Cpu::Absolute()
     address_ = (uint16_t)(lowByte | highByte << 8);
 }
 
-void Cpu::AbsoluteX()
+void Cpu::AbsoluteXRead()
 {
     auto lowByte = ReadProgramByte();
     auto highByte = ReadProgramByte();
@@ -1007,7 +1007,18 @@ void Cpu::AbsoluteX()
     }
 }
 
-void Cpu::AbsoluteY()
+void Cpu::AbsoluteXWrite()
+{
+    auto lowByte = ReadProgramByte();
+    auto highByte = ReadProgramByte();
+
+    address_ = (uint16_t)(lowByte | highByte << 8);
+    address_ += X_;
+
+    Tick();
+}
+
+void Cpu::AbsoluteYRead()
 {
     auto lowByte = ReadProgramByte();
     auto highByte = ReadProgramByte();
@@ -1021,6 +1032,17 @@ void Cpu::AbsoluteY()
     {
         Tick();
     }
+}
+
+void Cpu::AbsoluteYWrite()
+{
+    auto lowByte = ReadProgramByte();
+    auto highByte = ReadProgramByte();
+
+    address_ = (uint16_t)(lowByte | highByte << 8);
+    address_ += Y_;
+
+    Tick();
 }
 
 void Cpu::ZeroPage()
@@ -1083,7 +1105,7 @@ void Cpu::IndexIndirect()
     address_ = (uint16_t)(addressLow | addressHigh << 8);
 }
 
-void Cpu::IndirectIndex()
+void Cpu::IndirectIndexRead()
 {
     auto indirectAddress = ReadProgramByte();
 
@@ -1099,6 +1121,20 @@ void Cpu::IndirectIndex()
         Tick();
     }
 }
+
+void Cpu::IndirectIndexWrite()
+{
+    auto indirectAddress = ReadProgramByte();
+
+    auto addressLow = ReadData(indirectAddress);
+    auto addressHigh = ReadData((uint8_t)(indirectAddress + 1));
+
+    address_ = (uint16_t)(addressLow | addressHigh << 8);
+    address_ += Y_;
+
+    Tick();
+}
+
 
 void Cpu::Load()
 {

@@ -24,15 +24,18 @@ private:
     void Implicit();
     void Immediate();
     void Absolute();
-    void AbsoluteX();
-    void AbsoluteY();
+    void AbsoluteXRead();
+    void AbsoluteXWrite();
+    void AbsoluteYRead();
+    void AbsoluteYWrite();
     void ZeroPage();
     void ZeroPageX();
     void ZeroPageY();
     void Relative();
     void AbsoluteIndirect();
     void IndexIndirect();
-    void IndirectIndex();
+    void IndirectIndexRead();
+    void IndirectIndexWrite();
 
     // load/store "steps" for in-memory operations
     void Load();
