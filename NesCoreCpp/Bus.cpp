@@ -141,6 +141,10 @@ void Bus::PpuWrite(uint16_t address, uint8_t value)
         address = cart_->EffectivePpuRamAddress(address);
         ppuRam_[address] = value;
     }
+    else
+    {
+        cart_->PpuWrite(address, value);
+    }
 }
 
 void Bus::SignalNmi()

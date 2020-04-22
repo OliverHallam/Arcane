@@ -3,6 +3,62 @@
 #include <assert.h>
 #include <memory>
 
+Cart::Cart() :
+    chrWriteable_{ false },
+    mapper_{ 0 },
+    mapperShift_{ 0 },
+    mapperShiftCount_{ 0 },
+    prgMode_{ 3 },
+    prgBank_{ 0 },
+    chrMode_{ 0 },
+    chrBank0_{ 0 },
+    chrBank1_{ 0 }
+{
+    ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
+}
+
+void Cart::SetMapper(int mapper)
+{
+    mapper_ = mapper;
+}
+
+void Cart::SetPrgRom(std::vector<uint8_t> prgData)
+{
+    prgData_ = std::move(prgData);
+
+    // first and last bank mapped by default.
+    cpuBanks_[4] = &prgData_[0];
+    cpuBanks_[5] = &prgData_[0x2000];
+    cpuBanks_[6] = &prgData_[prgData_.size() - 0x4000];
+    cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
+}
+
+void Cart::SetChrRom(std::vector<uint8_t> chrData)
+{
+    chrData_ = std::move(chrData);
+
+    ppuBanks_[0] = &chrData_[0];
+    ppuBanks_[1] = &chrData_[0x1000];
+}
+
+void Cart::SetChrRam()
+{
+    chrData_.resize(0x2000);
+
+    ppuBanks_[0] = &chrData_[0];
+    ppuBanks_[1] = &chrData_[0x1000];
+
+    chrWriteable_ = true;
+}
+
+void Cart::SetMirrorMode(bool verticalMirroring)
+{
+    if (verticalMirroring)
+        ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
+    else
+        ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
+}
+
 uint8_t Cart::CpuRead(uint16_t address) const
 {
     auto bank = cpuBanks_[address >> 13];
@@ -36,42 +92,19 @@ uint16_t Cart::PpuReadChr16(uint16_t address) const
     return (bank[bankAddress] << 8) | bank[bankAddress | 8];
 }
 
+void Cart::PpuWrite(uint16_t address, uint8_t value)
+{
+    if (chrWriteable_)
+    {
+        auto bank = ppuBanks_[address >> 12];
+        bank[address & 0x0fff] = value;
+    }
+}
+
 uint16_t Cart::EffectivePpuRamAddress(uint16_t address) const
 {
     auto page = (address >> 10) & 0x03;
     return ppuRamAddressMap_[page] | (address & 0x3ff);
-}
-
-Cart::Cart(
-    uint32_t mapper,
-    std::vector<uint8_t> prgData,
-    std::vector<uint8_t> chrData,
-    bool verticalMirroring) :
-    prgData_{ std::move(prgData) },
-    chrData_{ std::move(chrData) },
-    mapper_{ mapper },
-    mapperShift_{ mapper },
-    mapperShiftCount_{ 0 },
-    prgMode_{ 3 },
-    prgBank_{ 0 },
-    chrMode_{ 0 },
-    chrBank0_{ 0 },
-    chrBank1_{ 0 }
-{
-    //cpuBanks_[3] = RAM
-    cpuBanks_[4] = &prgData_[0];
-    cpuBanks_[5] = &prgData_[0x2000];
-
-    cpuBanks_[6] = &prgData_[prgData_.size() - 0x4000];
-    cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
-
-    ppuBanks_[0] = &chrData_[0];
-    ppuBanks_[1] = &chrData_[0x1000];
-
-    if (verticalMirroring)
-        ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
-    else
-        ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
 }
 
 void Cart::WriteMMC1(uint16_t address, uint8_t value)
@@ -223,6 +256,11 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
     auto verticalMirroring = (flags6 & 1) != 0;
     auto hasTrainer = (flags6 & 0x04) != 0;
 
+    if (mapper > 1)
+    {
+        return nullptr;
+    }
+
     data += 16;
 
     if (hasTrainer)
@@ -232,15 +270,12 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
     if (prgEnd > end)
         return nullptr;
 
-    std::vector<uint8_t> prgData;
     if (prgSize == 0)
     {
-        prgData.resize(0x4000);
+        return nullptr;
     }
-    else
-    {
-        prgData = std::vector<uint8_t>(data, prgEnd);
-    }
+
+    std::vector<uint8_t> prgData{ data, prgEnd };
 
     data = prgEnd;
 
@@ -249,11 +284,7 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
         return nullptr;
 
     std::vector<uint8_t> chrData;
-    if (chrSize == 0)
-    {
-        chrData.resize(0x2000);
-    }
-    else
+    if (chrSize != 0)
     {
         chrData = std::vector<uint8_t>(data, chrEnd);
     }
@@ -265,13 +296,16 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
         return nullptr;
     }
 
-    switch (mapper)
-    {
-    case 0:
-    case 1:
-        return std::make_unique<Cart>(mapper, prgData, chrData, verticalMirroring);
-        break;
-    }
+    auto cart = std::make_unique<Cart>();
 
-    return nullptr;
+    cart->SetMirrorMode(verticalMirroring);
+    cart->SetMapper(mapper);
+    cart->SetPrgRom(std::move(prgData));
+
+    if (chrData.size())
+        cart->SetChrRom(std::move(chrData));
+    else
+        cart->SetChrRam();
+
+    return std::move(cart);
 }

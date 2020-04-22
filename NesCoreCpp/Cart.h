@@ -8,19 +8,22 @@
 class Cart
 {
 public:
+    Cart();
+
+    void SetMapper(int mapper);
+    void SetPrgRom(std::vector<uint8_t> prgData);
+    void SetChrRom(std::vector<uint8_t> chrData);
+    void SetChrRam();
+    void SetMirrorMode(bool verticalMirroring);
+
     uint8_t CpuRead(uint16_t address) const;
     void CpuWrite(uint16_t address, uint8_t value);
 
     uint8_t PpuRead(uint16_t address) const;
     uint16_t PpuReadChr16(uint16_t address) const;
+    void PpuWrite(uint16_t address, uint8_t value);
 
     uint16_t EffectivePpuRamAddress(uint16_t address) const;
-
-    Cart(
-        uint32_t mapper,
-        std::vector<uint8_t> prgData,
-        std::vector<uint8_t> chrData,
-        bool verticalMirroring);
 
 private:
     void WriteMMC1(uint16_t address, uint8_t value);
@@ -34,6 +37,7 @@ private:
 
     // The PPU address space in 4K banks
     std::array<uint8_t*, 2> ppuBanks_;
+    bool chrWriteable_;
 
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
