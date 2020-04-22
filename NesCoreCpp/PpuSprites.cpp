@@ -271,7 +271,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                     tileId |= tileFineY >> 3;
                     tileFineY &= 0x07;
                     patternAddress_ = (uint16_t)
-                        (bankAddress | (tileId & 0xfe) << 4 | tileFineY);
+                        (bankAddress | (tileId << 4) | tileFineY);
                 }
                 else
                 {
