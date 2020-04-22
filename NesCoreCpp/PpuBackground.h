@@ -66,7 +66,7 @@ private:
     Tile currentTile_;
 
     uint8_t fineX_{};
-    int32_t patternBitShift_{};
+    int32_t patternBitShift_{7};
 
     // cache for code performance
     uint16_t backgroundPatternBase_{};

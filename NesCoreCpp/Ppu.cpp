@@ -115,14 +115,11 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 5:
-        if (targetCycle_ > 256)
-        {
-            // we only need to sync if we are pending an HReset
-            Sync(targetCycle_);
-        }
-
         if (!addressLatch_)
         {
+            // The fine X takes effect immediately, so we need to sync
+            Sync(targetCycle_);
+
             initialAddress_ &= 0xffe0;
             initialAddress_ |= (uint8_t)(value >> 3);
             background_.SetFineX((uint8_t)(value & 7));
@@ -130,6 +127,12 @@ void Ppu::Write(uint16_t address, uint8_t value)
         }
         else
         {
+            if (targetCycle_ > 256)
+            {
+                // we only need to sync if we are pending an HReset
+                Sync(targetCycle_);
+            }
+
             initialAddress_ &= 0x8c1f;
             initialAddress_ |= (uint16_t)((value & 0xf8) << 2);
             initialAddress_ |= (uint16_t)((value & 0x07) << 12);

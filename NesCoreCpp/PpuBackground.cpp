@@ -13,8 +13,10 @@ void PpuBackground::SetBasePatternAddress(uint16_t address)
 
 void PpuBackground::SetFineX(uint8_t value)
 {
+    patternBitShift_ += fineX_ - value;
+    patternBitShift_ &= 7;
+
     fineX_ = value;
-    patternBitShift_ = 7 - fineX_;
 }
 
 void PpuBackground::BeginScanline()
