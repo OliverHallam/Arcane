@@ -198,7 +198,7 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         // PRG bank
 
         // enable/disable PRG RAM
-        cpuBanks_[3] = (value & 0x10) ? &prgRam_[0] : nullptr;
+        cpuBanks_[3] = (value & 0x10) ? nullptr : &prgRam_[0];
 
         prgBank_ = (value & 0x0f) << 14;
         UpdatePrgMap();
