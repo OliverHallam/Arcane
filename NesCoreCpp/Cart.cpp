@@ -80,7 +80,8 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     if (address < 0x8000)
     {
         auto bank = cpuBanks_[address >> 13];
-        bank[address & 0x1fff] = value;
+        if (bank)
+            bank[address & 0x1fff] = value;
         return;
     }
 
@@ -195,7 +196,10 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
 
     case 7:
         // PRG bank
-        assert((value & 0x10) == 0); // RAM not yet supported
+
+        // enable/disable PRG RAM
+        cpuBanks_[3] = (value & 0x10) ? &prgRam_[0] : nullptr;
+
         prgBank_ = (value & 0x0f) << 14;
         UpdatePrgMap();
         break;
