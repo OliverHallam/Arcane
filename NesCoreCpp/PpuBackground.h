@@ -26,7 +26,7 @@ public:
 
     void RunLoad(int32_t startCycle, int32_t endCycle);
     void RunLoad();
-    void Tick();
+    void Tick(int32_t cycle);
 
     void HReset(uint16_t initialAddress);
     void HResetRenderDisabled();

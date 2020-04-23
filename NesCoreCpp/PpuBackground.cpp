@@ -48,14 +48,16 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
         for (auto pixelIndex = startCycle; pixelIndex < leftCrop_; pixelIndex++)
         {
             backgroundPixels_[pixelIndex] = 0;
+            Tick(pixelIndex);
         }
+
         startCycle = leftCrop_;
     }
 
     for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
     {
         backgroundPixels_[pixelIndex] = Render();
-        Tick();
+        Tick(pixelIndex);
     }
 }
 
@@ -65,7 +67,7 @@ void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
     for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
     {
         backgroundPixels_[pixelIndex] = 0;
-        Tick();
+        Tick(pixelIndex);
     }
 }
 
@@ -362,13 +364,13 @@ void PpuBackground::RunLoad()
     }
 }
 
-void PpuBackground::Tick()
+void PpuBackground::Tick(int cycle)
 {
     if (patternBitShift_ == 0)
     {
         patternBitShift_ = 7;
 
-        currentTileIndex_++;
+        currentTileIndex_ = ((cycle) >> 3) + 1;
 
         currentTile_ = scanlineTiles_[currentTileIndex_];
     }
