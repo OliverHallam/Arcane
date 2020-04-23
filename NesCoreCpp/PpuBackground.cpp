@@ -364,7 +364,7 @@ void PpuBackground::RunLoad()
     }
 }
 
-void PpuBackground::Tick(int cycle)
+void PpuBackground::Tick(int32_t cycle)
 {
     if (patternBitShift_ == 0)
     {

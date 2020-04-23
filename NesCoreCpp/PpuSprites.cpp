@@ -157,7 +157,7 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
     if (scanlineCycle < leftCrop_)
     {
         auto cropMax = std::min(leftCrop_, targetCycle);
-        for (auto cycle = 0; cycle < cropMax; cycle++)
+        for (auto cycle = 0u; cycle < cropMax; cycle++)
         {
             scanlineData_[cycle] = 0;
         }
