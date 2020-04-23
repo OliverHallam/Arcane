@@ -112,7 +112,7 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
         else
             apu_->Write(address, value);
     }
-    else if (address >= 0x8000)
+    else if (address >= 0x6000)
     {
         // TODO: we only need to sync when we change a PPU bank
         ppu_->Sync();

@@ -33,6 +33,12 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
 }
 
+void Cart::SetPrgRam()
+{
+    prgRam_.resize(0x2000);
+    cpuBanks_[3] = &prgRam_[0];
+}
+
 void Cart::SetChrRom(std::vector<uint8_t> chrData)
 {
     chrData_ = std::move(chrData);
@@ -71,6 +77,13 @@ uint8_t Cart::CpuRead(uint16_t address) const
 
 void Cart::CpuWrite(uint16_t address, uint8_t value)
 {
+    if (address < 0x8000)
+    {
+        auto bank = cpuBanks_[address >> 13];
+        bank[address & 0x1fff] = value;
+        return;
+    }
+
     switch (mapper_)
     {
     case 1:
@@ -301,6 +314,10 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
     cart->SetMirrorMode(verticalMirroring);
     cart->SetMapper(mapper);
     cart->SetPrgRom(std::move(prgData));
+
+    // TODO: most games don't have this
+    if (mapper == 1)
+        cart->SetPrgRam();
 
     if (chrData.size())
         cart->SetChrRom(std::move(chrData));

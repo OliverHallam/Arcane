@@ -12,6 +12,7 @@ public:
 
     void SetMapper(int mapper);
     void SetPrgRom(std::vector<uint8_t> prgData);
+    void SetPrgRam();
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
     void SetMirrorMode(bool verticalMirroring);
@@ -39,6 +40,7 @@ private:
     std::array<uint8_t*, 2> ppuBanks_;
     bool chrWriteable_;
 
+    std::vector<uint8_t> prgRam_;
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
