@@ -45,7 +45,8 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
 {
     if (startCycle < leftCrop_)
     {
-        for (auto pixelIndex = startCycle; pixelIndex < leftCrop_; pixelIndex++)
+        auto cropSize = std::min(leftCrop_, endCycle);
+        for (auto pixelIndex = startCycle; pixelIndex < cropSize; pixelIndex++)
         {
             backgroundPixels_[pixelIndex] = 0;
             Tick(pixelIndex);
