@@ -18,6 +18,11 @@ void PpuSprites::SetBasePatternAddress(uint16_t address)
     spritePatternBase_ = address;
 }
 
+void PpuSprites::EnableLeftColumn(bool enabled)
+{
+    leftCrop_ = enabled ? 0 : 8;
+}
+
 void PpuSprites::SetOamAddress(uint8_t value)
 {
     oamAddress_ = value;
@@ -144,6 +149,17 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
                 scanlineAttributes_[cycle] = sprite.attributes;
                 scanlineData_[cycle] = pixel;
             }
+        }
+    }
+
+    // TODO: we may be able to do this earlier but would have to mess with the shifters.
+    // it's easier to mask it off at the end!
+    if (scanlineCycle < leftCrop_)
+    {
+        auto cropMax = std::min(leftCrop_, targetCycle);
+        for (auto cycle = 0; cycle < cropMax; cycle++)
+        {
+            scanlineData_[cycle] = 0;
         }
     }
 }

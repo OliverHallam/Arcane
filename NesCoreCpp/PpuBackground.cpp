@@ -19,6 +19,11 @@ void PpuBackground::SetFineX(uint8_t value)
     fineX_ = value;
 }
 
+void PpuBackground::EnableLeftColumn(bool enabled)
+{
+    leftCrop_ = enabled ? 0 : 8;
+}
+
 void PpuBackground::BeginScanline()
 {
     currentTileIndex_ = 0;
@@ -38,6 +43,15 @@ uint8_t PpuBackground::Render()
 
 void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
 {
+    if (startCycle < leftCrop_)
+    {
+        for (auto pixelIndex = startCycle; pixelIndex < leftCrop_; pixelIndex++)
+        {
+            backgroundPixels_[pixelIndex] = 0;
+        }
+        startCycle = leftCrop_;
+    }
+
     for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
     {
         backgroundPixels_[pixelIndex] = Render();
@@ -58,11 +72,19 @@ void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
 void PpuBackground::RenderScanline()
 {
     auto pixelIndex = 0;
+    auto tileIndex = 0;
+
+    if (leftCrop_)
+    {
+        *reinterpret_cast<uint64_t *>(&backgroundPixels_[0]) = 0;
+        pixelIndex = 8;
+        tileIndex = 1;
+    }
 
     uint8_t index;
 
     // push out first tile
-    auto tile = scanlineTiles_[0];
+    auto tile = scanlineTiles_[tileIndex++];
     auto patternHigh = tile.PatternByteHigh;
     auto patternLow = tile.PatternByteLow;
     auto attributeBits = tile.AttributeBits;
@@ -105,9 +127,9 @@ void PpuBackground::RenderScanline()
     // now render 31 tiles completely
     Tile prevTile{};
     uint64_t tileBytes{};
-    for (auto tileId = 1; tileId < 32; tileId++)
+    for (; tileIndex < 32; tileIndex++)
     {
-        tile = scanlineTiles_[tileId];
+        tile = scanlineTiles_[tileIndex];
         if (tile != prevTile)
         {
             uint64_t tileLowBits = tile.PatternByteLow;

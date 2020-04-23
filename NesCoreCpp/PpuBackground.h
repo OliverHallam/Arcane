@@ -14,6 +14,8 @@ public:
 
     void SetFineX(uint8_t value);
 
+    void EnableLeftColumn(bool enabled);
+
     void BeginScanline();
 
     uint8_t Render();
@@ -71,6 +73,8 @@ private:
     // cache for code performance
     uint16_t backgroundPatternBase_{};
     uint16_t patternAddress_{};
+
+    uint32_t leftCrop_{};
 
     std::array<uint8_t, 256> backgroundPixels_{};
 

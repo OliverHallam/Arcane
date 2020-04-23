@@ -11,6 +11,7 @@ public:
 
     void SetLargeSprites(bool enabled);
     void SetBasePatternAddress(uint16_t address);
+    void EnableLeftColumn(bool enabled);
 
     void SetOamAddress(uint8_t value);
     void WriteOam(uint8_t value);
@@ -66,6 +67,8 @@ private:
     bool spriteOverflow_{};
 
     bool spritesRendered_{};
+
+    uint32_t leftCrop_;
 
     std::array<uint8_t, 256> scanlineAttributes_{};
     std::array<uint8_t, 256> scanlineData_{};

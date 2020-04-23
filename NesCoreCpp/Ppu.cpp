@@ -234,6 +234,9 @@ void Ppu::RunDeferredUpdate()
         // mask updates after 2 cycles
         Sync(targetCycle_ - 1);
 
+        // TODO: grayscale/emphasis bits
+        background_.EnableLeftColumn((mask_ & 0x02) != 0);
+        sprites_.EnableLeftColumn((mask_ & 0x04) != 0);
         enableBackground_ = (mask_ & 0x08) != 0;
         enableForeground_ = (mask_ & 0x10) != 0;
         enableRendering_ = (mask_ & 0x18) != 0;
