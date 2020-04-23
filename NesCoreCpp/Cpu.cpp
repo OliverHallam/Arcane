@@ -999,9 +999,7 @@ void Cpu::AbsoluteXRead()
     address_ = (uint16_t)(lowByte | highByte << 8);
     address_ += X_;
 
-    auto addressHigh = address_ >> 8;
-
-    if (addressHigh != (address_ >> 8))
+    if (highByte != (address_ >> 8))
     {
         Tick();
     }
@@ -1014,8 +1012,6 @@ void Cpu::AbsoluteXWrite()
 
     address_ = (uint16_t)(lowByte | highByte << 8);
     address_ += X_;
-
-    Tick();
 }
 
 void Cpu::AbsoluteYRead()
@@ -1026,9 +1022,7 @@ void Cpu::AbsoluteYRead()
     address_ = (uint16_t)(lowByte | highByte << 8);
     address_ += Y_;
 
-    auto addressHigh = address_ >> 8;
-
-    if (addressHigh != (address_ >> 8))
+    if (highByte != (address_ >> 8))
     {
         Tick();
     }
@@ -1041,8 +1035,6 @@ void Cpu::AbsoluteYWrite()
 
     address_ = (uint16_t)(lowByte | highByte << 8);
     address_ += Y_;
-
-    Tick();
 }
 
 void Cpu::ZeroPage()
@@ -1213,7 +1205,7 @@ void Cpu::Beq()
 void Cpu::Bit()
 {
     N_ = (value_ & 0x80) != 0;
-    V_ = (value_ & 0x70) != 0;
+    V_ = (value_ & 0x40) != 0;
     Z_ = (value_ & A_) == 0;
 }
 
