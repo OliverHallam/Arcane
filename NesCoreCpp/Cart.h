@@ -5,6 +5,8 @@
 #include <array>
 #include <vector>
 
+class Bus;
+
 class Cart
 {
 public:
@@ -16,6 +18,8 @@ public:
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
     void SetMirrorMode(bool verticalMirroring);
+
+    void Attach(Bus* bus);
 
     uint8_t CpuRead(uint16_t address) const;
     void CpuWrite(uint16_t address, uint8_t value);
@@ -57,6 +61,8 @@ private:
     uint32_t chrMode_;
     uint32_t chrBank0_;
     uint32_t chrBank1_;
+
+    Bus* bus_;
 };
 
 std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length);

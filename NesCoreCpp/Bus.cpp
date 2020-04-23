@@ -39,12 +39,18 @@ void Bus::Attach(Controller* controller)
 void Bus::Attach(std::unique_ptr<Cart> cart)
 {
     cart_ = std::move(cart);
+    cart_->Attach(this);
 }
 
 void Bus::TickCpu()
 {
     apu_->Tick();
     ppu_->Tick3();
+}
+
+void Bus::SyncPpu()
+{
+    ppu_->Sync();
 }
 
 uint8_t Bus::CpuReadData(uint16_t address)
@@ -114,8 +120,6 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     }
     else if (address >= 0x6000)
     {
-        // TODO: we only need to sync when we change a PPU bank
-        ppu_->Sync();
         cart_->CpuWrite(address, value);
     }
 }

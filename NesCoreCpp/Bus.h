@@ -23,6 +23,8 @@ public:
 
     void TickCpu();
 
+    void SyncPpu();
+
     uint8_t CpuReadData(uint16_t address);
     uint8_t CpuReadProgramData(uint16_t address);
     void CpuWrite(uint16_t address, uint8_t value);

@@ -1,9 +1,13 @@
 #include "Cart.h"
 
+#include "Bus.h"
+
 #include <assert.h>
 #include <memory>
 
 Cart::Cart() :
+    cpuBanks_{},
+    ppuBanks_{},
     chrWriteable_{ false },
     mapper_{ 0 },
     mapperShift_{ 0 },
@@ -63,6 +67,11 @@ void Cart::SetMirrorMode(bool verticalMirroring)
         ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
     else
         ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
+}
+
+void Cart::Attach(Bus* bus)
+{
+    bus_ = bus;
 }
 
 uint8_t Cart::CpuRead(uint16_t address) const
@@ -208,6 +217,8 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
 
 void Cart::UpdateChrMap()
 {
+    bus_->SyncPpu();
+
     switch (chrMode_)
     {
     case 0:
