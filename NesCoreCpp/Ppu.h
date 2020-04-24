@@ -30,12 +30,14 @@ private:
     __declspec(noinline) void SyncScanline();
 
     void Sync(int32_t targetCycle);
+    void SyncComposite();
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
 
     void RenderScanline();
 
+    void Composite(int32_t startCycle, int32_t endCycle);
     void FinishRender();
     void EnterVBlank();
 
@@ -67,7 +69,7 @@ private:
 
     int32_t currentScanline_{ 241 };
     int32_t scanlineCycle_{ 0 };
-
+    int32_t compositeCycle_{ 0 };
     int32_t targetCycle_{ 0 };
 
     PpuBackground background_;

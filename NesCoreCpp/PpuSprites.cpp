@@ -141,6 +141,7 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
             {
                 if (spriteIndex == 0 && sprite0Visible_ && backgroundPixels[cycle])
                 {
+                    // TODO: one pixel early?
                     sprite0Hit_ = true;
                 }
 

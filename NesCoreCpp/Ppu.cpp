@@ -174,6 +174,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
         auto writeAddress = (uint16_t)(background_.CurrentAddress & 0x3fff);
         if (writeAddress >= 0x3f00)
         {
+            SyncComposite();
+
             value &= 0x3f;
 
             if ((writeAddress & 0x03) == 0)
@@ -313,6 +315,17 @@ void Ppu::Sync(int32_t targetCycle)
     {
         scanlineCycle_ = targetCycle;
     }
+}
+
+void Ppu::SyncComposite()
+{
+    if (currentScanline_ >= 240)
+        return;
+    if (targetCycle_ < 0 || targetCycle_ > 256)
+        return;
+
+    Composite(compositeCycle_, targetCycle_);
+    compositeCycle_ = targetCycle_;
 }
 
 void Ppu::PreRenderScanline(int32_t targetCycle)
@@ -505,7 +518,7 @@ void Ppu::RenderScanline()
     }
 }
 
-void Ppu::FinishRender()
+void Ppu::Composite(int32_t startCycle, int32_t endCycle)
 {
     // merge the sprites and the background
     auto& backgroundPixels = background_.ScanlinePixels();
@@ -515,7 +528,7 @@ void Ppu::FinishRender()
     auto scanline = display_.GetScanlinePtr();
     if (sprites_.SpritesVisible())
     {
-        for (auto i = 0; i < 256; i++)
+        for (auto i = startCycle; i < endCycle; i++)
         {
             auto pixel = backgroundPixels[i];
             auto spritePixel = spritePixels[i];
@@ -537,12 +550,18 @@ void Ppu::FinishRender()
     }
     else
     {
-        for (auto i = 0; i < 256; i++)
+        for (auto i = startCycle; i < endCycle; i++)
         {
             auto pixel = backgroundPixels[i];
             scanline[i] = rgbPalette_[pixel];
         }
     }
+}
+
+void Ppu::FinishRender()
+{
+    Composite(compositeCycle_, 256);
+    compositeCycle_ = 0;
 
     sprites_.HReset();
     display_.HBlank();

@@ -52,7 +52,20 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
             Tick(pixelIndex);
         }
 
-        startCycle = leftCrop_;
+        startCycle = cropSize;
+    }
+
+    // if the PPU is pointing at a pallette entry, that replaces the background colour.
+    if ((CurrentAddress & 0x3f00) == 0x3f00)
+    {
+        auto paletteIndex = CurrentAddress & 0x1f;
+
+        for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
+        {
+            backgroundPixels_[pixelIndex] = paletteIndex;
+            Tick(pixelIndex);
+        }
+        return;
     }
 
     for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
@@ -64,10 +77,31 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
 
 void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
 {
+    auto paletteIndex = 0;
+
+    // if the PPU is pointing at a pallette entry, that replaces the background colour.
+    if ((CurrentAddress & 0x3f00) == 0x3f00)
+    {
+        if (startCycle < leftCrop_)
+        {
+            // TODO: I'm assuming the crop still returns 0, this should be checked
+            auto cropSize = std::min(leftCrop_, endCycle);
+            for (auto pixelIndex = startCycle; pixelIndex < cropSize; pixelIndex++)
+            {
+                backgroundPixels_[pixelIndex] = 0;
+                Tick(pixelIndex);
+            }
+
+            startCycle = cropSize;
+        }
+
+        paletteIndex = CurrentAddress & 0x1f;
+    }
+
     // TODO: this can be optimized
     for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
     {
-        backgroundPixels_[pixelIndex] = 0;
+        backgroundPixels_[pixelIndex] = paletteIndex;
         Tick(pixelIndex);
     }
 }
