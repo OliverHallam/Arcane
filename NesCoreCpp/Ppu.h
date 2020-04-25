@@ -39,7 +39,10 @@ private:
 
     void Composite(int32_t startCycle, int32_t endCycle);
     void FinishRender();
+
     void EnterVBlank();
+    void SignalVBlank();
+
 
     Bus& bus_;
     Display& display_;
@@ -84,6 +87,6 @@ private:
     bool updateMask_{};
     uint8_t mask_{};
 
-    // the next tick should enter VBlank.
-    bool enterVBlank_{};
+    // the next tick should trigger the VBlank interrupt
+    bool signalVBlank_{};
 };

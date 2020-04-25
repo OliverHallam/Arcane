@@ -52,6 +52,9 @@ uint8_t Ppu::Read(uint16_t address)
             inVBlank_ = false;
         }
 
+        // if the status is read at the point we were about to signal a vblank, that can cause it to be skipped.
+        signalVBlank_ = false;
+
         if (sprites_.Sprite0Hit())
             status |= 0x40;
         else if (sprites_.Sprite0Visible())
@@ -96,18 +99,27 @@ void Ppu::Write(uint16_t address, uint8_t value)
     switch (address)
     {
     case 0:
+    {
         Sync(targetCycle_);
+
+        auto wasVblankInterruptEnabled = enableVBlankInterrupt_;
+
         // PPUCTRL flags
         enableVBlankInterrupt_ = (value & 0x80) != 0;
         sprites_.SetLargeSprites((value & 0x20) != 0);
         background_.SetBasePatternAddress((uint16_t)((value & 0x10) << 8));
-        sprites_   .SetBasePatternAddress((uint16_t)((value & 0x08) << 9));
+        sprites_.SetBasePatternAddress((uint16_t)((value & 0x08) << 9));
         addressIncrement_ = (value & 0x04) != 0 ? 32 : 1;
 
         // set base nametable address
         initialAddress_ &= 0xf3ff;
         initialAddress_ |= (uint16_t)((value & 3) << 10);
+
+        if (enableVBlankInterrupt_ && !wasVblankInterruptEnabled && inVBlank_)
+            bus_.SignalNmi();
+
         return;
+    }
 
     case 1:
         mask_ = value;
@@ -219,10 +231,10 @@ void Ppu::DmaWrite(uint8_t value)
 
 void Ppu::RunDeferredUpdate()
 {
-    if (enterVBlank_)
+    if (signalVBlank_)
     {
-        EnterVBlank();
-        enterVBlank_ = false;
+        SignalVBlank();
+        signalVBlank_ = false;
     }
 
     if (updateBaseAddress_)
@@ -268,15 +280,17 @@ void Ppu::SyncScanline()
         currentScanline_ = 241;
         targetCycle_ -= 341;
 
+        EnterVBlank();
+
         // if we've stepped over the start of VBlank, we should sync that too.
         if (targetCycle_ > 0)
         {
-            EnterVBlank();
+            SignalVBlank();
         }
         else
         {
-            // otherwise we enter VBlank on the next update
-            enterVBlank_ = true;
+            // otherwise we process the VBlank on the next update
+            signalVBlank_ = true;
             hasDeferredUpdate_ = true;
         }
         return;
@@ -578,12 +592,12 @@ void Ppu::EnterVBlank()
 
     bus_.OnFrame();
     frameCount_++;
+}
 
-    if (enableVBlankInterrupt_)
-    {
-        bus_.SignalNmi();
-    }
-
+void Ppu::SignalVBlank()
+{
     // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
     inVBlank_ = true;
+    if (enableVBlankInterrupt_)
+        bus_.SignalNmi();
 }
