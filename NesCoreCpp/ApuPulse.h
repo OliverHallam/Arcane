@@ -11,7 +11,7 @@ class ApuPulse
 public:
     ApuPulse(bool pulse1);
 
-    void Disable();
+    void Enabled(bool enabled);
     bool IsEnabled() const;
 
     void Write(uint8_t address, uint8_t value);

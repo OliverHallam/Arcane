@@ -13,12 +13,15 @@ void ApuLengthCounter::SetHalt(bool halt)
 
 void ApuLengthCounter::SetLength(uint8_t length)
 {
-    length_ = GetLinearLength(length);
+    if (enabled_)
+        length_ = GetLinearLength(length);
 }
 
-void ApuLengthCounter::Disable()
+void ApuLengthCounter::SetEnabled(bool enabled)
 {
-    length_ = 0;
+    enabled_ = enabled;
+    if (!enabled)
+        length_ = 0;
 }
 
 bool ApuLengthCounter::IsEnabled() const

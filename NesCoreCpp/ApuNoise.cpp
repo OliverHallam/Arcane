@@ -9,9 +9,9 @@ ApuNoise::ApuNoise()
 {
 }
 
-void ApuNoise::Disable()
+void ApuNoise::Enabled(bool enabled)
 {
-    lengthCounter_.Disable();
+    lengthCounter_.SetEnabled(enabled);
 }
 
 bool ApuNoise::IsEnabled() const

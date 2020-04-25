@@ -26,9 +26,9 @@ void ApuPulse::TickHalfFrame()
     lengthCounter_.Tick();
 }
 
-void ApuPulse::Disable()
+void ApuPulse::Enabled(bool enabled)
 {
-    lengthCounter_.Disable();
+    lengthCounter_.SetEnabled(enabled);
 }
 
 bool ApuPulse::IsEnabled() const

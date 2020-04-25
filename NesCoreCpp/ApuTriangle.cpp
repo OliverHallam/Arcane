@@ -1,8 +1,8 @@
 #include "ApuTriangle.h"
 
-void ApuTriangle::Disable()
+void ApuTriangle::Enable(bool enabled)
 {
-    lengthCounter_.Disable();
+    lengthCounter_.SetEnabled(enabled);
 }
 
 bool ApuTriangle::IsEnabled() const
