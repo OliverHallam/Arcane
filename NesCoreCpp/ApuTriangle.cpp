@@ -1,8 +1,13 @@
 #include "ApuTriangle.h"
 
-void ApuTriangle::Enable(bool enabled)
+void ApuTriangle::Disable()
 {
-    lengthCounter_.SetEnabled(enabled);
+    lengthCounter_.Disable();
+}
+
+bool ApuTriangle::IsEnabled() const
+{
+    return lengthCounter_.IsEnabled();
 }
 
 void ApuTriangle::Write(uint16_t address, uint8_t value)
@@ -35,7 +40,7 @@ void ApuTriangle::Run(uint32_t cycles)
 {
     timer_ -= cycles;
 
-    if (linearCounter_ && lengthCounter_.IsOutputEnabled())
+    if (linearCounter_ && lengthCounter_.IsEnabled())
     {
         while (timer_ <= 0)
         {
@@ -79,10 +84,10 @@ void ApuTriangle::TickHalfFrame()
     lengthCounter_.Tick();
 }
 
-int8_t ApuTriangle::Sample()
+int8_t ApuTriangle::Sample() const
 {
     // the original hardware outputs from 0 - 15, I've scaled this to -15 - 15
-    if (linearCounter_ && lengthCounter_.IsOutputEnabled())
+    if (linearCounter_ && lengthCounter_.IsEnabled())
     {
         if (waveformCycle_ < 16)
             return 15 - waveformCycle_ * 2;

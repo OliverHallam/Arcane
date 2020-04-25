@@ -5,7 +5,9 @@
 class ApuTriangle
 {
 public:
-    void Enable(bool enabled);
+    void Disable();
+    bool IsEnabled() const;
+
     void Write(uint16_t address, uint8_t value);
 
     void Run(uint32_t cycles);
@@ -13,7 +15,7 @@ public:
     void TickQuarterFrame();
     void TickHalfFrame();
 
-    int8_t Sample();
+    int8_t Sample() const;
 
 private:
     ApuLengthCounter lengthCounter_;

@@ -13,9 +13,9 @@ public:
 
     void Tick();
 
-    uint16_t Period();
+    uint16_t Period() const;
 
-    bool IsOutputEnabled();
+    bool IsOutputEnabled() const;
 
 private:
     void UpdateTargetPeriod();

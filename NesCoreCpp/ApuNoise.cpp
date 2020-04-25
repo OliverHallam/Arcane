@@ -9,9 +9,14 @@ ApuNoise::ApuNoise()
 {
 }
 
-void ApuNoise::Enable(bool enabled)
+void ApuNoise::Disable()
 {
-    lengthCounter_.SetEnabled(enabled);
+    lengthCounter_.Disable();
+}
+
+bool ApuNoise::IsEnabled() const
+{
+    return lengthCounter_.IsEnabled();
 }
 
 void ApuNoise::Write(uint16_t address, uint8_t value)
@@ -57,9 +62,9 @@ void ApuNoise::TickHalfFrame()
     lengthCounter_.Tick();
 }
 
-int8_t ApuNoise::Sample()
+int8_t ApuNoise::Sample() const
 {
-    if (lengthCounter_.IsOutputEnabled())
+    if (lengthCounter_.IsEnabled())
         return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
 
     return 0;
@@ -96,7 +101,7 @@ uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)
     }
 }
 
-bool ApuNoise::GetSequenceOutput()
+bool ApuNoise::GetSequenceOutput() const
 {
     return !(shifter_ & 0x0001);
 }

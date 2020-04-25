@@ -12,7 +12,7 @@ public:
     void SetValue(uint8_t envelope);
     void Start();
 
-    uint8_t Sample();
+    uint8_t Sample() const;
 
 private:
     bool start_{};

@@ -45,6 +45,4 @@ private:
     uint32_t sampleCounter_;
 
     uint32_t pendingCycles_{};
-
-    uint8_t status_;
 };

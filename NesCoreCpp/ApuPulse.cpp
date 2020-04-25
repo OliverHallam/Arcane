@@ -26,9 +26,14 @@ void ApuPulse::TickHalfFrame()
     lengthCounter_.Tick();
 }
 
-void ApuPulse::Enable(bool enabled)
+void ApuPulse::Disable()
 {
-    lengthCounter_.SetEnabled(enabled);
+    lengthCounter_.Disable();
+}
+
+bool ApuPulse::IsEnabled() const
+{
+    return lengthCounter_.IsEnabled();
 }
 
 void ApuPulse::Write(uint8_t address, uint8_t value)
@@ -60,9 +65,9 @@ void ApuPulse::Write(uint8_t address, uint8_t value)
     }
 }
 
-int8_t ApuPulse::Sample()
+int8_t ApuPulse::Sample() const
 {
-    if (lengthCounter_.IsOutputEnabled() && sweep_.IsOutputEnabled())
+    if (lengthCounter_.IsEnabled() && sweep_.IsOutputEnabled())
         return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
 
     return 0;
@@ -81,7 +86,7 @@ uint8_t ApuPulse::GetDutyLookup(uint8_t duty)
     }
 }
 
-bool ApuPulse::GetSequenceOutput()
+bool ApuPulse::GetSequenceOutput() const
 {
     return (dutyLookup_ << (sequence_ & 0x07)) & 0x80;
 }

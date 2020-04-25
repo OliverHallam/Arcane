@@ -43,12 +43,12 @@ void ApuSweep::Tick()
     }
 }
 
-uint16_t ApuSweep::Period()
+uint16_t ApuSweep::Period() const
 {
     return period2_;
 }
 
-bool ApuSweep::IsOutputEnabled()
+bool ApuSweep::IsOutputEnabled() const
 {
     // negate can cause an underflow
     return period_ >= 8 && (negate_ || targetPeriod_ <= 0x800);

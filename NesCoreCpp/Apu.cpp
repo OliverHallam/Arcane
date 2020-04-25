@@ -10,8 +10,7 @@ Apu::Apu(uint32_t samplesPerFrame) :
     lastSampleCycle_(29780 / samplesPerFrame),
     sampleCounter_(29780 / samplesPerFrame),
     pulse1_{true},
-    pulse2_{false},
-    status_{0}
+    pulse2_{false}
 {
 }
 
@@ -92,11 +91,18 @@ void Apu::Write(uint16_t address, uint8_t value)
         break;
 
     case 0x4015:
-        pulse1_.Enable((value & 0x01) != 0);
-        pulse2_.Enable((value & 0x02) != 0);
-        triangle_.Enable((value & 0x04) != 0);
-        noise_.Enable((value & 0x08) != 0);
-        status_ = value & 0x1f;
+        if (!(value & 0x01))
+            pulse1_.Disable();
+
+        if (!(value & 0x02))
+            pulse2_.Disable();
+
+        if (!(value & 0x04))
+            triangle_.Disable();
+
+        if (!(value & 0x08))
+            noise_.Disable();
+
         break;
 
     case 0x4017:
@@ -110,7 +116,20 @@ uint8_t Apu::Read(uint16_t address)
 {
     if (address == 0x4015)
     {
-        return status_;
+        uint8_t status = 0;
+        if (pulse1_.IsEnabled())
+            status |= 0x01;
+
+        if (pulse2_.IsEnabled())
+            status |= 0x02;
+
+        if (triangle_.IsEnabled())
+            status |= 0x04;
+
+        if (noise_.IsEnabled())
+            status |= 0x08;
+
+        return status;
     }
 
     return 0;

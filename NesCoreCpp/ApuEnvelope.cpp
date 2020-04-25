@@ -50,7 +50,7 @@ void ApuEnvelope::Start()
     start_ = true;
 }
 
-uint8_t ApuEnvelope::Sample()
+uint8_t ApuEnvelope::Sample() const
 {
     return constantVolume_ ? envelope_ : decayLevel_;
 }
