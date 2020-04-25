@@ -276,10 +276,6 @@ void Ppu::SyncScanline()
     }
     else if (currentScanline_ == 240)
     {
-        scanlineCycle_ = 0;
-        currentScanline_ = 241;
-        targetCycle_ -= 341;
-
         EnterVBlank();
 
         // if we've stepped over the start of VBlank, we should sync that too.
@@ -293,6 +289,11 @@ void Ppu::SyncScanline()
             signalVBlank_ = true;
             hasDeferredUpdate_ = true;
         }
+
+        scanlineCycle_ = 0;
+        currentScanline_ = 241;
+        targetCycle_ -= 341;
+
         return;
     }
     else if (currentScanline_ == 261)
