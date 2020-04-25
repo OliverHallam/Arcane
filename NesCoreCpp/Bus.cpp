@@ -66,6 +66,9 @@ uint8_t Bus::CpuReadData(uint16_t address)
         if (address == 0x4016)
             return controller_->Read();
 
+        else
+            return apu_->Read(address);
+
         return 0;
     }
 
@@ -98,6 +101,8 @@ uint8_t Bus::CpuReadProgramData(uint16_t address)
     {
         if (address == 0x4016)
             return controller_->Read();
+        else
+            return apu_->Read(address);
     }
 
     return 0;
