@@ -4,7 +4,7 @@
 
 ApuFrameCounter::ApuFrameCounter(Apu& apu)
     : apu_{ apu },
-    counter_{ 7458 },
+    counter_{ 7457 },
     phase_{ 0 }
 {
 }
@@ -56,7 +56,7 @@ void ApuFrameCounter::Activate()
             apu_.QuarterFrame();
             apu_.HalfFrame();
             phase_ = 0;
-            counter_ = 7458;
+            counter_ = 7457;
             break;
         }
         else
@@ -70,7 +70,7 @@ void ApuFrameCounter::Activate()
         apu_.QuarterFrame();
         apu_.HalfFrame();
         phase_ = 0;
-        counter_ = 7458;
+        counter_ = 7457;
         break;
     }
 }
