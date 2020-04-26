@@ -35,6 +35,9 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     cpuBanks_[5] = &prgData_[0x2000];
     cpuBanks_[6] = &prgData_[prgData_.size() - 0x4000];
     cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
+
+    prgMask16k_ = prgData_.size() - 1;
+    prgMask32k_ = prgMask16k_ & 0xffff8000;
 }
 
 void Cart::SetPrgRam()
@@ -243,7 +246,7 @@ void Cart::UpdatePrgMap()
     case 0:
     case 1:
     {
-        auto base = &prgData_[prgBank_ & 0x8000];
+        auto base = &prgData_[prgBank_ & prgMask32k_];
         cpuBanks_[4] = base;
         cpuBanks_[5] = base + 0x2000;
         cpuBanks_[6] = base + 0x4000;
@@ -252,16 +255,22 @@ void Cart::UpdatePrgMap()
     }
 
     case 2:
+    {
+        auto base = &prgData_[prgBank_ & prgMask16k_];
         cpuBanks_[4] = &prgData_[0];
         cpuBanks_[5] = &prgData_[0x2000];
-        cpuBanks_[6] = &prgData_[prgBank_];
-        cpuBanks_[7] = &prgData_[prgBank_ + 0x2000];
+        cpuBanks_[6] = base;
+        cpuBanks_[7] = base + 0x2000;
+    }
 
     case 3:
-        cpuBanks_[4] = &prgData_[prgBank_];
-        cpuBanks_[5] = &prgData_[prgBank_ + 0x2000];
+    {
+        auto base = &prgData_[prgBank_ & prgMask16k_];
+        cpuBanks_[4] = base;
+        cpuBanks_[5] = base + 0x2000;
         cpuBanks_[6] = &prgData_[prgData_.size() - 0x4000];
         cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
+    }
     }
 }
 

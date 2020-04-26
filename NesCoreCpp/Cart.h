@@ -57,6 +57,8 @@ private:
 
     uint32_t prgMode_;
     uint32_t prgBank_;
+    uint32_t prgMask32k_;
+    uint32_t prgMask16k_;
 
     uint32_t chrMode_;
     uint32_t chrBank0_;
