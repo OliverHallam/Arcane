@@ -21,12 +21,14 @@ public:
     void Attach(Controller* controller);
     void Attach(std::unique_ptr<Cart> cart);
 
-    void TickCpu();
+    void TickCpuRead();
+    void TickCpuWrite();
 
     uint32_t CycleCount() const;
 
     void SyncPpu();
 
+    void CpuDummyRead(uint16_t address);
     uint8_t CpuReadData(uint16_t address);
     uint8_t CpuReadProgramData(uint16_t address);
     void CpuWrite(uint16_t address, uint8_t value);
@@ -37,12 +39,22 @@ public:
     void PpuWrite(uint16_t address, uint8_t value);
 
     void SignalNmi();
-    void DmaWrite(uint8_t value);
+    void SetIrq(bool irq);
+
+    void BeginOamDma(uint8_t page);
+    void BeginDmcDma(uint16_t address);
 
     void OnFrame();
 
 private:
-    void RunDma(uint8_t page);
+    void Tick();
+
+    uint8_t DmcDmaRead(uint16_t address);
+    void OamDmaWrite(uint8_t value);
+
+    void RunDma();
+    void RunOamDma();
+    void RunDmcDma();
 
     Cpu* cpu_;
     Ppu* ppu_;
@@ -54,4 +66,11 @@ private:
     std::array<uint8_t, 2048> ppuRam_;
 
     uint32_t cycleCount_;
+
+    bool dma_;
+    bool oamDma_;
+    bool dmcDma_;
+
+    uint16_t oamDmaAddress_;
+    uint16_t dmcDmaAddress_;
 };

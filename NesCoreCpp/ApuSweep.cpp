@@ -51,16 +51,20 @@ uint16_t ApuSweep::Period() const
 bool ApuSweep::IsOutputEnabled() const
 {
     // negate can cause an underflow
-    return period_ >= 8 && (negate_ || targetPeriod_ <= 0x800);
+    return period_ >= 8 && targetPeriod_ <= 0x800;
 }
 
 void ApuSweep::UpdateTargetPeriod()
 {
     auto delta = period_ >> shift_;
+
     if (negate_)
     {
-        delta = -delta - negatedDeltaOffset_;
+        delta = -delta;
+        if (delta > 0)
+            delta -= negatedDeltaOffset_;
     }
+
     targetPeriod_ = period_ + delta;
 }
 

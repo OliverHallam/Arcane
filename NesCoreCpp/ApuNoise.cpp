@@ -9,7 +9,7 @@ ApuNoise::ApuNoise()
 {
 }
 
-void ApuNoise::Enabled(bool enabled)
+void ApuNoise::Enable(bool enabled)
 {
     lengthCounter_.SetEnabled(enabled);
 }
@@ -21,7 +21,7 @@ bool ApuNoise::IsEnabled() const
 
 void ApuNoise::Write(uint16_t address, uint8_t value)
 {
-    switch (address)
+    switch (address & 0x0003)
     {
     case 0:
         lengthCounter_.SetHalt(value & 0x20);

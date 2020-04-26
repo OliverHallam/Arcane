@@ -12,7 +12,7 @@ bool ApuTriangle::IsEnabled() const
 
 void ApuTriangle::Write(uint16_t address, uint8_t value)
 {
-    switch (address)
+    switch (address & 0x0003)
     {
     case 0:
         control_ = value & 0x80;

@@ -5,7 +5,7 @@ NesSystem::NesSystem(uint32_t audioSampleRate)
     bus_{},
     ppu_{ bus_, display_ },
     cpu_{ bus_ },
-    apu_{ audioSampleRate / 60 },
+    apu_{ bus_, audioSampleRate / 60 },
     controller_{}
 {
     bus_.Attach(&ppu_);

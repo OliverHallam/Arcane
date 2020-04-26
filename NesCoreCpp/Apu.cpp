@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-Apu::Apu(uint32_t samplesPerFrame) :
+Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     frameCounter_{*this},
     frameBuffer_{new int16_t[samplesPerFrame]},
     currentSample_(0),
@@ -10,7 +10,9 @@ Apu::Apu(uint32_t samplesPerFrame) :
     lastSampleCycle_(29780 / samplesPerFrame),
     sampleCounter_(29780 / samplesPerFrame),
     pulse1_{true},
-    pulse2_{false}
+    pulse2_{false},
+    dmc_{bus},
+    syncCounter_{}
 {
     // account for the fact we start off after VBlank
     currentSample_ = (21 * samplesPerFrame) / 261;
@@ -24,6 +26,11 @@ void Apu::Tick()
     frameCounter_.Tick();
 
     pendingCycles_++;
+
+    if (!--syncCounter_)
+    {
+        Sync();
+    }
 
     if (!--sampleCounter_)
     {
@@ -71,35 +78,44 @@ void Apu::Write(uint16_t address, uint8_t value)
     case 0x4001:
     case 0x4002:
     case 0x4003:
-        pulse1_.Write(address & 0x0003, value);
+        pulse1_.Write(address, value);
         break;
 
     case 0x4004:
     case 0x4005:
     case 0x4006:
     case 0x4007:
-        pulse2_.Write(address & 0x0003, value);
+        pulse2_.Write(address, value);
         break;
 
     case 0x4008:
     case 0x4009:
     case 0x400a:
     case 0x400b:
-        triangle_.Write(address & 0x0003, value);
+        triangle_.Write(address, value);
         break;
 
     case 0x400c:
     case 0x400d:
     case 0x400e:
     case 0x400f:
-        noise_.Write(address & 0x0003, value);
+        noise_.Write(address, value);
+        break;
+
+    case 0x4010:
+    case 0x4011:
+    case 0x4012:
+    case 0x4013:
+        dmc_.Write(address, value);
+        syncCounter_ = dmc_.CyclesUntilNextDma();
         break;
 
     case 0x4015:
         pulse1_.Enabled(value & 0x01);
         pulse2_.Enabled(value & 0x02);
         triangle_.Enable(value & 0x04);
-        noise_.Enabled(value & 0x08);
+        noise_.Enable(value & 0x08);
+        dmc_.Enable(value & 0x10);
         break;
 
     case 0x4017:
@@ -126,6 +142,9 @@ uint8_t Apu::Read(uint16_t address)
         if (noise_.IsEnabled())
             status |= 0x08;
 
+        if (dmc_.IsEnabled())
+            status |= 0x10;
+
         return status;
     }
 
@@ -142,14 +161,22 @@ const int16_t* Apu::Samples() const
     return frameBuffer_.get();
 }
 
+void Apu::SetDmcBuffer(uint8_t value)
+{
+    dmc_.SetBuffer(value);
+}
+
 void Apu::Sync()
 {
     pulse1_.Run(pendingCycles_);
     pulse2_.Run(pendingCycles_);
     triangle_.Run(pendingCycles_);
     noise_.Run(pendingCycles_);
+    dmc_.Run(pendingCycles_);
 
     pendingCycles_ = 0;
+
+    syncCounter_ = dmc_.CyclesUntilNextDma();
 }
 
 void Apu::Sample()
@@ -162,7 +189,9 @@ void Apu::Sample()
         (pulse1_.Sample() << 7) +
         (pulse2_.Sample() << 7) +
         (triangle_.Sample() << 7) +
-        (noise_.Sample() << 7);
+        (noise_.Sample() << 7) +
+        (dmc_.Sample() << 7);
+
     auto nextSampleCycle = (29780 * (currentSample_ + 1)) / samplesPerFrame_;
     sampleCounter_ = nextSampleCycle - lastSampleCycle_;
     lastSampleCycle_ = nextSampleCycle;

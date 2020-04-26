@@ -12,6 +12,15 @@ void Cpu::Reset()
     interruptVector_ = 0xfffc;
 }
 
+void Cpu::SetIrq(bool irq)
+{
+    irq_ = irq;
+    if (irq_ && interruptVector_ == 0)
+        interruptVector_ = 0xfffe;
+    else if (interruptVector_ == 0xfffe)
+        interruptVector_ = 0;
+}
+
 void Cpu::SignalNmi()
 {
     interruptVector_ = 0xfffa;
@@ -19,14 +28,18 @@ void Cpu::SignalNmi()
 
 void Cpu::RunInstruction()
 {
+    // TODO: check when we ar polling IRQ
     if (interruptVector_ != 0)
     {
-        I_ = true;
-        bus_.TickCpu();
-        bus_.TickCpu();
-        Interrupt();
-        interruptVector_ = 0;
-        return;
+        if (!(I_ && interruptVector_ == 0xfffe))
+        {
+            I_ = true;
+            bus_.CpuDummyRead(PC_);
+            bus_.CpuDummyRead(PC_);
+            Interrupt();
+            interruptVector_ = irq_ ? 0xfffe : 0;
+            return;
+        }
     }
 
     auto opCode = ReadProgramByte();
@@ -928,9 +941,9 @@ void Cpu::Interrupt()
     }
     else
     {
-        bus_.TickCpu();
-        bus_.TickCpu();
-        bus_.TickCpu();
+        bus_.CpuDummyRead(PC_);
+        bus_.CpuDummyRead(PC_);
+        bus_.CpuDummyRead(PC_);
     }
 
     auto pcLow = ReadData(interruptVector_);
@@ -943,7 +956,7 @@ void Cpu::Jsr()
 {
     auto lowByte = ReadProgramByte();
 
-    bus_.TickCpu();
+    bus_.CpuDummyRead(PC_);
 
     Push((uint8_t)(PC_ >> 8));
     Push((uint8_t)(PC_ & 0xff));
@@ -954,7 +967,7 @@ void Cpu::Jsr()
 
 void Cpu::Implicit()
 {
-    bus_.TickCpu();
+    bus_.CpuDummyRead(PC_);
 }
 
 void Cpu::Immediate()
@@ -980,7 +993,7 @@ void Cpu::AbsoluteXRead()
 
     if (highByte != (address_ >> 8))
     {
-        bus_.TickCpu();
+        bus_.CpuDummyRead(address_ - 0x0100);
     }
 }
 
@@ -1003,7 +1016,7 @@ void Cpu::AbsoluteYRead()
 
     if (highByte != (address_ >> 8))
     {
-        bus_.TickCpu();
+        bus_.CpuDummyRead(PC_ - 0x0100);
     }
 }
 
@@ -1025,20 +1038,18 @@ void Cpu::ZeroPageX()
 {
     auto zpAddress = ReadProgramByte();
 
-    zpAddress += X_;
-    bus_.TickCpu();
+    bus_.CpuDummyRead(zpAddress);
 
-    address_ = zpAddress;
+    address_ = zpAddress + X_;
 }
 
 void Cpu::ZeroPageY()
 {
     auto zpAddress = ReadProgramByte();
 
-    zpAddress += Y_;
-    bus_.TickCpu();
+    bus_.CpuDummyRead(zpAddress);
 
-    address_ = zpAddress;
+    address_ = zpAddress + Y_;
 }
 
 void Cpu::Relative()
@@ -1067,8 +1078,9 @@ void Cpu::IndexIndirect()
 {
     uint8_t indirectAddress = ReadProgramByte();
 
+    bus_.CpuDummyRead(indirectAddress);
+
     indirectAddress += X_;
-    bus_.TickCpu();
 
     auto addressLow = ReadData(indirectAddress);
     auto addressHigh = ReadData((uint8_t)(indirectAddress + 1));
@@ -1089,7 +1101,7 @@ void Cpu::IndirectIndexRead()
     if ((address_ >> 8) != addressHigh)
     {
         // page crossed
-        bus_.TickCpu();
+        bus_.CpuDummyRead(address_ - 0x0100);
     }
 }
 
@@ -1101,9 +1113,10 @@ void Cpu::IndirectIndexWrite()
     auto addressHigh = ReadData((uint8_t)(indirectAddress + 1));
 
     address_ = (uint16_t)(addressLow | addressHigh << 8);
-    address_ += Y_;
 
-    bus_.TickCpu();
+    bus_.CpuDummyRead(address_);
+
+    address_ += Y_;
 }
 
 void Cpu::Load()
@@ -1353,7 +1366,7 @@ void Cpu::Php()
 
 void Cpu::Pla()
 {
-    bus_.TickCpu();
+    bus_.CpuDummyRead(PC_);
 
     A_ = Pop();
 
@@ -1362,7 +1375,7 @@ void Cpu::Pla()
 
 void Cpu::Plp()
 {
-    bus_.TickCpu();
+    bus_.CpuDummyRead(PC_);
 
     P(Pop());
 }
@@ -1397,7 +1410,7 @@ void Cpu::Ror()
 
 void Cpu::Rti()
 {
-    bus_.TickCpu();
+    bus_.CpuDummyRead(PC_);
 
     P(Pop());
     auto pcLow = Pop();
@@ -1408,13 +1421,13 @@ void Cpu::Rti()
 
 void Cpu::Rts()
 {
-    bus_.TickCpu();
-
     auto lowByte = Pop();
     auto highByte = Pop();
 
+    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(PC_);
+
     PC_ = (uint16_t)(((highByte << 8) | lowByte) + 1);
-    bus_.TickCpu();
 }
 
 void Cpu::Sec()
@@ -1501,12 +1514,12 @@ void Cpu::Tya()
 
 void Cpu::Jump()
 {
-    bus_.TickCpu();
+    bus_.CpuDummyRead(PC_);
 
     if ((PC_ & 0xff00) != (address_ & 0xff00))
     {
         // page crossed
-        bus_.TickCpu();
+        bus_.CpuDummyRead((PC_ & 0xff00) | (address_ & 0x00ff));
     }
 
     PC_ = address_;

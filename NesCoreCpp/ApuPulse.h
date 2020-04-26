@@ -14,7 +14,7 @@ public:
     void Enabled(bool enabled);
     bool IsEnabled() const;
 
-    void Write(uint8_t address, uint8_t value);
+    void Write(uint16_t address, uint8_t value);
 
     void Run(uint32_t cycles);
 

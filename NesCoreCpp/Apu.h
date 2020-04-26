@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ApuEnvelope.h"
+#include "ApuDmc.h"
 #include "ApuFrameCounter.h"
 #include "ApuNoise.h"
 #include "ApuPulse.h"
@@ -9,10 +9,12 @@
 #include <memory>
 #include <cstdint>
 
+class Bus;
+
 class Apu
 {
 public:
-    Apu(uint32_t samplesPerFrame);
+    Apu(Bus& bus, uint32_t samplesPerFrame);
 
     void Tick();
     void QuarterFrame();
@@ -26,6 +28,8 @@ public:
     uint32_t SamplesPerFrame() const;
     const int16_t* Samples() const;
 
+    void SetDmcBuffer(uint8_t value);
+
 private:
     void Sync();
     void Sample();
@@ -36,13 +40,16 @@ private:
     ApuPulse pulse2_;
     ApuTriangle triangle_;
     ApuNoise noise_;
+    ApuDmc dmc_;
 
     std::unique_ptr<int16_t[]> frameBuffer_;
 
     uint32_t samplesPerFrame_;
     uint32_t currentSample_;
     uint32_t lastSampleCycle_;
+
     uint32_t sampleCounter_;
+    uint32_t syncCounter_;
 
     uint32_t pendingCycles_{};
 };

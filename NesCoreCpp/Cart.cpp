@@ -109,7 +109,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 {
     if (address < 0x8000)
     {
-        bus_->TickCpu();
+        bus_->TickCpuWrite();
 
         auto bank = cpuBanks_[address >> 13];
         if (bank)
@@ -122,7 +122,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     case 1:
         // The MMC1 takes the first value and ignores the second.
         WriteMMC1(address, firstValue);
-        bus_->TickCpu();
+        bus_->TickCpuWrite();
         break;
     }
 }

@@ -36,9 +36,9 @@ bool ApuPulse::IsEnabled() const
     return lengthCounter_.IsEnabled();
 }
 
-void ApuPulse::Write(uint8_t address, uint8_t value)
+void ApuPulse::Write(uint16_t address, uint8_t value)
 {
-    switch (address)
+    switch (address & 0x0003)
     {
     case 0:
         dutyLookup_ = GetDutyLookup(value >> 6);

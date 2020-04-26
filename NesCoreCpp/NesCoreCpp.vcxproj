@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Apu.h" />
+    <ClInclude Include="ApuDmc.h" />
     <ClInclude Include="ApuEnvelope.h" />
     <ClInclude Include="ApuFrameCounter.h" />
     <ClInclude Include="ApuLengthCounter.h" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Apu.cpp" />
+    <ClCompile Include="ApuDmc.cpp" />
     <ClCompile Include="ApuEnvelope.cpp" />
     <ClCompile Include="ApuFrameCounter.cpp" />
     <ClCompile Include="ApuLengthCounter.cpp" />

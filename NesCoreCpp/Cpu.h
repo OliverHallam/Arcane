@@ -10,6 +10,9 @@ public:
     Cpu(Bus& bus);
 
     void Reset();
+
+    void SetIrq(bool irq);
+
     void SignalNmi();
 
     void RunInstruction();
@@ -129,4 +132,5 @@ private:
     uint8_t outValue_{};
 
     uint16_t interruptVector_{};
+    bool irq_{};
 };
