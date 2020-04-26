@@ -283,6 +283,7 @@ void Cart::UpdatePrgMap()
         cpuBanks_[5] = &prgData_[0x2000];
         cpuBanks_[6] = base;
         cpuBanks_[7] = base + 0x2000;
+        break;
     }
 
     case 3:
