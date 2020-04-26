@@ -116,7 +116,10 @@ void Ppu::Write(uint16_t address, uint8_t value)
         initialAddress_ |= (uint16_t)((value & 3) << 10);
 
         if (enableVBlankInterrupt_ && !wasVblankInterruptEnabled && inVBlank_)
-            bus_.SignalNmi();
+        {
+            signalVBlank_ = true;
+            hasDeferredUpdate_ = true;
+        }
 
         return;
     }
