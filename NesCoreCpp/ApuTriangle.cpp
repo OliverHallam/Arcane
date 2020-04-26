@@ -87,13 +87,13 @@ void ApuTriangle::TickHalfFrame()
 int8_t ApuTriangle::Sample() const
 {
     // the original hardware outputs from 0 - 15, I've scaled this to -15 - 15
-    if (linearCounter_ && lengthCounter_.IsEnabled())
-    {
-        if (waveformCycle_ < 16)
-            return 15 - waveformCycle_ * 2;
-        else
-            return waveformCycle_ * 2 - 47;
-    }
 
-    return 0;
+    // period check simulates the low-pass filter
+    if (period2_ <= 2)
+        return 0;
+
+    if (waveformCycle_ < 16)
+        return 15 - waveformCycle_ * 2;
+    else
+        return waveformCycle_ * 2 - 47;
 }
