@@ -23,11 +23,14 @@ public:
 
     void TickCpu();
 
+    uint32_t CycleCount() const;
+
     void SyncPpu();
 
     uint8_t CpuReadData(uint16_t address);
     uint8_t CpuReadProgramData(uint16_t address);
     void CpuWrite(uint16_t address, uint8_t value);
+    void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
     uint8_t PpuRead(uint16_t address) const;
     uint16_t PpuReadChr16(uint16_t address) const;
@@ -39,6 +42,8 @@ public:
     void OnFrame();
 
 private:
+    void RunDma(uint8_t page);
+
     Cpu* cpu_;
     Ppu* ppu_;
     Apu* apu_;
@@ -47,4 +52,6 @@ private:
 
     std::array<uint8_t, 2048> cpuRam_;
     std::array<uint8_t, 2048> ppuRam_;
+
+    uint32_t cycleCount_;
 };

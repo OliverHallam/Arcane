@@ -36,7 +36,7 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     cpuBanks_[6] = &prgData_[prgData_.size() - 0x4000];
     cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
 
-    prgMask16k_ = prgData_.size() - 1;
+    prgMask16k_ = static_cast<uint32_t>(prgData_.size()) - 1;
     prgMask32k_ = prgMask16k_ & 0xffff8000;
 }
 
@@ -101,6 +101,28 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     {
     case 1:
         WriteMMC1(address, value);
+        break;
+    }
+}
+
+void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
+{
+    if (address < 0x8000)
+    {
+        bus_->TickCpu();
+
+        auto bank = cpuBanks_[address >> 13];
+        if (bank)
+            bank[address & 0x1fff] = secondValue;
+        return;
+    }
+
+    switch (mapper_)
+    {
+    case 1:
+        // The MMC1 takes the first value and ignores the second.
+        WriteMMC1(address, firstValue);
+        bus_->TickCpu();
         break;
     }
 }

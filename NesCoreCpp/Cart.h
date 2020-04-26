@@ -23,6 +23,7 @@ public:
 
     uint8_t CpuRead(uint16_t address) const;
     void CpuWrite(uint16_t address, uint8_t value);
+    void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
     uint8_t PpuRead(uint16_t address) const;
     uint16_t PpuReadChr16(uint16_t address) const;

@@ -3,8 +3,7 @@
 #include "Bus.h"
 
 Cpu::Cpu(Bus& bus) :
-    bus_{ bus },
-    cycleCount_{0}
+    bus_{ bus }
 {
 }
 
@@ -23,8 +22,8 @@ void Cpu::RunInstruction()
     if (interruptVector_ != 0)
     {
         I_ = true;
-        Tick();
-        Tick();
+        bus_.TickCpu();
+        bus_.TickCpu();
         Interrupt();
         interruptVector_ = 0;
         return;
@@ -275,7 +274,7 @@ void Cpu::RunInstruction()
         return;
 
     case 0x48:
-        Tick();
+        Implicit();
         Pha();
         return;
 
@@ -915,26 +914,6 @@ void Cpu::RunInstruction()
     }
 }
 
-void Cpu::RunDma(uint8_t page)
-{
-    Tick();
-
-    if (cycleCount_ & 1)
-    {
-        Tick();
-    }
-
-    auto address = (uint16_t)(page << 8);
-    auto endAddress = (uint16_t)(address + 0x100);
-    while (address != endAddress)
-    {
-        auto value = ReadData(address++);
-
-        bus_.DmaWrite(value);
-        Tick();
-    }
-}
-
 void Cpu::Interrupt()
 {
     if (interruptVector_ != 0xfffc)
@@ -949,9 +928,9 @@ void Cpu::Interrupt()
     }
     else
     {
-        Tick();
-        Tick();
-        Tick();
+        bus_.TickCpu();
+        bus_.TickCpu();
+        bus_.TickCpu();
     }
 
     auto pcLow = ReadData(interruptVector_);
@@ -964,7 +943,7 @@ void Cpu::Jsr()
 {
     auto lowByte = ReadProgramByte();
 
-    Tick();
+    bus_.TickCpu();
 
     Push((uint8_t)(PC_ >> 8));
     Push((uint8_t)(PC_ & 0xff));
@@ -975,12 +954,12 @@ void Cpu::Jsr()
 
 void Cpu::Implicit()
 {
-    Tick();
+    bus_.TickCpu();
 }
 
 void Cpu::Immediate()
 {
-    value_ = ReadProgramByte();
+    inValue_ = ReadProgramByte();
 }
 
 void Cpu::Absolute()
@@ -1001,7 +980,7 @@ void Cpu::AbsoluteXRead()
 
     if (highByte != (address_ >> 8))
     {
-        Tick();
+        bus_.TickCpu();
     }
 }
 
@@ -1024,7 +1003,7 @@ void Cpu::AbsoluteYRead()
 
     if (highByte != (address_ >> 8))
     {
-        Tick();
+        bus_.TickCpu();
     }
 }
 
@@ -1047,7 +1026,7 @@ void Cpu::ZeroPageX()
     auto zpAddress = ReadProgramByte();
 
     zpAddress += X_;
-    Tick();
+    bus_.TickCpu();
 
     address_ = zpAddress;
 }
@@ -1057,7 +1036,7 @@ void Cpu::ZeroPageY()
     auto zpAddress = ReadProgramByte();
 
     zpAddress += Y_;
-    Tick();
+    bus_.TickCpu();
 
     address_ = zpAddress;
 }
@@ -1089,7 +1068,7 @@ void Cpu::IndexIndirect()
     uint8_t indirectAddress = ReadProgramByte();
 
     indirectAddress += X_;
-    Tick();
+    bus_.TickCpu();
 
     auto addressLow = ReadData(indirectAddress);
     auto addressHigh = ReadData((uint8_t)(indirectAddress + 1));
@@ -1110,7 +1089,7 @@ void Cpu::IndirectIndexRead()
     if ((address_ >> 8) != addressHigh)
     {
         // page crossed
-        Tick();
+        bus_.TickCpu();
     }
 }
 
@@ -1124,42 +1103,39 @@ void Cpu::IndirectIndexWrite()
     address_ = (uint16_t)(addressLow | addressHigh << 8);
     address_ += Y_;
 
-    Tick();
+    bus_.TickCpu();
 }
-
 
 void Cpu::Load()
 {
-    value_ = ReadData(address_);
+    inValue_ = ReadData(address_);
 }
 
 void Cpu::Store()
 {
-    Tick();
-
-    Write(address_, value_);
+    bus_.CpuWrite2(address_, inValue_, outValue_);
 }
 
 void Cpu::LoadA()
 {
-    value_ = A_;
+    inValue_ = A_;
 }
 
 void Cpu::StoreA()
 {
-    A_ = value_;
+    A_ = outValue_;
 }
 
 void Cpu::Adc()
 {
-    auto result = A_ + value_;
+    auto result = A_ + inValue_;
 
     if (C_)
     {
         result++;
     }
 
-    V_ = (~(A_ ^ value_) & (A_ ^ result) & 0x80) != 0;
+    V_ = (~(A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
     C_ = (result & 0x100) != 0;
 
     A_ = (uint8_t)result;
@@ -1170,18 +1146,18 @@ void Cpu::Adc()
 
 void Cpu::And()
 {
-    A_ &= value_;
+    A_ &= inValue_;
     SetFlags(A_);
 }
 
 void Cpu::Asl()
 {
-    C_ = (value_ & 0x80) != 0;
+    C_ = (inValue_ & 0x80) != 0;
 
-    value_ <<= 1;
+    outValue_ = inValue_ << 1;
 
-    Z_ = value_ == 0;
-    N_ = (value_ & 0x80) != 0;
+    Z_ = outValue_ == 0;
+    N_ = (outValue_ & 0x80) != 0;
 }
 
 void Cpu::Bcc()
@@ -1204,9 +1180,9 @@ void Cpu::Beq()
 
 void Cpu::Bit()
 {
-    N_ = (value_ & 0x80) != 0;
-    V_ = (value_ & 0x40) != 0;
-    Z_ = (value_ & A_) == 0;
+    N_ = (inValue_ & 0x80) != 0;
+    V_ = (inValue_ & 0x40) != 0;
+    Z_ = (inValue_ & A_) == 0;
 }
 
 void Cpu::Bmi()
@@ -1282,8 +1258,8 @@ void Cpu::Cpy()
 
 void Cpu::Dec()
 {
-    value_--;
-    SetFlags(value_);
+    outValue_ = inValue_ - 1;
+    SetFlags(outValue_);
 }
 
 void Cpu::Dex()
@@ -1300,14 +1276,14 @@ void Cpu::Dey()
 
 void Cpu::Eor()
 {
-    A_ ^= value_;
+    A_ ^= inValue_;
     SetFlags(A_);
 }
 
 void Cpu::Inc()
 {
-    value_++;
-    SetFlags(value_);
+    outValue_ = inValue_ + 1;
+    SetFlags(outValue_);
 }
 
 void Cpu::Inx()
@@ -1329,35 +1305,35 @@ void Cpu::Jmp()
 
 void Cpu::Lda()
 {
-    A_ = value_;
+    A_ = inValue_;
     SetFlags(A_);
 }
 
 void Cpu::Ldx()
 {
-    X_ = value_;
+    X_ = inValue_;
     SetFlags(X_);
 }
 
 void Cpu::Ldy()
 {
-    Y_ = value_;
+    Y_ = inValue_;
     SetFlags(Y_);
 }
 
 void Cpu::Lsr()
 {
-    C_ = (value_ & 0x01) != 0;
+    C_ = (inValue_ & 0x01) != 0;
 
-    value_ >>= 1;
+    outValue_ = inValue_ >> 1;
 
     N_ = false; // top bit is left unset
-    Z_ = value_ == 0;
+    Z_ = outValue_ == 0;
 }
 
 void Cpu::Ora()
 {
-    A_ |= value_;
+    A_ |= inValue_;
     SetFlags(A_);
 }
 
@@ -1377,7 +1353,7 @@ void Cpu::Php()
 
 void Cpu::Pla()
 {
-    Tick();
+    bus_.TickCpu();
 
     A_ = Pop();
 
@@ -1386,46 +1362,42 @@ void Cpu::Pla()
 
 void Cpu::Plp()
 {
-    Tick();
+    bus_.TickCpu();
 
     P(Pop());
 }
 
 void Cpu::Rol()
 {
-    auto carry = (value_ & 0x80) != 0;
+    auto carry = (inValue_ & 0x80) != 0;
 
-    value_ <<= 1;
+    outValue_ = inValue_ << 1;
 
     if (C_)
-    {
-        value_ |= 0x01;
-    }
+        outValue_ |= 0x01;
 
-    Z_ = value_ == 0;
-    N_ = (value_ & 0x80) != 0;
+    Z_ = outValue_ == 0;
+    N_ = (outValue_ & 0x80) != 0;
     C_ = carry;
 }
 
 void Cpu::Ror()
 {
-    auto carry = (value_ & 1) != 0;
+    auto carry = (inValue_ & 1) != 0;
 
-    value_ >>= 1;
+    outValue_ = inValue_ >> 1;
 
     if (C_)
-    {
-        value_ |= 0x80;
-    }
+        outValue_ |= 0x80;
 
-    Z_ = value_ == 0;
-    N_ = (value_ & 0x80) != 0;
+    Z_ = outValue_ == 0;
+    N_ = (outValue_ & 0x80) != 0;
     C_ = carry;
 }
 
 void Cpu::Rti()
 {
-    Tick();
+    bus_.TickCpu();
 
     P(Pop());
     auto pcLow = Pop();
@@ -1436,13 +1408,13 @@ void Cpu::Rti()
 
 void Cpu::Rts()
 {
-    Tick();
+    bus_.TickCpu();
 
     auto lowByte = Pop();
     auto highByte = Pop();
 
     PC_ = (uint16_t)(((highByte << 8) | lowByte) + 1);
-    Tick();
+    bus_.TickCpu();
 }
 
 void Cpu::Sec()
@@ -1462,13 +1434,13 @@ void Cpu::Sei()
 
 void Cpu::Sbc()
 {
-    auto result = (uint16_t)A_ - value_;
+    auto result = (uint16_t)A_ - inValue_;
     if (!C_)
     {
         result--;
     }
 
-    V_ = ((A_ ^ value_) & (A_ ^ result) & 0x80) != 0;
+    V_ = ((A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
     C_ = (result & 0x100) == 0;
 
     A_ = (uint8_t)result;
@@ -1529,12 +1501,12 @@ void Cpu::Tya()
 
 void Cpu::Jump()
 {
-    Tick();
+    bus_.TickCpu();
 
     if ((PC_ & 0xff00) != (address_ & 0xff00))
     {
         // page crossed
-        Tick();
+        bus_.TickCpu();
     }
 
     PC_ = address_;
@@ -1548,7 +1520,7 @@ void Cpu::SetFlags(uint8_t value)
 
 void Cpu::SetCompareFlags(uint8_t reg)
 {
-    auto result = reg - value_;
+    auto result = reg - inValue_;
 
     auto tmp = (uint8_t)result;
 
@@ -1559,34 +1531,26 @@ void Cpu::SetCompareFlags(uint8_t reg)
 
 uint8_t Cpu::ReadProgramByte()
 {
-    auto uint8_t = bus_.CpuReadProgramData(PC_++);
-    Tick();
-    return uint8_t;
+    return bus_.CpuReadProgramData(PC_++);
 }
 
 uint8_t Cpu::ReadData(uint16_t address)
 {
-    auto uint8_t = bus_.CpuReadData(address);
-    Tick();
-    return uint8_t;
+    return bus_.CpuReadData(address);
 }
 
 uint8_t Cpu::Pop()
 {
-    auto uint8_t = bus_.CpuReadData((uint16_t)(0x100 + ++S_));
-    Tick();
-    return uint8_t;
+    return bus_.CpuReadData((uint16_t)(0x100 + ++S_));
 }
 
 void Cpu::Write(uint16_t address, uint8_t value)
 {
-    Tick();
     bus_.CpuWrite(address, value);
 }
 
 void Cpu::Push(uint8_t value)
 {
-    Tick();
     bus_.CpuWrite((uint16_t)(0x100 + S_--), value);
 }
 
@@ -1610,10 +1574,3 @@ void Cpu::P(uint8_t value)
     Z_ = (value & 0x02) != 0;
     C_ = (value & 0x01) != 0;
 }
-
-void Cpu::Tick()
-{
-    cycleCount_++;
-    bus_.TickCpu();
-}
-
