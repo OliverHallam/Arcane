@@ -12,6 +12,11 @@ Apu::Apu(uint32_t samplesPerFrame) :
     pulse1_{true},
     pulse2_{false}
 {
+    // account for the fact we start off after VBlank
+    currentSample_ = (21 * samplesPerFrame) / 261;
+    lastSampleCycle_ = ((currentSample_ + 1) * 29780) / samplesPerFrame;
+    auto currentCycle = (21 * 341 / 3);
+    sampleCounter_ = lastSampleCycle_ - currentCycle;
 }
 
 void Apu::Tick()
