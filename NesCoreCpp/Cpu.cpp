@@ -15,7 +15,7 @@ void Cpu::Reset()
 void Cpu::SetIrq(bool irq)
 {
     irq_ = irq;
-    if (irq_ && interruptVector_ == 0)
+    if (irq_ && !I_ && interruptVector_ == 0)
         interruptVector_ = 0xfffe;
     else if (interruptVector_ == 0xfffe)
         interruptVector_ = 0;
@@ -31,13 +31,17 @@ void Cpu::RunInstruction()
     // TODO: check when we ar polling IRQ
     if (interruptVector_ != 0)
     {
-        if (!(I_ && interruptVector_ == 0xfffe))
+        if (skipInterrupt_)
+        {
+            skipInterrupt_ = false;
+        }
+        else
         {
             I_ = true;
             bus_.CpuDummyRead(PC_);
             bus_.CpuDummyRead(PC_);
             Interrupt();
-            interruptVector_ = irq_ ? 0xfffe : 0;
+            interruptVector_ = 0;
             return;
         }
     }
@@ -1247,6 +1251,11 @@ void Cpu::Cld()
 void Cpu::Cli()
 {
     I_ = false;
+    if (irq_ && interruptVector_ == 0)
+    {
+        interruptVector_ = 0xfffe;
+        skipInterrupt_ = true;
+    }
 }
 
 void Cpu::Clv()
@@ -1378,6 +1387,12 @@ void Cpu::Plp()
     bus_.CpuDummyRead(PC_);
 
     P(Pop());
+
+    if (!I_ && irq_ && interruptVector_ == 0)
+    {
+        interruptVector_ = 0xfffe;
+        skipInterrupt_ = true;
+    }
 }
 
 void Cpu::Rol()
@@ -1417,6 +1432,11 @@ void Cpu::Rti()
     auto pcHigh = Pop();
 
     PC_ = (uint16_t)(pcHigh << 8 | pcLow);
+
+    if (!I_ && irq_ && interruptVector_ == 0)
+    {
+        interruptVector_ = 0xfffe;
+    }
 }
 
 void Cpu::Rts()
@@ -1443,6 +1463,8 @@ void Cpu::Sed()
 void Cpu::Sei()
 {
     I_ = true;
+
+    // if the IRQ is already set it will still trigger for the next instruction
 }
 
 void Cpu::Sbc()

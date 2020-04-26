@@ -133,4 +133,5 @@ private:
 
     uint16_t interruptVector_{};
     bool irq_{};
+    bool skipInterrupt_{};
 };
