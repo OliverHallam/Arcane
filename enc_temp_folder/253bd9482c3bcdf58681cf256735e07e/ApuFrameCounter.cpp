@@ -13,24 +13,12 @@ void ApuFrameCounter::SetMode(uint8_t mode)
 {
     mode_ = mode;
 
-    if (mode == 1)
-    {
-        // we will reset in 3/4 cycles time so lets do this by jumping to the end 
-        phase_ = 4;
-        if (counter_ & 1)
-            counter_ = 3;
-        else
-            counter_ = 4;
-    }
+    // we will reset in 3/4 cycles time so lets do this by jumping to the end 
+    phase_ = 4;
+    if (counter_ & 1)
+        counter_ = 3;
     else
-    {
-        // if the mode flag is not set, we don't generate the quarter and half frame signals.
-        phase_ = 0;
-        if (counter_ & 1)
-            counter_ = 7460;
-        else
-            counter_ = 7461;
-    }
+        counter_ = 4;
 }
 
 void ApuFrameCounter::Tick()
