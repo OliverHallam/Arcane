@@ -28,7 +28,6 @@ void Cpu::SignalNmi()
 
 void Cpu::RunInstruction()
 {
-    // TODO: check when we ar polling IRQ
     if (interruptVector_ != 0)
     {
         if (skipInterrupt_)
@@ -1044,7 +1043,7 @@ void Cpu::ZeroPageX()
 
     bus_.CpuDummyRead(zpAddress);
 
-    address_ = zpAddress + X_;
+    address_ = (zpAddress + X_) & 0x00ff;
 }
 
 void Cpu::ZeroPageY()
@@ -1053,7 +1052,7 @@ void Cpu::ZeroPageY()
 
     bus_.CpuDummyRead(zpAddress);
 
-    address_ = zpAddress + Y_;
+    address_ = (zpAddress + Y_) & 0x00ff;
 }
 
 void Cpu::Relative()
