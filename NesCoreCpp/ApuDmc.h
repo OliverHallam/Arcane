@@ -2,12 +2,12 @@
 
 #include <cstdint>
 
-class Bus;
+class Apu;
 
 class ApuDmc
 {
 public:
-    ApuDmc(Bus& bus);
+    ApuDmc(Apu& bus);
 
     void Enable(bool enabled);
     bool IsEnabled() const;
@@ -47,5 +47,5 @@ private:
     uint16_t currentAddress_;
     uint16_t sampleBytesRemaining_;
 
-    Bus& bus_;
+    Apu& apu_;
 };

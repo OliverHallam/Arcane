@@ -1,8 +1,11 @@
 #include "Apu.h"
 
+#include "Bus.h"
+
 #include <assert.h>
 
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
+    bus_(bus),
     frameCounter_{*this},
     frameBuffer_{new int16_t[samplesPerFrame]},
     currentSample_(0),
@@ -11,7 +14,7 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     sampleCounter_(29780 / samplesPerFrame),
     pulse1_{true},
     pulse2_{false},
-    dmc_{bus},
+    dmc_{*this},
     syncCounter_{}
 {
     // account for the fact we start off after VBlank
@@ -119,7 +122,7 @@ void Apu::Write(uint16_t address, uint8_t value)
         break;
 
     case 0x4017:
-        // TODO: interrupt mask
+        frameCounter_.EnableInterrupt((value & 0x40) == 0);
         frameCounter_.SetMode(value >> 7);
         break;
     }
@@ -145,6 +148,15 @@ uint8_t Apu::Read(uint16_t address)
         if (dmc_.IsEnabled())
             status |= 0x10;
 
+        if (frameCounterInterrupt_)
+            status |= 0x40;
+
+        if (dmcInterrupt_)
+            status |= 0x80;
+
+        frameCounterInterrupt_ = false;
+        bus_.SetIrq(dmcInterrupt_);
+
         return status;
     }
 
@@ -161,9 +173,26 @@ const int16_t* Apu::Samples() const
     return frameBuffer_.get();
 }
 
+void Apu::RequestDmcByte(uint16_t address)
+{
+    bus_.BeginDmcDma(address);
+}
+
 void Apu::SetDmcBuffer(uint8_t value)
 {
     dmc_.SetBuffer(value);
+}
+
+void Apu::SetFrameCounterInterrupt(bool interrupt)
+{
+    frameCounterInterrupt_ = interrupt;
+    bus_.SetIrq(frameCounterInterrupt_ || dmcInterrupt_);
+}
+
+void Apu::SetDmcInterrupt(bool interrupt)
+{
+    dmcInterrupt_ = interrupt;
+    bus_.SetIrq(frameCounterInterrupt_ || dmcInterrupt_);
 }
 
 void Apu::Sync()

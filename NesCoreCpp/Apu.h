@@ -28,11 +28,17 @@ public:
     uint32_t SamplesPerFrame() const;
     const int16_t* Samples() const;
 
+    void RequestDmcByte(uint16_t address);
     void SetDmcBuffer(uint8_t value);
+
+    void SetFrameCounterInterrupt(bool interrupt);
+    void SetDmcInterrupt(bool interrupt);
 
 private:
     void Sync();
     void Sample();
+
+    Bus& bus_;
 
     ApuFrameCounter frameCounter_;
 
@@ -52,4 +58,7 @@ private:
     uint32_t syncCounter_;
 
     uint32_t pendingCycles_{};
+
+    bool dmcInterrupt_{};
+    bool frameCounterInterrupt_{};
 };

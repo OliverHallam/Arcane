@@ -2,7 +2,7 @@
 
 #include "Bus.h"
 
-ApuDmc::ApuDmc(Bus& bus)
+ApuDmc::ApuDmc(Apu& apu)
     : enabled_{},
     irqEnabled_{},
     loop_{},
@@ -18,7 +18,7 @@ ApuDmc::ApuDmc(Bus& bus)
     sampleBufferHasData_{},
     currentAddress_{},
     sampleBytesRemaining_{},
-    bus_{ bus }
+    apu_{ apu }
 {
 }
 
@@ -41,7 +41,7 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
         loop_ = value & 0x40;
         rate_ = GetLinearRate(value & 0x0f);
         if (!irqEnabled_)
-            bus_.SetIrq(false);
+            apu_.SetDmcInterrupt(false);
         return;
 
     case 1:
@@ -117,21 +117,26 @@ void ApuDmc::Clock()
 
         if (sampleBytesRemaining_ == 0)
         {
+            return;
+        }
+
+        apu_.RequestDmcByte(currentAddress_);
+        currentAddress_++;
+        currentAddress_ |= 0x8000;
+        sampleBytesRemaining_--;
+
+        if (sampleBytesRemaining_ == 0)
+        {
             if (!loop_)
             {
                 outBuffer_ = 0;
-                bus_.SetIrq(true);
+                apu_.SetDmcInterrupt(true);
                 return;
             }
 
             sampleBytesRemaining_ = sampleLength_;
             currentAddress_ = sampleAddress_;
         }
-
-        bus_.BeginDmcDma(currentAddress_);
-        currentAddress_++;
-        currentAddress_ |= 0x8000;
-        sampleBytesRemaining_--;
     }
     else
         sampleShift_++;

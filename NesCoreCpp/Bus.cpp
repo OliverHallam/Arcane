@@ -231,7 +231,7 @@ void Bus::SignalNmi()
 
 void Bus::SetIrq(bool irq)
 {
-    cpu_->SetIrq(true);
+    cpu_->SetIrq(irq);
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)
