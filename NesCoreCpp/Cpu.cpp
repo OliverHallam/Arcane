@@ -1222,6 +1222,7 @@ void Cpu::Bpl()
 void Cpu::Brk()
 {
     B_ = true;
+    PC_++;
     interruptVector_ = 0xfffe;
 }
 
