@@ -33,7 +33,7 @@ void Ppu::Tick3()
 
 void Ppu::Sync()
 {
-    this->Sync(targetCycle_);
+    Sync(targetCycle_);
 }
 
 uint8_t Ppu::Read(uint16_t address)

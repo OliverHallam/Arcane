@@ -55,19 +55,6 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
         startCycle = cropSize;
     }
 
-    // if the PPU is pointing at a pallette entry, that replaces the background colour.
-    if ((CurrentAddress & 0x3f00) == 0x3f00)
-    {
-        auto paletteIndex = CurrentAddress & 0x1f;
-
-        for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
-        {
-            backgroundPixels_[pixelIndex] = paletteIndex;
-            Tick(pixelIndex);
-        }
-        return;
-    }
-
     for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
     {
         backgroundPixels_[pixelIndex] = Render();
@@ -82,19 +69,6 @@ void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
     // if the PPU is pointing at a pallette entry, that replaces the background colour.
     if ((CurrentAddress & 0x3f00) == 0x3f00)
     {
-        if (startCycle < leftCrop_)
-        {
-            // TODO: I'm assuming the crop still returns 0, this should be checked
-            auto cropSize = std::min(leftCrop_, endCycle);
-            for (auto pixelIndex = startCycle; pixelIndex < cropSize; pixelIndex++)
-            {
-                backgroundPixels_[pixelIndex] = 0;
-                Tick(pixelIndex);
-            }
-
-            startCycle = cropSize;
-        }
-
         paletteIndex = CurrentAddress & 0x1f;
     }
 
@@ -424,12 +398,17 @@ void PpuBackground::HReset(uint16_t initialAddress)
     if ((CurrentAddress & 0x7000) == 0)
     {
         // move to the next row
-        if ((CurrentAddress & 0x03e0) == 0x03a0)
+        auto yBits = (CurrentAddress & 0x03e0);
+        if (yBits == 0x03a0)
         {
             // reset the Y co-ordinate
             CurrentAddress &= 0x7c1f;
             // swap the nametable Y
             CurrentAddress ^= 0x0800;
+        }
+        else if (yBits == 0x03e0)
+        {
+            CurrentAddress &= 0x7c1f;
         }
         else
         {
