@@ -55,8 +55,13 @@ uint8_t Ppu::Read(uint16_t address)
         // if the status is read at the point we were about to signal a vblank, that can cause it to be skipped.
         signalVBlank_ = false;
 
+        // the flag should be reset at the start of the pre-render row, we need to sync in that case
         if (sprites_.Sprite0Hit())
-            status |= 0x40;
+        {
+            // the pre-render line will reset this but we haven't synced yet
+            if (currentScanline_ != 261)
+                status |= 0x40;
+        }
         else if (sprites_.Sprite0Visible())
         {
             Sync(targetCycle_);
