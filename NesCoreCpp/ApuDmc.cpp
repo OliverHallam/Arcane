@@ -8,15 +8,15 @@ ApuDmc::ApuDmc(Apu& apu)
     loop_{},
     rate_{ 428 },
     level_{},
-    sampleAddress_{},
-    sampleLength_{},
+    sampleAddress_{ 0xC000 },
+    sampleLength_{ 1 },
     timer_{ 428 },
     outBuffer_{},
     outBufferHasData_{},
     sampleShift_{ 0 },
     sampleBuffer_{},
     sampleBufferHasData_{},
-    currentAddress_{},
+    currentAddress_{ 0xC000 },
     sampleBytesRemaining_{},
     apu_{ apu }
 {
@@ -130,6 +130,7 @@ void ApuDmc::Clock()
             if (!loop_)
             {
                 outBuffer_ = 0;
+                outBufferHasData_ = false;
                 if (irqEnabled_)
                     apu_.SetDmcInterrupt(true);
                 return;
