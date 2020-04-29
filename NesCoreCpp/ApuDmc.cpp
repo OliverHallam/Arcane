@@ -130,7 +130,8 @@ void ApuDmc::Clock()
             if (!loop_)
             {
                 outBuffer_ = 0;
-                apu_.SetDmcInterrupt(true);
+                if (irqEnabled_)
+                    apu_.SetDmcInterrupt(true);
                 return;
             }
 
