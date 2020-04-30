@@ -22,7 +22,7 @@ void ApuSweep::Tick()
 {
     if (!divideCounter_)
     {
-        if (enabled_ && IsOutputEnabled())
+        if (enabled_ && IsOutputEnabled() && shift_)
         {
             period_ = targetPeriod_;
             period2_ = period_ * 2 + 2;
@@ -51,7 +51,7 @@ uint16_t ApuSweep::Period() const
 bool ApuSweep::IsOutputEnabled() const
 {
     // negate can cause an underflow
-    return period_ >= 8 && targetPeriod_ <= 0x800;
+    return period_ >= 8 && targetPeriod_ < 0x800;
 }
 
 void ApuSweep::UpdateTargetPeriod()
