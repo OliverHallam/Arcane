@@ -1007,6 +1007,8 @@ void Cpu::AbsoluteXWrite()
 
     address_ = (uint16_t)(lowByte | highByte << 8);
     address_ += X_;
+
+    bus_.CpuDummyRead(lowByte | (address_ * 0xff));
 }
 
 void Cpu::AbsoluteYRead()
