@@ -40,10 +40,19 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     prgMask32k_ = prgMask16k_ & 0xffff8000;
 }
 
-void Cart::SetPrgRam()
+void Cart::SetPrgRam(bool batteryBacked)
 {
-    prgRam_.resize(0x2000);
-    cpuBanks_[3] = &prgRam_[0];
+    batteryBacked_ = batteryBacked;
+    localPrgRam_.resize(0x2000);
+    prgRam_ = &localPrgRam_[0];
+    cpuBanks_[3] = prgRam_;
+}
+
+void Cart::SetPrgRam(uint8_t* data)
+{
+    localPrgRam_.clear();
+    prgRam_ = data;
+    cpuBanks_[3] = prgRam_;
 }
 
 void Cart::SetChrRom(std::vector<uint8_t> chrData)
@@ -70,6 +79,11 @@ void Cart::SetMirrorMode(bool verticalMirroring)
         ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
     else
         ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
+}
+
+bool Cart::BatteryBacked() const
+{
+    return batteryBacked_;
 }
 
 void Cart::Attach(Bus* bus)
@@ -232,7 +246,7 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         // PRG bank
 
         // enable/disable PRG RAM
-        cpuBanks_[3] = (value & 0x10) ? nullptr : &prgRam_[0];
+        cpuBanks_[3] = (value & 0x10) ? nullptr : prgRam_;
 
         prgBank_ = (value & 0x0f) << 14;
         UpdatePrgMap();
@@ -313,7 +327,8 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
     auto flags6 = data[6];
 
     auto mapper = flags6 >> 4;
-    auto verticalMirroring = (flags6 & 1) != 0;
+    auto verticalMirroring = (flags6 & 0x01) != 0;
+    auto batteryBacked = (flags6 & 0x02) != 0;
     auto hasTrainer = (flags6 & 0x04) != 0;
 
     if (mapper > 1)
@@ -364,7 +379,7 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
 
     // TODO: most games don't have this
     if (mapper == 1)
-        cart->SetPrgRam();
+        cart->SetPrgRam(batteryBacked);
 
     if (chrData.size())
         cart->SetChrRom(std::move(chrData));

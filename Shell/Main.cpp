@@ -7,6 +7,7 @@
 #include "CommandLine.h"
 #include "D3DRenderer.h"
 #include "Error.h"
+#include "SaveFile.h"
 #include "WasapiRenderer.h"
 
 #include <string>
@@ -91,6 +92,36 @@ int WINAPI WinMain(
             ReportError(wnd, L"Error loading cartridge", e);
             return -1;
         }
+
+        SaveFile saveFile;
+
+        if (cart->BatteryBacked())
+        {
+            try
+            {
+                auto dotPos = romPath.find_last_of('.');
+                auto withoutExtension = romPath.substr(0, dotPos);
+                auto savPath = withoutExtension + L".sav";
+
+                saveFile.Create(savPath);
+
+                cart->SetPrgRam(saveFile.Data());
+            }
+            catch (const Error& e)
+            {
+                auto message = std::wstring(L"There was a problem loading the save file.  The game will run without saving.\n" + e.Message());
+                MessageBox(wnd, e.Message().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
+            }
+            catch (const winrt::hresult_error& e)
+            {
+                std::wstringstream ss;
+                ss << L"There was a problem loading the save file.  The game will run without saving.\n"
+                    << L"HRESULT: 0x" << std::hex << e.code() << L"\n" << e.message().c_str();
+
+                MessageBox(wnd, ss.str().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
+            }
+        }
+
 
         System = std::make_unique<NesSystem>(wasapi.SampleRate());
         System->InsertCart(std::move(cart));

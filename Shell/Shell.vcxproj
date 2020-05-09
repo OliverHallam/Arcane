@@ -162,13 +162,13 @@
     <ClCompile Include="D3DRenderer.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Error.cpp" />
-    <ClCompile Include="MappedFile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SaveFile.cpp" />
     <ClCompile Include="WasapiRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -181,10 +181,10 @@
     <ClInclude Include="D3DRenderer.h" />
     <ClInclude Include="Error.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="MappedFile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SaveFile.h" />
     <ClInclude Include="Shell.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="WasapiRenderer.h" />

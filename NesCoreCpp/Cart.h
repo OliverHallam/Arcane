@@ -14,10 +14,13 @@ public:
 
     void SetMapper(int mapper);
     void SetPrgRom(std::vector<uint8_t> prgData);
-    void SetPrgRam();
+    void SetPrgRam(bool batteryBacked);
+    void SetPrgRam(uint8_t* data);
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
     void SetMirrorMode(bool verticalMirroring);
+
+    bool BatteryBacked() const;
 
     void Attach(Bus* bus);
 
@@ -45,11 +48,15 @@ private:
     std::array<uint8_t*, 2> ppuBanks_;
     bool chrWriteable_;
 
-    std::vector<uint8_t> prgRam_;
+    std::vector<uint8_t> localPrgRam_;
+    std::uint8_t* prgRam_;
+
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
     std::array<uint16_t, 4> ppuRamAddressMap_;
+
+    bool batteryBacked_;
 
     uint32_t mapper_;
 

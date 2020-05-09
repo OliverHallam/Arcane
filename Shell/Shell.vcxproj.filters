@@ -7,7 +7,7 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="CommandLine.cpp" />
-    <ClCompile Include="MappedFile.cpp" />
+    <ClCompile Include="SaveFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -23,7 +23,7 @@
     <ClInclude Include="Shell.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="MappedFile.h" />
+    <ClInclude Include="SaveFile.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
