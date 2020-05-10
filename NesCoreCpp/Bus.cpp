@@ -79,58 +79,50 @@ void Bus::CpuDummyRead(uint16_t address)
 
 uint8_t Bus::CpuReadData(uint16_t address)
 {
-    uint8_t value;
+    TickCpuRead();
 
     if (address < 0x2000)
-        value = cpuRam_[address & 0x7ff];
+        return cpuRam_[address & 0x7ff];
     else if (address < 0x4000)
-        value = ppu_->Read(address);
+        return ppu_->Read(address);
     else if (address < 0x4020)
     {
         if (address == 0x4016)
-            value = -controller_->Read();
+            return -controller_->Read();
         else
-            value = apu_->Read(address);
+            return apu_->Read(address);
     }
     else if (cart_)
-        value = cart_->CpuRead(address);
+        return cart_->CpuRead(address);
     else
-        value = 0;
-
-    TickCpuRead();
-
-    return value;
+        return 0;
 }
 
 uint8_t Bus::CpuReadProgramData(uint16_t address)
 {
-    uint8_t value;
+    TickCpuRead();
 
     // program data most likely comes from cartridge
     if (address > 0x4020)
     {
         if (cart_)
-            value = cart_->CpuRead(address);
+            return cart_->CpuRead(address);
         else
-            value = 0;
+            return 0;
     }
     else if (address < 0x2000)
-        value = cpuRam_[address & 0x7ff];
+        return cpuRam_[address & 0x7ff];
     else if (address < 0x4000)
-        value = ppu_->Read(address);
+        return ppu_->Read(address);
     else if (address < 0x4020)
     {
         if (address == 0x4016)
-            value = controller_->Read();
+            return controller_->Read();
         else
-            value = apu_->Read(address);
+            return apu_->Read(address);
     }
     else
-        value = 0;
-
-    TickCpuRead();
-
-    return value;
+        return 0;
 }
 
 void Bus::CpuWrite(uint16_t address, uint8_t value)
