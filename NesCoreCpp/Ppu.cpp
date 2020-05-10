@@ -367,8 +367,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
         if (enableRendering_)
         {
             background_.RunLoad(scanlineCycle_, maxIndex);
-
-            sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
         }
 
         scanlineCycle_ = maxIndex;
@@ -378,8 +376,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
     if (scanlineCycle_ == 256)
     {
-        sprites_.HReset();
-
         if (enableRendering_)
             background_.HReset(initialAddress_);
         else
@@ -400,9 +396,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
             {
                 background_.VReset(initialAddress_);
             }
-
-            // sprite tile loading
-            sprites_.RunLoad(-1, scanlineCycle_, maxCycle);
 
             scanlineCycle_ = maxCycle;
         }
@@ -450,7 +443,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
                 background_.RunRenderDisabled(scanlineCycle_, maxIndex);
             }
 
-            if (enableForeground_)
+            if (enableForeground_ && currentScanline_ != 0)
             {
                 sprites_.RunRender(scanlineCycle_, maxIndex, background_.ScanlinePixels());
             }
@@ -520,7 +513,7 @@ void Ppu::RenderScanline()
             background_.RunRenderDisabled(0, 256);
         }
 
-        if (enableForeground_)
+        if (enableForeground_ && currentScanline_ != 0)
         {
             sprites_.RunRender(0, 256, background_.ScanlinePixels());
         }

@@ -190,6 +190,7 @@ void PpuSprites::HReset()
 void PpuSprites::VReset()
 {
     sprite0Hit_ = false;
+    spritesRendered_ = false;
 }
 
 const std::array<uint8_t, 256>& PpuSprites::ScanlineAttributes() const
