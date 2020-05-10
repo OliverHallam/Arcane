@@ -175,7 +175,6 @@ void PpuSprites::HReset()
     scanlineSpriteCount_ = oamCopyIndex_ >> 2;
     sprite0Visible_ = sprite0Selected_;
     sprite0Selected_ = false;
-    oamAddress_ = 0;
     oamCopyIndex_ = 0;
     spriteIndex_ = 0;
     spritesRendered_ = false;
@@ -226,6 +225,9 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
         RunLoad(currentScanline);
         return;
     }
+
+    // the OAM address is forced to 0 during the whole load phase.
+    oamAddress_ = 0;
 
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
@@ -328,6 +330,9 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
 void PpuSprites::RunLoad(uint32_t currentScanline)
 {
+    // the OAM address is forced to 0 during the whole load phase.
+    oamAddress_ = 0;
+
     while (spriteIndex_ < scanlineSpriteCount_)
     {
         auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
