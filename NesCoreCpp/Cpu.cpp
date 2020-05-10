@@ -36,7 +36,6 @@ void Cpu::RunInstruction()
         }
         else
         {
-            I_ = true;
             bus_.CpuDummyRead(PC_);
             bus_.CpuDummyRead(PC_);
             Interrupt();
@@ -953,6 +952,8 @@ void Cpu::Interrupt()
     auto pcHigh = ReadData((uint16_t)(interruptVector_ + 1));
 
     PC_ = (uint16_t)((pcHigh << 8) | pcLow);
+
+    I_ = true;
 }
 
 void Cpu::Jsr()
