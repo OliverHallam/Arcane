@@ -3,8 +3,7 @@
 #include "Bus.h"
 
 ApuDmc::ApuDmc(Apu& apu)
-    : enabled_{},
-    irqEnabled_{},
+    : irqEnabled_{},
     loop_{},
     rate_{ 428 },
     level_{},
@@ -24,12 +23,22 @@ ApuDmc::ApuDmc(Apu& apu)
 
 void ApuDmc::Enable(bool enabled)
 {
-    enabled_ = enabled;
+    if (enabled)
+    {
+        if (sampleBytesRemaining_ == 0)
+        {
+            sampleBytesRemaining_ = sampleLength_;
+        }
+    }
+    else
+    {
+        sampleBytesRemaining_ = 0;
+    }
 }
 
 bool ApuDmc::IsEnabled() const
 {
-    return enabled_;
+    return sampleBytesRemaining_;
 }
 
 void ApuDmc::Write(uint16_t address, uint8_t value)
@@ -54,7 +63,7 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
         return;
 
     case 3:
-        sampleBytesRemaining_ = sampleBytesRemaining_ = (value << 4) + 1;
+        sampleBytesRemaining_ = sampleLength_ = (value << 4) + 1;
         break;
     }
 }

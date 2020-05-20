@@ -27,7 +27,6 @@ private:
 
     static uint32_t GetLinearRate(uint8_t rate);
 
-    bool enabled_;
     bool irqEnabled_;
     bool loop_;
     uint32_t rate_;
