@@ -175,6 +175,10 @@ void Cart::WriteMMC1(uint16_t address, uint8_t value)
     {
         mapperShiftCount_ = 0;
         mapperShift_ = 0;
+
+        // when the shift register is reset, the control bit is or'd with 0x0C
+        prgMode_ = 3;
+        UpdatePrgMap();
         return;
     }
 
@@ -225,7 +229,6 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
             ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
             break;
         }
-
         break;
 
     case 5:
