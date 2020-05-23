@@ -116,6 +116,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     case 1:
         WriteMMC1(address, value);
         break;
+
+    case 2:
+        WriteUxROM(address, value);
+        break;
     }
 }
 
@@ -137,6 +141,11 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         // The MMC1 takes the first value and ignores the second.
         WriteMMC1(address, firstValue);
         bus_->TickCpuWrite();
+        break;
+
+    case 2:
+        bus_->TickCpuWrite();
+        WriteUxROM(address, secondValue);
         break;
     }
 }
@@ -178,7 +187,7 @@ void Cart::WriteMMC1(uint16_t address, uint8_t value)
 
         // when the shift register is reset, the control bit is or'd with 0x0C
         prgMode_ = 3;
-        UpdatePrgMap();
+        UpdatePrgMapMMC1();
         return;
     }
 
@@ -204,11 +213,11 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
 
         // chr mode
         chrMode_ = (value >> 4) & 0x01;
-        UpdateChrMap();
+        UpdateChrMapMMC1();
 
         // prg mode
         prgMode_ = (value >> 2) & 0x03;
-        UpdatePrgMap();
+        UpdatePrgMapMMC1();
 
         // mirroring mode
         switch (value & 0x03)
@@ -235,14 +244,14 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         // CHR bank 0
         chrBank0_ = value << 12;
         chrBank0_ &= chrData_.size() - 1;
-        UpdateChrMap();
+        UpdateChrMapMMC1();
         break;
 
     case 6:
         // CHR bank 1
         chrBank1_ = value << 12;
         chrBank1_ &= chrData_.size() - 1;
-        UpdateChrMap();
+        UpdateChrMapMMC1();
         break;
 
     case 7:
@@ -252,12 +261,12 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         cpuBanks_[3] = (value & 0x10) ? nullptr : prgRam_;
 
         prgBank_ = (value & 0x0f) << 14;
-        UpdatePrgMap();
+        UpdatePrgMapMMC1();
         break;
     }
 }
 
-void Cart::UpdateChrMap()
+void Cart::UpdateChrMapMMC1()
 {
     bus_->SyncPpu();
 
@@ -278,7 +287,7 @@ void Cart::UpdateChrMap()
     }
 }
 
-void Cart::UpdatePrgMap()
+void Cart::UpdatePrgMapMMC1()
 {
     switch (prgMode_)
     {
@@ -314,6 +323,15 @@ void Cart::UpdatePrgMap()
     }
 }
 
+void Cart::WriteUxROM(uint16_t address, uint8_t value)
+{
+    // TODO: bus conflicts for older carts
+    auto bankAddress = (address << 14) & prgMask16k_;
+    auto base = &prgData_[bankAddress];
+    cpuBanks_[4] = base;
+    cpuBanks_[5] = base + 0x2000;
+}
+
 std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
 {
     auto end = data + length;
@@ -334,7 +352,7 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
     auto batteryBacked = (flags6 & 0x02) != 0;
     auto hasTrainer = (flags6 & 0x04) != 0;
 
-    if (mapper > 1)
+    if (mapper > 2)
     {
         return nullptr;
     }
@@ -378,6 +396,13 @@ std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
 
     cart->SetMirrorMode(verticalMirroring);
     cart->SetMapper(mapper);
+
+    if (prgData.size() & (prgData.size() - 1))
+    {
+        // expected power of 2 rom size.
+        return nullptr;
+    }
+
     cart->SetPrgRom(std::move(prgData));
 
     // TODO: most games don't have this

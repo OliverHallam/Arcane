@@ -38,8 +38,10 @@ private:
     void WriteMMC1(uint16_t address, uint8_t value);
     void WriteMMC1Register(uint16_t address, uint8_t value);
 
-    void UpdateChrMap();
-    void UpdatePrgMap();
+    void WriteUxROM(uint16_t address, uint8_t value);
+
+    void UpdateChrMapMMC1();
+    void UpdatePrgMapMMC1();
 
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> cpuBanks_;
