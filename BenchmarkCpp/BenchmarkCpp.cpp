@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "..\NesCoreCpp\RomFile.h"
 #include "..\NesCoreCpp\NesSystem.h"
 
 int main()
@@ -23,7 +24,8 @@ int main()
 
     auto system = std::make_unique<NesSystem>(44100);
 
-    auto cart = TryLoadCart(reinterpret_cast<uint8_t *>(&buffer[0]), buffer.size());
+    auto romFile = TryLoadINesFile(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
+    auto cart = TryCreateCart(romFile->Descriptor, std::move(romFile->PrgData), std::move(romFile->ChrData));
 
     system->InsertCart(std::move(cart));
     system->Reset();

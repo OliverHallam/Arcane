@@ -10,6 +10,9 @@
 #include "SaveFile.h"
 #include "WasapiRenderer.h"
 
+#include "../NesCoreCpp/GameDatabase.h"
+#include "../NesCoreCpp/RomFile.h"
+
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -298,12 +301,20 @@ std::unique_ptr<Cart> LoadCart(const std::wstring& romPath)
     if (data == NULL)
         winrt::throw_last_error();
 
-    auto cart = TryLoadCart(reinterpret_cast<uint8_t*>(data), fileSize.LowPart);
-
+    auto romFile = TryLoadINesFile(reinterpret_cast<uint8_t*>(data), fileSize.LowPart);
     UnmapViewOfFile(data);
+    if (!romFile)
+        throw Error(L"Unsupported or invalid ROM file: " + romPath);
+
+    auto goodDescriptor = GameDatabase::Lookup(romFile->PrgData, romFile->ChrData);
+
+    auto cart = TryCreateCart(
+        goodDescriptor ? *goodDescriptor : romFile->Descriptor,
+        std::move(romFile->PrgData),
+        std::move(romFile->ChrData));
 
     if (!cart)
-        throw Error(L"Unsupported or invalid ROM file: " + romPath);
+        throw Error(L"The selected game is not supported");
 
     return std::move(cart);
 }

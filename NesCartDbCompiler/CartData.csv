@@ -1,0 +1,743 @@
+# This file is built from NewRisingSun's "NES and Famicom Accurate Cartridge Information Database"
+# as available here: http://nerdlypleasures.blogspot.com/2020/04/the-nes-and-famicom-accurate-cartridge.html
+# Last retrieved on 2020-05-24
+# For now, I've just included the data for the US releases.
+
+# Game Name A-Z, PRG-ROM, CHR-ROM, Misc ROM, Mapper, Mirror + Flag, PPU, PRG-RAM, PRG-RAM B, CHR-RAM, CHR-RAM B, Console, Controller, CRC32
+
+# Licensed NA
+# -----------
+"10-Yard Fight (USA, Europe).nes",32,8,0,0.00,H,any,0,0,0,0,Normal,Standard,3D564757
+"1942 (Japan, USA).nes",32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,171251E3
+1943 - The Battle of Midway (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,12C6D5C7
+3-D WorldRunner (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,E6A477B2
+720 Degrees (USA).nes,128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,49F745E0
+8 Eyes (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,326AB3B6
+Abadox - The Deadly Inner War (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B134D713
+"Addams Family, The - Pugsley's Scavenger Hunt (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,063E5653
+"Addams Family, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,65518EAE
+Advanced Dungeons & Dragons - DragonStrike (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,2C5908A7
+Advanced Dungeons & Dragons - Heroes of the Lance (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,B17574F3
+Advanced Dungeons & Dragons - Hillsfar (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,5DE61639
+Advanced Dungeons & Dragons - Pool of Radiance (USA).nes,512,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,25952141
+Adventure Island (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,F8A713BE
+Adventure Island 3 (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,BFBFD25D
+Adventure Island II (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,771C8855
+Adventures in the Magic Kingdom (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5DBD6099
+"Adventures of Bayou Billy, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,67751094
+Adventures of Dino Riki (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,9BDE3267
+"Adventures of Gilligan's Island, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,55773880
+Adventures of Lolo (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,71BF075F
+Adventures of Lolo 2 (USA).nes,32,32,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,1992D163
+Adventures of Lolo 3 (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,8DD92725
+"Adventures of Rad Gravity, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,D8EE7669
+"Adventures of Rocky and Bullwinkle and Friends, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,227CF577
+Adventures of Tom Sawyer (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,6E85D8DD
+Air Fortress (USA).nes,128,32,0,1.00,H,RP2C02,8K,0,0,0,Normal,Standard,35C41CD4
+Airwolf (USA) (Acclaim).nes,32,128,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,489EF6A2
+Al Unser Jr. Turbo Racing (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,5BC9D7A1
+Alex DeMeo's Race America (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A8B0DA56
+Alfred Chicken (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,63E992AC
+Alien 3 (USA).nes,128,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,C527C297
+All-Pro Basketball (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,934DB14A
+Alpha Mission (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,DBF90772
+Amagon (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,E2B43A68
+American Gladiators (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,1973AEA8
+Anticipation (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,99A9F57E
+Arch Rivals - A Basketbrawl! (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,C740EB46
+Archon (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,F304F1B9
+Arkanoid (USA).nes,32,16,0,3.02,H,RP2C02,0,0,0,0,Normal,PaddleNES,32FB0583
+Arkista's Ring (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,1425D7F4
+Astyanax (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,054CB4EB
+Athena (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,27DDF227
+Athletic World (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,PowerPadA,1771EA8F
+Attack of the Killer Tomatoes (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,7C6F615F
+Back to the Future (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,A55FA397
+Back to the Future Part II & III (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,37BA3261
+Bad Dudes (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,161D717B
+Bad News Baseball (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,40DAFCBA
+Bad Street Brawler (USA).nes,128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,1AE7B933
+Balloon Fight (USA).nes,16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,401349A8
+Bandai Golf - Challenge Pebble Beach (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,6CD46979
+Bandit Kings of Ancient China (USA).nes,256,128,0,5.00,HB,RP2C02,8K,8K,0,0,Normal,Standard,15FE6D0F
+Barbie (USA) (Rev 1).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,18B249E5
+"Bard's Tale, The (USA).nes",128,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,9B821A83
+Barker Bill's Trick Shooting (USA).nes,64,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,4318A2F8
+"Baseball (USA, Europe).nes",16,8,0,0.00,H,any,0,0,0,0,Normal,Standard,AFDCBD24
+Baseball Simulator 1.000 (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,1F6EA423
+Baseball Stars (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,40D159B6
+Baseball Stars II (USA).nes,256,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,18A9F0D9
+Bases Loaded (USA) (Rev 2).nes,256,64,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,6ABAD366
+Bases Loaded 3 (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,3ECA3DDA
+Bases Loaded 4 (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,28F9B41F
+Bases Loaded II - Second Season (USA).nes,256,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B9CF171F
+Batman - Return of the Joker (USA).nes,128,256,0,69.00,H,RP2C02,8K,0,0,0,Normal,Standard,03EC46AF
+Batman - The Video Game (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,13C6617E
+Batman Returns (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,C247A23D
+Battle Chess (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,2C2DDFB4
+"Battle of Olympus, The (USA).nes",128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,6B53006A
+Battleship (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,50CCC8ED
+Battletoads (USA).nes,256,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,279710DC
+Battletoads-Double Dragon (USA).nes,256,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,CEB65B06
+Beetlejuice (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,EB84C54C
+Best of the Best - Championship Karate (USA).nes,256,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,A6A725B8
+Bigfoot (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,C42E648A
+Bill & Ted's Excellent Video Game Adventure (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,C4B6ED3C
+Bill Elliott's NASCAR Challenge (USA).nes,128,256,0,4.00,V,RP2C02,8K,0,0,0,Normal,Standard,847D672D
+Bionic Commando (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,D2574720
+"Black Bass, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,1D0F4D6B
+Blades of Steel (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,8AB52A24
+Blaster Master (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,3F0FD764
+"Blue Marlin, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,F37BEFD5
+"Blues Brothers, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,9F2EEF20
+Bo Jackson Baseball (USA).nes,128,256,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,5FD2AAB1
+Bomberman (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,DB9DCF89
+Bomberman II (USA).nes,128,0,0,1.00,H,RP2C02,8K,0,8K,0,Normal,FourScore,1EBB5B42
+Bonk's Adventure (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,4E44FF44
+Boulder Dash (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,A8F4D99E
+Bram Stoker's Dracula (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,DFA111F1
+Break Time - The National Pool Tour (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5F0BCE2A
+BreakThru (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A5E8D2CD
+Bubble Bobble (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5E900522
+Bubble Bobble Part 2 (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E095C3F2
+Bucky O'Hare (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E19EE99C
+"Bugs Bunny Birthday Blowout, The (USA).nes",128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,126EBF66
+"Bugs Bunny Crazy Castle, The (USA).nes",64,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,E50A9130
+Bump 'n' Jump (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,A0A095C4
+Burai Fighter (USA).nes,32,32,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,CE228874
+BurgerTime (USA).nes,16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,DAF9D7E3
+Cabal (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,BDF046EF
+Caesars Palace (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,DB1D03E5
+California Games (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,2F66E302
+Capcom's Gold Medal Challenge '92 (USA).nes,128,128,0,4.00,VB,RP2C02,0,8K,0,0,Normal,Standard,BE250388
+Captain America and the Avengers (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,58C7DDAF
+Captain Planet and the Planeteers (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,0B404915
+Captain Skyhawk (USA) (Rev 1).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,EFD26E37
+Casino Kid (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,05A688C8
+Casino Kid II (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,7329118D
+Castelian (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,0AE6C9E2
+Castle of Dragon (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,2F2D1FA9
+Castlequest (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,12906664
+Castlevania (USA) (Rev 1).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,B668C7FC
+Castlevania II - Simon's Quest (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,C471E42D
+Castlevania III - Dracula's Curse (USA).nes,256,128,0,5.00,H,RP2C02,0,0,0,0,Normal,Standard,ED2465BE
+Caveman Games (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,D1EA84C3
+Championship Bowling (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,EAC38105
+Championship Pool (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,CDC641FC
+"Chessmaster, The (USA) (Rev 1).nes",128,32,0,1.00,H,RP2C02,8K,0,0,0,Normal,Standard,19F4CA6B
+Chip 'n Dale - Rescue Rangers (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,8BF29CB6
+Chip 'n Dale - Rescue Rangers 2 (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,FC5783A7
+Chris Evert & Ivan Lendl in Top Players' Tennis (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,FourScore,F99E37EB
+Chubby Cherub (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,77833016
+Circus Caper (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,D152FB02
+City Connection (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,AE8666B4
+Clash at Demonhead (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,82AFA828
+Classic Concentration (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,A3C0D49F
+Cliffhanger (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,57C2AE4E
+Clu Clu Land (World).nes,16,8,0,0.00,H,any,0,0,0,0,Normal,Standard,48F68D40
+Cobra Command (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,2D75C7A9
+Cobra Triangle (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,C8AD4F32
+Code Name - Viper (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E2313813
+Color a Dinosaur (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,0123BFFE
+Commando (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,82BE4724
+Conan (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,C6000085
+Conflict (USA).nes,128,128,0,1.00,H,RP2C02,8K,0,0,0,Normal,Standard,32CF4307
+Conquest of the Crystal Palace (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,20A5219B
+Contra (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,F6035030
+Contra Force (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,A94591B0
+Cool World (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,D73AA04C
+Cowboy Kid (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D18E6BE3
+Crash 'n' the Boys - Street Challenge (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,C7F0C457
+Crystalis (USA).nes,256,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,1335CB05
+Cyber Stadium Series - Base Wars (USA).nes,128,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,F00584B6
+Cyberball (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,88338ED5
+Cybernoid - The Fighting Machine (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,AC8DCDEA
+Dance Aerobics (USA).nes,64,32,0,1.00,H,RP2C02,0,0,0,0,Normal,PowerPadB,9E382EBF
+Danny Sullivan's Indy Heat (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,FourScore,C1B43207
+Darkman (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,398B8182
+Darkwing Duck (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5DCE2EEA
+Dash Galaxy in the Alien Asylum (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,67811DA6
+David Crane's A Boy and His Blob - Trouble on Blobolonia (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,4D1AC58C
+Day Dreamin' Davey (USA).nes,256,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,E145B441
+Days of Thunder (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,12748678
+Deadly Towers (USA).nes,128,0,0,34.02,H,RP2C02,0,0,8K,0,Normal,Standard,C2730C30
+Defender II (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,A2AF25D0
+Defender of the Crown (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,28FB71AE
+Defenders of Dynatron City (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,A725B2D3
+Deja Vu (USA).nes,128,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,43D01C10
+Demon Sword (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,4681691A
+Desert Commander (USA).nes,128,128,0,1.00,H,RP2C02,8K,0,0,0,Normal,Standard,68EC97CB
+Destination Earthstar (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,EB9960EE
+Destiny of an Emperor (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,A558FB52
+Dick Tracy (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,D738C059
+Die Hard (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,085DE7C9
+Dig Dug II - Trouble in Paradise (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,DBB06A25
+Digger - The Legend of the Lost City (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,1CEE0C21
+Dirty Harry (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,0C2E7863
+Donkey Kong (World) (Rev 1).nes,16,8,0,0.00,H,any,0,0,0,0,Normal,Standard,6F97C721
+Donkey Kong 3 (World).nes,16,8,0,0.00,V,any,0,0,0,0,Normal,Standard,B3D74C0D
+Donkey Kong Jr. (World) (Rev 1).nes,16,8,0,0.00,V,any,0,0,0,0,Normal,Standard,4864C304
+"Donkey Kong Jr. Math (USA, Europe).nes",16,8,0,0.00,V,any,0,0,0,0,Normal,Standard,0504B007
+Double Dare (USA).nes,256,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,2B378D11
+Double Dragon (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,0F1CC048
+Double Dragon II - The Revenge (USA) (Rev 1).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8A640AEF
+Double Dragon III - The Sacred Stones (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,50FD0CC6
+Double Dribble (USA) (Rev 1).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,D0E96F6B
+Dr. Chaos (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,73620901
+Dr. Jekyll and Mr. Hyde (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,4D3FBA78
+"Dr. Mario (Japan, USA) (Rev 1).nes",32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,DE581355
+Dragon Fighter (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A166548F
+Dragon Power (USA).nes,128,32,0,66.00,V,RP2C02,0,0,0,0,Normal,Standard,811F06D9
+Dragon Spirit - The New Legend (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D7E29C03
+Dragon Warrior (USA) (Rev 1).nes,64,16,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,2545214C
+Dragon Warrior II (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,8C5A784E
+Dragon Warrior III (USA).nes,512,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,A86A5318
+Dragon Warrior IV (USA).nes,512,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,506E259D
+Dragon's Lair (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,CA033B3A
+Duck Hunt (World).nes,16,8,0,0.00,V,any,0,0,0,0,Normal,Zapper,24598791
+DuckTales (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,EFB09075
+DuckTales 2 (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,73C7FCF4
+Dungeon Magic - Sword of the Elements (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,23C3FB2D
+Dusty Diamond's All-Star Softball (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,38B590E4
+Dynowarz - The Destruction of Spondylus (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,BDE93999
+Elevator Action (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,2AC87283
+Eliminator Boat Duel (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,059E0CDF
+"Empereur, L' (USA).nes",256,128,0,5.00,HB,RP2C02,8K,8K,0,0,Normal,Standard,9C18762B
+"Excitebike (Japan, USA).nes",16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,DataRec,49AEB3A6
+F-117A Stealth Fighter (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,0A7E62D4
+F-15 Strike Eagle (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,0BCAA4D7
+Family Feud (USA).nes,32,128,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,51BEE3EA
+Faria - A World of Mystery & Danger! (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,45F03D2E
+Faxanadu (USA) (Rev 1).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,E71DB268
+Felix the Cat (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,2CAAE01C
+Ferrari Grand Prix Challenge (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,CE77B4BE
+Fester's Quest (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B6BF5137
+Final Fantasy (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,CEBD2A31
+Fire 'n Ice (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D534C98E
+Fisher-Price - Firehouse Rescue (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,38946C43
+Fisher-Price - I Can Remember (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,267DE4CC
+Fisher-Price - Perfect Fit (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,B9762DA8
+Fist of the North Star (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,06D72C83
+Flight of the Intruder (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,F92BE7F2
+"Flintstones, The - The Rescue of Dino & Hoppy (USA).nes",128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,2FE20D79
+"Flintstones, The - The Surprise at Dinosaur Peak! (USA).nes",128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,DAB84A9C
+Flying Dragon - The Secret Scroll (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,F1FED9B8
+Flying Warriors (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,10180072
+Formula One - Built to Win (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,5A8B4DA8
+Fox's Peter Pan & the Pirates - The Revenge of Captain Hook (USA).nes,128,64,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,20353E63
+Frankenstein - The Monster Returns (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,E943EC4D
+Freedom Force (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,3E58A87E
+Friday the 13th (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,BEB15855
+Fun House (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,576A0DE8
+G.I. Joe - A Real American Hero (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,1D2D93FF
+G.I. Joe - The Atlantis Factor (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8C8DEDB6
+Galaga - Demons of Death (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,1DB07C0D
+Galaxy 5000 - Racing in the 51st Century (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,1D20A5C6
+Gargoyle's Quest II (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,F0E9971B
+Garry Kitchen's Battletank (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,90D68A43
+Gauntlet (USA).nes,128,64,0,206.00,4,RP2C02,0,0,0,0,Normal,Standard,EC968C51
+Gauntlet II (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,FourScore,1B71CCDB
+Gemfire (USA).nes,256,256,0,5.00,HB,RP2C02,0,8K,0,0,Normal,Standard,0EC6C023
+Genghis Khan (USA).nes,256,0,0,1.00,HB,RP2C02,8K,8K,8K,0,Normal,Standard,2225C20F
+George Foreman's KO Boxing (USA).nes,128,256,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,AF05F37E
+Ghost Lion (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,04766130
+Ghostbusters (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,6A154B68
+Ghostbusters II (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,2AE97660
+Ghosts'n Goblins (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,B4E4879E
+Ghoul School (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,2BC25D5A
+Goal! (USA).nes,256,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,84148F73
+Goal! Two (USA).nes,128,128,0,118.00,H,RP2C02,0,0,0,0,Normal,Standard,90C773C1
+Godzilla - Monster of Monsters! (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,74386F15
+Godzilla 2 - War of the Monsters (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,9FB32923
+Golf (USA).nes,16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,E7D2C49D
+Golf Grand Slam (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,CF5F8AF0
+Golgo 13 - Top Secret Episode (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,F532F09A
+"Goonies II, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,999577B6
+Gotcha! - The Sport! (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Zapper,4E959173
+Gradius (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,350D835E
+"Great Waldo Search, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,2DFF7FDC
+Greg Norman's Golf Power (USA).nes,128,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,FourScore,1352F1B9
+Gremlins 2 - The New Batch (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,0ED96F42
+"Guardian Legend, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,FA43146B
+Guerrilla War (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,6DECD886
+"Gumshoe (USA, Europe).nes",128,32,0,66.00,V,any,0,0,0,0,Normal,Zapper,BEB8AB01
+Gun Nac (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D19DCB2B
+Gun.Smoke (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,A8784932
+Gyromite ~ Gyro (World).nes,32,8,0,0.00,V,any,0,0,0,0,Normal,GyroSet,023A5A32
+Gyruss (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,1D41CC8C
+Harlem Globetrotters (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,FourScore,2E6EE98D
+Hatris (USA).nes,128,0,0,1.00,H,RP2C02,8K,0,8K,0,Normal,Standard,841B69B6
+Heavy Barrel (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,34EAB034
+Heavy Shreddin' (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,EB15169E
+High Speed (USA).nes,128,64,0,119.00,H,RP2C02,0,0,8K,0,Normal,Standard,383CABBF
+Hogan's Alley (World).nes,16,8,0,0.00,V,any,0,0,0,0,Normal,Zapper,FF24D794
+Hollywood Squares (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,3869E598
+Home Alone (USA) (Rev 1).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,F31D36A3
+Home Alone 2 - Lost in New York (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,2E0741B6
+Hook (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,D8230D0E
+Hoops (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,F4615036
+Hudson Hawk (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5A4F156D
+"Hunt for Red October, The (USA) (Rev 1).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,4E77733A
+Hydlide (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,77BF8B23
+"Ice Climber (USA, Europe, Korea).nes",16,8,0,0.00,H,any,0,0,0,0,Normal,Standard,FB98D46E
+Ice Hockey (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,AE64CA77
+Ikari III - The Rescue (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,567E1620
+Ikari Warriors (USA) (Rev 1).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,2D273AA4
+Ikari Warriors II - Victory Road (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,4F467410
+Image Fight (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,058F23A2
+"Immortal, The (USA).nes",128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8889C564
+"Incredible Crash Dummies, The (USA).nes",128,256,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,A80A0F01
+Indiana Jones and the Last Crusade (USA) (Taito).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,8BCA5146
+Indiana Jones and the Last Crusade (USA) (UBI Soft).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,2EA8CC16
+Indiana Jones and the Temple of Doom (USA) (Rev 1).nes,128,64,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,B4C81ADB
+Infiltrator (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,DF64963B
+Iron Tank - The Invasion of Normandy (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B14EA4D2
+IronSword - Wizards & Warriors II (USA).nes,256,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,2328046E
+Isolated Warrior (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,6944A01A
+Ivan 'Ironman' Stewart's Super Off Road (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,4B041B6B
+Jack Nicklaus' Greatest 18 Holes of Major Championship Golf (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,C313EF54
+Jackal (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,1D5B03A5
+Jackie Chan's Action Kung Fu (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,45A41784
+James Bond Jr (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,F6898A59
+Jaws (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,27D14A54
+Jeopardy! (USA) (Rev 1).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,2A662AC7
+Jeopardy! 25th Anniversary Edition (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,0BDD8DD9
+Jeopardy! Junior Edition (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,6A88579F
+"Jetsons, The - Cogswell's Caper (USA).nes",128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,2BF61C53
+Jimmy Connors Tennis (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,00E95D86
+Joe & Mac (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,26D3082C
+John Elway's Quarterback (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,CF322BB3
+Jordan vs Bird - One on One (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,303D4371
+Journey to Silius (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,E2C4EDCE
+Joust (USA).nes,16,16,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,BE387AF0
+"Jungle Book, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,61179BFA
+Jurassic Park (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,3B7F5B3B
+Kabuki - Quantum Fighter (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,7474AC92
+Karate Champ (USA) (Rev 1).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,F42B0DBD
+"Karate Kid, The (USA).nes",32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,983948A5
+Karnov (USA).nes,128,64,0,206.00,H,RP2C02,0,0,0,0,Normal,Standard,548A2C3C
+Kickle Cubicle (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,CD10DCE2
+KickMaster (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,5104833E
+"Kid Icarus (USA, Europe) (Rev 1).nes",128,0,0,1.00,H,any,8K,0,8K,0,Normal,Standard,D67FD6A6
+Kid Klown in Night Mayor World (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,8EE7C43E
+Kid Kool and the Quest for the Seven Wonder Herbs (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,AA6BB985
+Kid Niki - Radical Ninja (USA) (Rev 1).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,A9415562
+King's Knight (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,01B4CA89
+King's Quest V (USA).nes,256,256,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,00837960
+Kings of the Beach - Professional Beach Volleyball (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,FourScore,F54B34BD
+Kirby's Adventure (USA) (Rev 1).nes,512,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,5ED6F221
+Kiwi Kraze - A Bird-Brained Adventure! (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,563C2CC0
+KlashBall (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,F4DFDB14
+Knight Rider (USA).nes,64,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,EBCFE7C5
+"Krion Conquest, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,03272E9B
+Krusty's Fun House (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,A0DF4B8F
+"Kung Fu (Japan, USA).nes",32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,D5C64257
+Kung-Fu Heroes (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,AA74A4D8
+Laser Invasion (USA).nes,128,128,0,5.00,H,RP2C02,0,0,0,0,Normal,Zapper,B0480AE9
+Last Action Hero (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E7DA8A04
+"Last Ninja, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E353969F
+"Last Starfighter, The (USA).nes",32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,6997F5E1
+Lee Trevino's Fighting Golf (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,88E1A5F4
+Legacy of the Wizard (USA).nes,128,64,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,F181C021
+"Legend of Kage, The (USA).nes",32,16,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,BBED6E6E
+"Legend of Zelda, The (USA) (Rev 1).nes",128,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,EAF7ED72
+Legendary Wings (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,A2194CAD
+Legends of the Diamond - The Baseball Championship Game (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,05CE560C
+Lemmings (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A69F29FA
+Lethal Weapon (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,7077B075
+Life Force (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,C4BC85A2
+Little League Baseball - Championship Series (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,859C65E1
+"Little Mermaid, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,3BE244EF
+Little Nemo - The Dream Master (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,5B4B6056
+Little Ninja Brothers (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,BC7FEDB9
+Little Samson (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,B5E392E2
+Lode Runner (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,BASICKbd,AF5676DE
+"Lone Ranger, The (USA).nes",256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Zapper,23D17F5E
+Loopz (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,FD8D6C75
+Low G Man - The Low Gravity Man (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,93991433
+Lunar Pool (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,988B446D
+M.C. Kids (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,B0EBF3DB
+M.U.L.E. (USA).nes,128,0,0,1.00,H,RP2C02,8K,0,8K,0,Normal,FourScore,0939852F
+M.U.S.C.L.E. - Tag Team Match (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,8FF31896
+"Mach Rider (Japan, USA) (Rev 1).nes",32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,DataRec,38810A91
+Mad Max (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,026E41C5
+"Mafat Conspiracy, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8A043CD6
+Magic Darts (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5EB8E707
+Magic Johnson's Fast Break (USA).nes,64,128,0,1.00,H,RP2C02,0,0,0,0,Normal,FourScore,C6C2EDB5
+"Magic of Scheherazade, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,92197173
+Magician (USA).nes,128,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,91E2E863
+Magmax (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,81389607
+Major League Baseball (USA) (Rev 1).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,96E6C1CE
+Maniac Mansion (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,0D9F5BD1
+Mappy-Land (USA).nes,128,32,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,83FC38F8
+Marble Madness (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,09874777
+Mario Bros. (World).nes,16,8,0,0.00,H,any,0,0,0,0,Normal,Standard,C4C3949A
+Mario is Missing! (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,2055971A
+Mario's Time Machine (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,55DB7E2A
+Mechanized Attack (USA).nes,64,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,5EE6008E
+Mega Man (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,6EE4BB0A
+Mega Man 2 (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,0FCFC04D
+Mega Man 3 (USA).nes,256,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,603AAA57
+Mega Man 4 (USA) (Rev 1).nes,512,0,0,4.00,H,RP2C02,0,0,8K,0,Normal,Standard,18A2E74F
+Mega Man 5 (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,3EDCF7E8
+Mega Man 6 (USA).nes,512,0,0,4.00,H,RP2C02,0,0,8K,0,Normal,Standard,988798A8
+Mendel Palace (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,12078AFD
+Metal Gear (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,817431EC
+Metal Storm (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,BCACBBF4
+MetalMech - Man & Machine (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,05378607
+Metroid (USA).nes,128,0,0,1.00,H,RP2C02,8K,0,8K,0,Normal,Standard,70080810
+Michael Andretti's World GP (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,942B1210
+Mickey Mousecapade (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,7C6A3D51
+Mickey's Adventure in Numberland (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,6FB349E2
+Mickey's Safari in Letterland (USA).nes,128,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,982DFB38
+Might & Magic - Secret of the Inner Sanctum (USA).nes,256,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,532A27E6
+Mighty Bomb Jack (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,AAC2E75E
+Mighty Final Fight (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,3F78037C
+"Mike Tyson's Punch-Out!! (Japan, USA) (Rev 1).nes",128,128,0,9.00,H,RP2C02,0,0,0,0,Normal,Standard,2C818014
+Millipede (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,AE52DECE
+Milon's Secret Castle (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,586A3277
+"Miracle Piano Teaching System, The (USA).nes",256,64,0,1.00,H,RP2C02,8K,0,0,0,Normal,MiraclPno,92C138E4
+Mission - Impossible (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E3C5BB3D
+Monopoly (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,FourScore,9747AC09
+Monster in My Pocket (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E542E3CF
+Monster Party (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,02B9E7C2
+Monster Truck Rally (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,FourScore,2F698C4D
+Motor City Patrol (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,0A0926BD
+Ms. Pac-Man (USA) (Namco).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,B6D2D300
+Muppet Adventure - Chaos at the Carnival (USA).nes,128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,7156CB4D
+"Mutant Virus, The - Crisis in a Computer World (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,7DCB4C18
+Mystery Quest (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,B5D28EA2
+NARC (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,0537322A
+NES Open Tournament Golf (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,F6B9799C
+NES Play Action Football (USA).nes,128,128,0,118.00,H,RP2C02,0,0,0,0,Normal,FourScore,B9B4D9E0
+NFL (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,35B6FEBF
+Nigel Mansell's World Championship Racing (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,4751A751
+"Nightmare on Elm Street, A (USA).nes",128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,FourScore,DA2CB59A
+Nightshade (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,A60CA3D6
+Ninja Crusaders (USA).nes,128,0,0,4.00,H,RP2C02,0,0,8K,0,Normal,Standard,3D1C4894
+Ninja Gaiden (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,7C4A72D8
+Ninja Gaiden II - The Dark Sword of Chaos (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,B780521C
+Ninja Gaiden III - The Ancient Ship of Doom (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,902E3168
+Ninja Kid (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,02CC3973
+Nintendo World Cup (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,FourScore,A22657FA
+Nobunaga's Ambition (USA).nes,256,0,0,1.00,HB,RP2C02,8K,8K,8K,0,Normal,Standard,4642DDA6
+Nobunaga's Ambition II (USA).nes,256,128,0,5.00,HB,RP2C02,8K,8K,0,0,Normal,Standard,8CE478DB
+North and South (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,AE9F33D0
+Operation Wolf (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,EDC3662B
+Orb-3D (USA).nes,64,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,958E4BAE
+Othello (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,699FA085
+Overlord (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,2856111F
+P.O.W. - Prisoners of War (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,75255F88
+Pac-Man (USA) (Tengen).nes,16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,A9BBF44F
+Palamedes (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,6BB6A0CE
+Panic Restaurant (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,435AEEC6
+Paperboy (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,32086826
+Paperboy 2 (USA).nes,256,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,3A0965B1
+Phantom Fighter (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,CC37094C
+Pictionary - The Game of Video Quick Draw (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,DC02F095
+Pin Bot (USA).nes,128,64,0,119.00,H,RP2C02,0,0,8K,0,Normal,Standard,D19ADDEB
+"Pinball (Japan, USA).nes",16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,035DC2E9
+Pinball Quest (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,2538D860
+Pipe Dream (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,BCE77871
+Pirates! (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,3D0996B2
+Platoon (USA) (Rev 1).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,695515A2
+Popeye (World) (Rev 1).nes,16,8,0,0.00,H,any,0,0,0,0,Normal,Standard,70860FCA
+Power Blade (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,5CF536F4
+Power Blade 2 (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D273B409
+Power Punch II (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,90226E40
+Predator (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A7DE65E4
+Prince of Persia (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,70CE3771
+Princess Tomato in the Salad Kingdom (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,56756615
+Pro Sport Hockey (USA).nes,128,128,0,118.00,H,RP2C02,0,0,0,0,Normal,Standard,41F9E0AA
+Pro Wrestling (USA) (Rev 1).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,64B710D2
+"Punisher, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,27F8D0D2
+Puss 'n Boots - Pero's Great Adventure (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,6E0EB43E
+Puzznic (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,EB61133B
+Q-bert (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,C0B23520
+QIX (USA).nes,128,0,0,1.00,H,RP2C02,8K,0,8K,0,Normal,Standard,95E4E594
+R.B.I. Baseball (USA).nes,64,32,0,206.00,V,RP2C02,0,0,0,0,Normal,Standard,3C5C81D4
+R.C. Pro-Am (USA) (Rev 1).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,AAED295C
+R.C. Pro-Am II (USA).nes,256,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,FourScore,9EDD2159
+Racket Attack (USA).nes,256,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,ECCD4089
+Rad Racer (USA).nes,128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,8B9D3E9C
+Rad Racer II (USA).nes,64,64,0,4.00,4,RP2C02,0,0,0,0,Normal,Standard,404B2E8B
+Raid on Bungeling Bay (USA).nes,16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,D308D52C
+Rainbow Islands (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,9EA1DC76
+Rally Bike (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,E1C41D7C
+Rambo (USA) (Rev 1).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,4F9DBBE5
+Rampage (USA).nes,128,64,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,263AC8A0
+Rampart (USA) (Jaleco).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,26796758
+Remote Control (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,9F6C119C
+"Ren & Stimpy Show, The - Buckeroo$! (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E98AB943
+Renegade (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,A0568E1D
+Rescue - The Embassy Mission (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,63FCC0DD
+Ring King (USA).nes,64,64,0,206.00,V,RP2C02,0,0,0,0,Normal,Standard,5BB62688
+River City Ransom (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E9C387EC
+RoadBlasters (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,8ADA3497
+Robin Hood - Prince of Thieves (USA) (Rev 1).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,C3CCC493
+Robo Warrior (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,810B7AB9
+RoboCop (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,192D546F
+RoboCop 2 (USA) (Rev 1).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,990985C0
+RoboCop 3 (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,96087988
+Rock 'n' Ball (USA).nes,128,64,0,4.00,H,RP2C02,0,0,0,0,Normal,FourScore,476E022B
+Rocket Ranger (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,67F77118
+"Rocketeer, The (USA).nes",256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,1D6DECCC
+Rockin' Kats (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8927FD4C
+Roger Clemens' MVP Baseball (USA).nes,128,256,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,018A8699
+Rollerball (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,69635A6E
+Rollerblade Racer (USA).nes,128,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,2370C0A9
+Rollergames (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,AA4997C1
+Romance of the Three Kingdoms (USA).nes,256,0,0,1.00,HB,RP2C02,8K,8K,8K,0,Normal,Standard,C6182024
+Romance of the Three Kingdoms II (USA).nes,256,256,0,5.00,HB,RP2C02,0,32K,0,0,Normal,Standard,F011E490
+Roundball - 2-on-2 Challenge (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,FourScore,6E4DCFD2
+Rush'n Attack (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,DE25B90F
+Rygar (USA) (Rev 1).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,37C474D5
+S.C.A.T. - Special Cybernetic Attack Team (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,74189E12
+Section-Z (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,0FEC90D2
+Seicross (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,27AA3933
+Sesame Street - 123 (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,339437F6
+Sesame Street - ABC (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,EC0FC2DE
+Sesame Street - Big Bird's Hide & Speak (USA).nes,256,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,FDE1C7ED
+Sesame Street - Countdown (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5CF6A82E
+Shadow of the Ninja (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,DDD90C39
+Shadowgate (USA).nes,128,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,6A1F628A
+Shatterhand (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,AA20F73D
+Shingen the Ruler (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,BE3BF3B3
+Shooting Range (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Zapper,851EB9BE
+Short Order + Eggsplode! (USA).nes,64,32,0,1.00,H,RP2C02,0,0,0,0,Normal,PowerPadB,6435C095
+Side Pocket (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,DC4DA5D4
+Silent Service (USA) (Rev 1).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,B843EB84
+Silk Worm (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,E74A91BB
+Silver Surfer (USA).nes,128,256,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,BEE1C0D9
+"Simpsons, The - Bart vs. the Space Mutants (USA) (Rev 1).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5248CAF3
+"Simpsons, The - Bart vs. the World (USA).nes",256,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,7416903F
+"Simpsons, The - Bartman Meets Radioactive Man (USA).nes",256,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,5991B9D0
+Skate or Die (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,423ADA8E
+Skate or Die 2 - The Search for Double Trouble (USA).nes,256,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,06961BE4
+Ski or Die (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,E9A6C211
+Sky Kid (USA).nes,32,128,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,3322105A
+Sky Shark (USA).nes,64,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,9FFE2F55
+Slalom (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,86670C93
+Smash T.V. (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,DoublFist,6EE94D32
+Snake Rattle n Roll (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,FDF4569B
+Snake's Revenge (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,48E904D0
+Snoopy's Silly Sports Spectacular! (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A8923256
+Snow Brothers (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,1DAC6208
+"Soccer (Japan, USA).nes",32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,657F7875
+Solar Jetman - Hunt for the Golden Warpship (USA).nes,256,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,8111BA08
+Solomon's Key (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,40684E95
+Solstice - The Quest for the Staff of Demnos (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,EDCF1B71
+Space Shuttle Project (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,2220E14A
+Spelunker (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,99D15A91
+Spider-Man - Return of the Sinister Six (USA).nes,128,256,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,D679627A
+Spot - The Video Game (USA).nes,128,0,0,1.00,H,RP2C02,8K,0,8K,0,Normal,FourScore,CFAE9DFA
+Spy Hunter (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,C7197FB1
+Spy vs Spy (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,C4A02712
+Sqoon (USA).nes,32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Standard,44F34172
+Stack-Up ~ Block (World).nes,32,8,0,0.00,H,any,0,0,0,0,Normal,BlockSet,DF67DAA1
+Stanley - The Search for Dr. Livingston (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,62E2E7FC
+Star Force (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,FCE408A4
+Star Soldier (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,262B5A1D
+Star Trek - 25th Anniversary (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,16EBA50A
+Star Trek - The Next Generation (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,E575687C
+Star Voyager (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,B1723338
+Star Wars - The Empire Strikes Back (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,240DE736
+Star Wars (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,C1C3636B
+Starship Hector (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,9F432594
+StarTropics (USA).nes,256,256,0,4.01,HB,RP2C02,0,1K,0,0,Normal,Standard,889129CB
+Stealth ATF (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,C6DD7E69
+Stinger (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,C5B0B1AB
+Street Cop (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,PowerPadB,61D86167
+Street Fighter 2010 - The Final Fight (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8DA651D4
+Strider (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,02EE3706
+Super C (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,305B4E62
+Super Cars (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,419461D0
+Super Dodge Ball (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,689971F9
+Super Glove Ball (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,EFCF375D
+Super Jeopardy! (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,FourScore,CF4487A2
+Super Mario Bros. (World) (HVC-SM).nes,32,8,0,0.00,V,any,0,0,0,0,Normal,Standard,D445F698
+Super Mario Bros. 2 (USA) (Rev 1).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,CA594ACE
+Super Mario Bros. 3 (USA) (Rev 1).nes,256,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,2E6301ED
+Super Pitfall (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,979C5314
+Super Spike V'Ball (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,FourScore,E840FD21
+Super Spy Hunter (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,AB41445E
+Super Team Games (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,PowerPadB,D74B2719
+Superman (USA) (Kemco).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,1FA8C4A4
+Swamp Thing (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,A1FF4E1D
+Sword Master (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,465E5483
+Swords and Serpents (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,FourScore,3417EC46
+Taboo - The Sixth Sense (USA) (Rev 1).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,482C79AF
+Tag Team Wrestling (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,BF250AF2
+TaleSpin (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,798EEB98
+Target - Renegade (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,93B49582
+Tecmo Baseball (USA).nes,128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,AD12A34F
+Tecmo Bowl (USA) (Rev 1).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,85A6C0D5
+Tecmo Cup - Soccer Game (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,696D7839
+Tecmo NBA Basketball (USA) (NES-BK) (Rev 1).nes,128,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,DA8E4AF4
+Tecmo Super Bowl (USA).nes,256,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,179A0D57
+Tecmo World Wrestling (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,7FF76219
+Teenage Mutant Ninja Turtles - Tournament Fighters (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,86964EDD
+Teenage Mutant Ninja Turtles (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,EE921D8E
+Teenage Mutant Ninja Turtles II - The Arcade Game (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,A9217EA2
+Teenage Mutant Ninja Turtles III - The Manhattan Project (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,BB6D7949
+"Tennis (Japan, USA).nes",16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,D4D9E21A
+Terminator 2 - Judgment Day (USA).nes,128,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,EA27B477
+"Terminator, The (USA, Europe).nes",128,128,0,4.00,H,any,0,0,0,0,Normal,Standard,6272C549
+Terra Cresta (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,2A46B57F
+Tetris (USA).nes,32,16,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,1394F57E
+Tetris 2 (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,9C537919
+"Three Stooges, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,538CD2EA
+Thunder & Lightning (USA).nes,128,32,0,66.00,H,RP2C02,0,0,0,0,Normal,Standard,D80B44BC
+Thunderbirds (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,2DDC2DC3
+Thundercade (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,AFB46DD6
+Tiger-Heli (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,C3C7A568
+Time Lord (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,13D5B1A4
+Times of Lore (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,0F86FEB4
+Tiny Toon Adventures (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,99DDDB04
+Tiny Toon Adventures 2 - Trouble in Wackyland (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,81A5EB65
+Tiny Toon Adventures Cartoon Workshop (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,9E6092A4
+To the Earth (USA).nes,32,32,0,4.00,H,RP2C02,0,0,0,0,Normal,Zapper,DE8FD935
+Toki (USA).nes,128,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,7FB74A43
+Tom & Jerry - The Ultimate Game of Cat and Mouse! (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D63B30F5
+Tombs & Treasure (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,50D296B3
+Top Gun - The Second Mission (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,6F8AF3E8
+Top Gun (USA) (Rev 1).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,CF6D0D7A
+Total Recall (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,248566A7
+Totally Rad (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,B629D555
+Touchdown Fever (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,EA4EB69E
+Town & Country Surf Designs - Thrilla's Surfari (USA).nes,128,128,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,7E57FBEC
+Town & Country Surf Designs - Wood & Water Rage (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,D3BFF72E
+Toxic Crusaders (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,F009DDD2
+Track & Field (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,9C9F3571
+Track & Field II (USA) (Rev A).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,7FA191E7
+Treasure Master (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B918580C
+Trog! (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,EE6892EB
+Trojan (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,FC3E5C86
+Twin Cobra (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,0EF730E7
+Twin Eagle (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,CF26A149
+Ultima - Exodus (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,A4062017
+Ultima - Quest of the Avatar (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,A25A750F
+Ultima - Warriors of Destiny (USA).nes,256,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,4823EEFE
+Ultimate Air Combat (USA).nes,256,256,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E387C77F
+Ultimate Basketball (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,9F6CE171
+"Uncanny X-Men, The (USA).nes",128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,2D41EF92
+Uncharted Waters (USA).nes,512,128,0,5.00,HB,RP2C02,8K,8K,0,0,Normal,Standard,ACA15643
+Uninvited (USA).nes,128,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,9BAC73EF
+"Untouchables, The (USA) (Rev 2).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,20C795EB
+Urban Champion (World).nes,16,8,0,0.00,V,any,0,0,0,0,Normal,Standard,656D4265
+Vegas Dream (USA).nes,128,128,0,1.00,H,RP2C02,8K,0,0,0,Normal,Standard,C973699D
+Vice - Project Doom (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,753768A6
+Videomation (USA).nes,32,0,0,13.00,V,RP2C02,0,0,16K,0,Normal,Standard,5E66EAEA
+"Volleyball (USA, Europe).nes",32,8,0,0.00,V,any,0,0,0,0,Normal,Standard,27777635
+Wacky Races (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,401521F7
+Wall Street Kid (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,B6661BDA
+Wario's Woods (USA).nes,256,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,F79A75D7
+Wayne Gretzky Hockey (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,15F0D3F1
+Wayne's World (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,B0CD000F
+WCW World Championship Wrestling (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,5EA7D410
+Werewolf - The Last Warrior (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,333C48A0
+Wheel of Fortune - Family Edition (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,009AF6BE
+Wheel of Fortune - Junior Edition (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,68383607
+Wheel of Fortune (USA) (Rev 1).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,3368F7FB
+Wheel of Fortune Featuring Vanna White (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,4220C170
+Where in Time Is Carmen Sandiego (USA).nes,128,256,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,917770D8
+Where's Waldo (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,C3463A3D
+Who Framed Roger Rabbit (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,12B2C361
+Whomp 'Em (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,6FD5A271
+Widget (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,E7C981A2
+Wild Gunman (World) (Rev 1).nes,16,8,0,0.00,V,any,0,0,0,0,Normal,Zapper,5112DC21
+Willow (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,103E7E7F
+"Win, Lose or Draw (USA).nes",128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,F74DFC91
+Winter Games (USA) (Rev 1).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,969EF9E4
+Wizardry - Knight of Diamonds - The Second Scenario (USA).nes,128,128,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,6BC33D2F
+Wizardry - Proving Grounds of the Mad Overlord (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,D9BB572C
+Wizards & Warriors (USA) (Rev 1).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,26535EF5
+Wizards & Warriors III - Kuros...Visions of Power (USA).nes,256,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,D2562072
+Wolverine (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,35476E87
+World Champ (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,8593E5AD
+World Class Track Meet (USA) (Rev 1).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,PowerPadB,AF4010EA
+World Games (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,F613A8F9
+Wrath of the Black Manta (USA) (Rev 1).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,3A8723B9
+Wrecking Crew (World).nes,32,8,0,0.00,H,any,0,0,0,0,Normal,DataRec,9B506A48
+Wurm - Journey to the Center of the Earth! (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,EB803610
+WWF King of the Ring (USA).nes,128,256,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,7B4ED0BB
+WWF Wrestlemania - Steel Cage Challenge (USA).nes,128,256,0,4.03,H,RP2C02,0,0,0,0,Normal,Standard,D4611B79
+WWF Wrestlemania (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,37138039
+WWF Wrestlemania Challenge (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,A0230D75
+Xenophobe (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,711896B8
+Xevious - The Avenger (USA).nes,32,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,DFD70E27
+Xexyz (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B1612FE6
+Yo! Noid (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,50D141FC
+Yoshi (USA).nes,128,32,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,E7EAD93B
+Yoshi's Cookie (USA).nes,128,64,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,52B58732
+"Young Indiana Jones Chronicles, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,35C6F574
+Zanac (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,E292AA10
+Zelda II - The Adventure of Link (USA).nes,128,128,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,BA322865
+Zen - Intergalactic Ninja (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,D8578BFD
+Zoda's Revenge - StarTropics II (USA).nes,256,256,0,4.01,HB,RP2C02,0,1K,0,0,Normal,Standard,D054FFB0
+Zombie Nation (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,03FB57B6
+
+# Old Revisions
+Barbie (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,5B6CA654
+Bases Loaded (USA) (Rev 1).nes,256,64,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,DAEE19F2
+Bases Loaded (USA).nes,256,64,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B4241FCC
+Captain Skyhawk (USA).nes,128,0,0,7.02,H,RP2C02,0,0,8K,0,Normal,Standard,F518DD58
+Castlevania (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,0AC1AA8F
+"Chessmaster, The (USA).nes",128,32,0,1.00,H,RP2C02,8K,0,0,0,Normal,Standard,D7F6320C
+Double Dragon II - The Revenge (USA).nes,128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,13C774DD
+Double Dribble (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,437E7B69
+"Dr. Mario (Japan, USA).nes",32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,198C2F41
+Dragon Warrior (USA).nes,64,16,0,1.00,HB,RP2C02,0,8K,0,0,Normal,Standard,3B3F88F0
+Faxanadu (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,57DD23D1
+Home Alone (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,CA5EDBFC
+"Hunt for Red October, The (USA).nes",128,128,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,03F899CD
+Ikari Warriors (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,655EFEED
+Indiana Jones and the Temple of Doom (USA).nes,128,64,0,4.00,H,RP2C02,0,0,0,0,Normal,Standard,A0C31A57
+Jeopardy! (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,B5D10D5C
+Karate Champ (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,Standard,ACA145D8
+"Kid Icarus (USA, Europe).nes",128,0,0,1.00,H,any,8K,0,8K,0,Normal,Standard,D9F0749F
+Kid Niki - Radical Ninja (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,8192D2E7
+Kirby's Adventure (USA).nes,512,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,D7794AFC
+"Legend of Zelda, The (USA).nes",128,0,0,1.00,HB,RP2C02,0,8K,8K,0,Normal,Standard,3FE272FB
+"Mach Rider (Japan, USA).nes",32,8,0,0.00,V,RP2C02,0,0,0,0,Normal,DataRec,59977A46
+Major League Baseball (USA).nes,32,32,0,3.02,V,RP2C02,0,0,0,0,Normal,Standard,A03A422B
+Mega Man 4 (USA).nes,512,0,0,4.00,H,RP2C02,0,0,8K,0,Normal,Standard,2BC67AA8
+"Mike Tyson's Punch-Out!! (Japan, USA).nes",128,128,0,9.00,H,RP2C02,0,0,0,0,Normal,Standard,92A2185C
+Pac-Man (USA) (Namco).nes,16,8,0,0.00,H,RP2C02,0,0,0,0,Normal,Standard,9E4E9CC2
+Platoon (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B3769A51
+Pro Wrestling (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,E6F08E93
+R.C. Pro-Am (USA).nes,64,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,DD062F9C
+Rambo (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,A342A5FD
+Robin Hood - Prince of Thieves (USA).nes,256,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,86B0D1CF
+RoboCop 2 (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,B4CDF95F
+Rygar (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,B3783F2A
+Silent Service (USA).nes,128,0,0,2.02,V,RP2C02,0,0,8K,0,Normal,Standard,5E767671
+"Simpsons, The - Bart vs. the Space Mutants (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,6F10097D
+Super Mario Bros. + Duck Hunt + World Class Track Meet (USA).nes,128,64,0,1.00,H,RP2C02,0,0,0,0,Normal,Multicart,529B621F
+Super Mario Bros. 2 (USA).nes,128,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,57AC67AF
+Super Mario Bros. 3 (USA).nes,256,128,0,4.00,H,RP2C02,8K,0,0,0,Normal,Standard,A0B0B742
+Taboo - The Sixth Sense (USA).nes,32,32,0,1.05,H,RP2C02,0,0,0,0,Normal,Standard,40ED2A9D
+Tecmo Bowl (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,CE00022D
+Tecmo NBA Basketball (USA) (NES-BK).nes,128,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,2651F227
+Top Gun (USA).nes,128,0,0,2.02,H,RP2C02,0,0,8K,0,Normal,Standard,4E22368D
+Track & Field II (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Zapper,09C083B7
+"Untouchables, The (USA) (Rev 1).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,588A31FE
+"Untouchables, The (USA).nes",128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,209F3587
+Wheel of Fortune (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,FBF8A785
+"Wild Gunman (Japan, USA).nes",16,8,0,0.00,V,RP2C02,0,0,0,0,Normal,Zapper,B8B9ACA3
+Winter Games (USA).nes,128,0,0,1.00,H,RP2C02,0,0,8K,0,Normal,Standard,52880295
+Wizards & Warriors (USA).nes,128,0,0,7.01,H,RP2C02,0,0,8K,0,Normal,Standard,505F9715
+World Class Track Meet (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,PowerPadB,5734EB9E
+Wrath of the Black Manta (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,F651398D
+
+# Special Releases
+"Donkey Kong Classics (USA, Europe).nes",32,16,0,3.02,V,any,0,0,0,0,Normal,Standard,AB2006B4
+Kirby's Adventure (Canada).nes,512,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,37088EFF
+Nintendo World Championships 1990 (USA) (Competition Cart).nes,256,0,0,105.00,H,RP2C02,8K,0,8K,0,Normal,Standard,0B0E128F
+Punch-Out!! (USA).nes,128,128,0,9.00,H,RP2C02,0,0,0,0,Normal,Standard,B95E9E7F
+Sesame Street - ABC & 123 (USA).nes,128,128,0,1.00,H,RP2C02,0,0,0,0,Normal,Standard,24EECC15
+Stadium Events (USA).nes,32,32,0,3.02,H,RP2C02,0,0,0,0,Normal,PowerPadB,FCE71311
+Super Mario Bros. + Duck Hunt (USA).nes,64,16,0,66.00,V,RP2C02,0,0,0,0,Normal,Multicart,D26EFD78
+Super Mario Bros. + Duck Hunt + World Class Track Meet (USA) (Rev 1).nes,128,64,0,1.00,H,RP2C02,0,0,0,0,Normal,Multicart,60E63537
+Super Spike V'Ball + Nintendo World Cup (USA).nes,256,256,0,47.00,H,RP2C02,0,0,0,0,Normal,FourScore,407D6FFD
+Tecmo NBA Basketball (USA) (NES-N7).nes,128,256,0,4.00,HB,RP2C02,0,8K,0,0,Normal,Standard,B54BAEBE

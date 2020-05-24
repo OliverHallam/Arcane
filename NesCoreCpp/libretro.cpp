@@ -10,7 +10,9 @@
 #include "Cart.h"
 #include "Controller.h"
 #include "Display.h"
+#include "GameDatabase.h"
 #include "NesSystem.h"
+#include "RomFile.h"
 #include <memory>
 
 char retro_base_directory[4096];
@@ -188,11 +190,19 @@ void retro_run(void)
 
 bool retro_load_game(const struct retro_game_info* info)
 {
-    auto cart = TryLoadCart(static_cast<const uint8_t*>(info->data), info->size);
-    if (!cart)
-    {
+    auto romFile = TryLoadINesFile(static_cast<const uint8_t*>(info->data), info->size);
+    if (!romFile)
         return false;
-    }
+
+    auto goodDescriptor = GameDatabase::Lookup(romFile->PrgData, romFile->ChrData);
+
+    auto cart = TryCreateCart(
+        goodDescriptor ? *goodDescriptor : romFile->Descriptor,
+        std::move(romFile->PrgData),
+        std::move(romFile->ChrData));
+
+    if (!cart)
+        return false;
 
     nesSystem->InsertCart(std::move(cart));
     nesSystem->Reset();

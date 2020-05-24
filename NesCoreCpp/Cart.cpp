@@ -326,92 +326,65 @@ void Cart::UpdatePrgMapMMC1()
 void Cart::WriteUxROM(uint16_t address, uint8_t value)
 {
     // TODO: bus conflicts for older carts
-    auto bankAddress = (address << 14) & prgMask16k_;
+    auto bankAddress = (value << 14) & prgMask16k_;
     auto base = &prgData_[bankAddress];
     cpuBanks_[4] = base;
     cpuBanks_[5] = base + 0x2000;
 }
 
-std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length)
+std::unique_ptr<Cart> TryCreateCart(const CartDescriptor& desc, std::vector<uint8_t> prgData, std::vector<uint8_t> chrData)
 {
-    auto end = data + length;
-
-    if (length < 16)
-        return nullptr;
-
-    if (data[0] != 'N' || data[1] != 'E' || data[2] != 'S' || data[3] != 0x1a)
-        return nullptr;
-
-    auto prgSize = data[4] * 0x4000;
-    auto chrSize = data[5] * 0x2000;
-
-    auto flags6 = data[6];
-
-    auto mapper = flags6 >> 4;
-    auto verticalMirroring = (flags6 & 0x01) != 0;
-    auto batteryBacked = (flags6 & 0x02) != 0;
-    auto hasTrainer = (flags6 & 0x04) != 0;
-
-    if (mapper > 2)
-    {
-        return nullptr;
-    }
-
-    data += 16;
-
-    if (hasTrainer)
-        data += 512;
-
-    auto prgEnd = data + prgSize;
-    if (prgEnd > end)
-        return nullptr;
-
-    if (prgSize == 0)
-    {
-        return nullptr;
-    }
-
-    std::vector<uint8_t> prgData{ data, prgEnd };
-
-    data = prgEnd;
-
-    auto chrEnd = data + chrSize;
-    if (chrEnd > end)
-        return nullptr;
-
-    std::vector<uint8_t> chrData;
-    if (chrSize != 0)
-    {
-        chrData = std::vector<uint8_t>(data, chrEnd);
-    }
-
-    data = chrEnd;
-
-    if (data != end)
-    {
-        return nullptr;
-    }
-
     auto cart = std::make_unique<Cart>();
 
-    cart->SetMirrorMode(verticalMirroring);
-    cart->SetMapper(mapper);
-
     if (prgData.size() & (prgData.size() - 1))
-    {
-        // expected power of 2 rom size.
-        return nullptr;
-    }
+        return nullptr; // non-zero power of 2 size expected
 
     cart->SetPrgRom(std::move(prgData));
 
-    // TODO: most games don't have this
-    if (mapper == 1)
-        cart->SetPrgRam(batteryBacked);
-
-    if (chrData.size())
+    if (chrData.size() != 0)
+    {
         cart->SetChrRom(std::move(chrData));
-    else
+    }
+
+    switch (desc.MirrorMode)
+    {
+    case MirrorMode::Horizontal:
+        cart->SetMirrorMode(false);
+        break;
+
+    case MirrorMode::Vertical:
+        cart->SetMirrorMode(true);
+        break;
+
+    case MirrorMode::FourScreen:
+        // TODO:
+        return nullptr;
+    }
+
+    if (desc.Mapper > 2)
+        return nullptr;
+
+    cart->SetMapper(desc.Mapper);
+
+    if (desc.PrgRamSize != 0 && desc.PrgBatteryRamSize != 0)
+        return nullptr;
+
+    if (desc.PrgRamSize != 0 && desc.PrgRamSize != 0x2000)
+        return nullptr;
+
+    if (desc.PrgBatteryRamSize != 0 && desc.PrgBatteryRamSize != 0x2000)
+        return nullptr;
+
+    if (desc.PrgRamSize != 0)
+        cart->SetPrgRam(false);
+
+    if (desc.PrgBatteryRamSize != 0)
+        cart->SetPrgRam(true);
+
+    if (desc.ChrRamSize != 0 && desc.ChrRamSize != 0x2000)
+        return nullptr;
+
+    if (desc.ChrRamSize != 0)
         cart->SetChrRam();
 
     return std::move(cart);

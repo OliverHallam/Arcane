@@ -25,6 +25,12 @@
     <ClInclude Include="ApuNoise.h" />
     <ClInclude Include="ApuTriangle.h" />
     <ClInclude Include="ApuDmc.h" />
+    <ClInclude Include="CartDescriptor.h" />
+    <ClInclude Include="MirrorMode.h" />
+    <ClInclude Include="RomFile.h" />
+    <ClInclude Include="GameDatabase.h" />
+    <ClInclude Include="CartData.h" />
+    <ClInclude Include="Crc32.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -45,5 +51,8 @@
     <ClCompile Include="ApuNoise.cpp" />
     <ClCompile Include="ApuTriangle.cpp" />
     <ClCompile Include="ApuDmc.cpp" />
+    <ClCompile Include="RomFile.cpp" />
+    <ClCompile Include="GameDatabase.cpp" />
+    <ClCompile Include="Crc32.cpp" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CartDescriptor.h"
+
 #include <cstdint>
 #include <memory>
 #include <array>
@@ -77,4 +79,4 @@ private:
     Bus* bus_;
 };
 
-std::unique_ptr<Cart> TryLoadCart(const uint8_t* data, size_t length);
+std::unique_ptr<Cart> TryCreateCart(const CartDescriptor& desc, std::vector<uint8_t> prgData, std::vector<uint8_t> chrData);
