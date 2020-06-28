@@ -40,19 +40,17 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     prgMask32k_ = prgMask16k_ & 0xffff8000;
 }
 
-void Cart::SetPrgRam(bool batteryBacked)
+void Cart::AddPrgRam()
 {
-    batteryBacked_ = batteryBacked;
     localPrgRam_.resize(0x2000);
-    prgRam_ = &localPrgRam_[0];
-    cpuBanks_[3] = prgRam_;
+    prgRamBanks_.push_back(&localPrgRam_[0]);
+    cpuBanks_[3] = prgRamBanks_[0];
 }
 
-void Cart::SetPrgRam(uint8_t* data)
+void Cart::AddPrgRam(uint8_t* data)
 {
-    localPrgRam_.clear();
-    prgRam_ = data;
-    cpuBanks_[3] = prgRam_;
+    prgRamBanks_.push_back(data);
+    cpuBanks_[3] = prgRamBanks_[0];
 }
 
 void Cart::SetChrRom(std::vector<uint8_t> chrData)
@@ -79,11 +77,6 @@ void Cart::SetMirrorMode(bool verticalMirroring)
         ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
     else
         ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
-}
-
-bool Cart::BatteryBacked() const
-{
-    return batteryBacked_;
 }
 
 void Cart::Attach(Bus* bus)
@@ -243,22 +236,35 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
     case 5:
         // CHR bank 0
         chrBank0_ = value << 12;
-        chrBank0_ &= chrData_.size() - 1;
         UpdateChrMapMMC1();
+
+        if (prgData_.size() == 0x80000)
+        {
+            // TODO: this needs to toggle when the CHR address changes bit 16
+            prgPlane_ = ((chrBank0_ << 2) & 0x40000);
+            UpdatePrgMapMMC1();
+        }
+
         break;
 
     case 6:
         // CHR bank 1
         chrBank1_ = value << 12;
-        chrBank1_ &= chrData_.size() - 1;
         UpdateChrMapMMC1();
+
+        if (prgData_.size() == 0x80000)
+        {
+            // TODO: this needs to toggle when the CHR address changes bit 16
+            prgPlane_ = ((chrBank0_ << 2) & 0x40000);
+            UpdatePrgMapMMC1();
+        }
         break;
 
     case 7:
         // PRG bank
 
         // enable/disable PRG RAM
-        cpuBanks_[3] = (value & 0x10) ? nullptr : prgRam_;
+        cpuBanks_[3] = (value & 0x10) ? nullptr : prgRamBanks_[0];
 
         prgBank_ = (value & 0x0f) << 14;
         UpdatePrgMapMMC1();
@@ -281,8 +287,8 @@ void Cart::UpdateChrMapMMC1()
     }
 
     case 1:
-        ppuBanks_[0] = &chrData_[chrBank0_];
-        ppuBanks_[1] = &chrData_[chrBank1_];
+        ppuBanks_[0] = &chrData_[chrBank0_ & (chrData_.size() - 1)];
+        ppuBanks_[1] = &chrData_[chrBank1_ & (chrData_.size() - 1)];
         break;
     }
 }
@@ -294,7 +300,7 @@ void Cart::UpdatePrgMapMMC1()
     case 0:
     case 1:
     {
-        auto base = &prgData_[prgBank_ & prgMask32k_];
+        auto base = &prgData_[prgPlane_ | (prgBank_ & prgMask32k_)];
         cpuBanks_[4] = base;
         cpuBanks_[5] = base + 0x2000;
         cpuBanks_[6] = base + 0x4000;
@@ -304,9 +310,9 @@ void Cart::UpdatePrgMapMMC1()
 
     case 2:
     {
-        auto base = &prgData_[prgBank_ & prgMask16k_];
-        cpuBanks_[4] = &prgData_[0];
-        cpuBanks_[5] = &prgData_[0x2000];
+        auto base = &prgData_[prgPlane_ | (prgBank_ & prgMask16k_)];
+        cpuBanks_[4] = &prgData_[prgPlane_];
+        cpuBanks_[5] = &prgData_[prgPlane_ | 0x2000];
         cpuBanks_[6] = base;
         cpuBanks_[7] = base + 0x2000;
         break;
@@ -314,11 +320,11 @@ void Cart::UpdatePrgMapMMC1()
 
     case 3:
     {
-        auto base = &prgData_[prgBank_ & prgMask16k_];
+        auto base = &prgData_[prgPlane_ | (prgBank_ & prgMask16k_)];
         cpuBanks_[4] = base;
         cpuBanks_[5] = base + 0x2000;
-        cpuBanks_[6] = &prgData_[prgData_.size() - 0x4000];
-        cpuBanks_[7] = &prgData_[prgData_.size() - 0x2000];
+        cpuBanks_[6] = &prgData_[prgPlane_ | ((prgData_.size() - 0x4000) & 0x3ffff)];
+        cpuBanks_[7] = &prgData_[prgPlane_ | ((prgData_.size() - 0x2000) & 0x3ffff)];
     }
     }
 }
@@ -332,7 +338,11 @@ void Cart::WriteUxROM(uint16_t address, uint8_t value)
     cpuBanks_[5] = base + 0x2000;
 }
 
-std::unique_ptr<Cart> TryCreateCart(const CartDescriptor& desc, std::vector<uint8_t> prgData, std::vector<uint8_t> chrData)
+std::unique_ptr<Cart> TryCreateCart(
+    const CartDescriptor& desc,
+    std::vector<uint8_t> prgData,
+    std::vector<uint8_t> chrData,
+    uint8_t* batteryRam)
 {
     auto cart = std::make_unique<Cart>();
 
@@ -366,9 +376,6 @@ std::unique_ptr<Cart> TryCreateCart(const CartDescriptor& desc, std::vector<uint
 
     cart->SetMapper(desc.Mapper);
 
-    if (desc.PrgRamSize != 0 && desc.PrgBatteryRamSize != 0)
-        return nullptr;
-
     if (desc.PrgRamSize != 0 && desc.PrgRamSize != 0x2000)
         return nullptr;
 
@@ -376,10 +383,15 @@ std::unique_ptr<Cart> TryCreateCart(const CartDescriptor& desc, std::vector<uint
         return nullptr;
 
     if (desc.PrgRamSize != 0)
-        cart->SetPrgRam(false);
+        cart->AddPrgRam();
 
     if (desc.PrgBatteryRamSize != 0)
-        cart->SetPrgRam(true);
+    {
+        if (batteryRam)
+            cart->AddPrgRam(batteryRam);
+        else
+            cart->AddPrgRam();
+    }
 
     if (desc.ChrRamSize != 0 && desc.ChrRamSize != 0x2000)
         return nullptr;

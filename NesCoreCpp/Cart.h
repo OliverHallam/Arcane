@@ -16,13 +16,11 @@ public:
 
     void SetMapper(int mapper);
     void SetPrgRom(std::vector<uint8_t> prgData);
-    void SetPrgRam(bool batteryBacked);
-    void SetPrgRam(uint8_t* data);
+    void AddPrgRam();
+    void AddPrgRam(uint8_t* data);
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
     void SetMirrorMode(bool verticalMirroring);
-
-    bool BatteryBacked() const;
 
     void Attach(Bus* bus);
 
@@ -53,14 +51,12 @@ private:
     bool chrWriteable_;
 
     std::vector<uint8_t> localPrgRam_;
-    std::uint8_t* prgRam_;
+    std::vector<uint8_t*> prgRamBanks_;
 
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
     std::array<uint16_t, 4> ppuRamAddressMap_;
-
-    bool batteryBacked_;
 
     uint32_t mapper_;
 
@@ -69,6 +65,7 @@ private:
 
     uint32_t prgMode_;
     uint32_t prgBank_;
+    uint32_t prgPlane_;
     uint32_t prgMask32k_;
     uint32_t prgMask16k_;
 
@@ -79,4 +76,8 @@ private:
     Bus* bus_;
 };
 
-std::unique_ptr<Cart> TryCreateCart(const CartDescriptor& desc, std::vector<uint8_t> prgData, std::vector<uint8_t> chrData);
+std::unique_ptr<Cart> TryCreateCart(
+    const CartDescriptor& desc,
+    std::vector<uint8_t> prgData,
+    std::vector<uint8_t> chrData,
+    uint8_t* batteryRam);

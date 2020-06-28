@@ -3,6 +3,7 @@
 #include "Error.h"
 
 #include "../NesCoreCpp/NesSystem.h"
+#include "../NesCoreCpp/RomFile.h"
 
 extern std::unique_ptr<NesSystem> System;
 
@@ -17,7 +18,7 @@ void ReportError(HWND window, const wchar_t* title, const winrt::hresult_error& 
 
 HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow);
 
-std::unique_ptr<Cart> LoadCart(const std::wstring& romPath);
+std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath);
 
 LRESULT CALLBACK WindowProc(
     HWND hWnd,

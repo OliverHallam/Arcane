@@ -80,10 +80,10 @@ int WINAPI WinMain(
             return -1;
         }
 
-        std::unique_ptr<Cart> cart;
+        std::unique_ptr<RomFile> romFile;
         try
         {
-            cart = LoadCart(romPath);
+            romFile = LoadCart(romPath);
         }
         catch (const Error& e)
         {
@@ -97,8 +97,8 @@ int WINAPI WinMain(
         }
 
         SaveFile saveFile;
-
-        if (cart->BatteryBacked())
+        auto batteryBackedMemorySize = romFile->Descriptor.PrgBatteryRamSize;
+        if (batteryBackedMemorySize)
         {
             try
             {
@@ -107,8 +107,6 @@ int WINAPI WinMain(
                 auto savPath = withoutExtension + L".sav";
 
                 saveFile.Create(savPath);
-
-                cart->SetPrgRam(saveFile.Data());
             }
             catch (const Error& e)
             {
@@ -125,6 +123,17 @@ int WINAPI WinMain(
             }
         }
 
+        auto cart = TryCreateCart(
+            romFile->Descriptor,
+            std::move(romFile->PrgData),
+            std::move(romFile->ChrData),
+            saveFile.Data());
+
+        if (!cart)
+        {
+            MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
+            return -1;
+        }
 
         System = std::make_unique<NesSystem>(wasapi.SampleRate());
         System->InsertCart(std::move(cart));
@@ -265,7 +274,7 @@ HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
     return wnd;
 }
 
-std::unique_ptr<Cart> LoadCart(const std::wstring& romPath)
+std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath)
 {
     winrt::file_handle hFile {
         CreateFile(
@@ -308,15 +317,10 @@ std::unique_ptr<Cart> LoadCart(const std::wstring& romPath)
 
     auto goodDescriptor = GameDatabase::Lookup(romFile->PrgData, romFile->ChrData);
 
-    auto cart = TryCreateCart(
-        goodDescriptor ? *goodDescriptor : romFile->Descriptor,
-        std::move(romFile->PrgData),
-        std::move(romFile->ChrData));
+    if (goodDescriptor)
+        romFile->Descriptor = *goodDescriptor.release();
 
-    if (!cart)
-        throw Error(L"The selected game is not supported");
-
-    return std::move(cart);
+    return std::move(romFile);
 }
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
