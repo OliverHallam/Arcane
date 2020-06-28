@@ -71,6 +71,16 @@ void Bus::SyncPpu()
     ppu_->Sync();
 }
 
+bool Bus::SensitiveToChrA12() const
+{
+    return cart_->SensitiveToChrA12();
+}
+
+void Bus::SetChrA12(bool set)
+{
+    cart_->SetChrA12(set);
+}
+
 void Bus::CpuDummyRead(uint16_t address)
 {
     // TODO: side effects

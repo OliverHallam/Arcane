@@ -234,6 +234,9 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
         return;
     }
 
+    if (!largeSprites_)
+        bus_.SetChrA12(spritePatternBase_ != 0);
+
     switch (scanlineCycle & 0x07)
     {
         while (true)
@@ -287,6 +290,8 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 {
                     // address is 000PTTTTTTTY0YYY
                     auto bankAddress = (tileId & 1) << 12;
+                    bus_.SetChrA12(bankAddress != 0);
+
                     tileId &= 0xfe;
                     tileId |= tileFineY >> 3;
                     tileFineY &= 0x07;
@@ -333,6 +338,9 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
     // the OAM address is forced to 0 during the whole load phase.
     oamAddress_ = 0;
 
+    if (!largeSprites_)
+        bus_.SetChrA12(spritePatternBase_ != 0);
+
     while (spriteIndex_ < scanlineSpriteCount_)
     {
         auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
@@ -357,6 +365,8 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
         {
             // address is 000PTTTTTTTY0YYY
             auto bankAddress = (tileId & 1) << 12;
+            bus_.SetChrA12(bankAddress != 0);
+
             tileId &= 0xfe;
             tileId |= tileFineY >> 3;
             tileFineY &= 0x07;

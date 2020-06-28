@@ -28,6 +28,9 @@ public:
 
     void SyncPpu();
 
+    bool SensitiveToChrA12() const;
+    void SetChrA12(bool set);
+
     void CpuDummyRead(uint16_t address);
     uint8_t CpuReadData(uint16_t address);
     uint8_t CpuReadProgramData(uint16_t address);

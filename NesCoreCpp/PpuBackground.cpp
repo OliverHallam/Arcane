@@ -1,7 +1,7 @@
 #include "PpuBackground.h"
 #include "Bus.h"
 
-PpuBackground::PpuBackground(const Bus& bus) :
+PpuBackground::PpuBackground(Bus& bus) :
     bus_{ bus }
 {
 }
@@ -228,6 +228,8 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
         return;
     }
 
+    bus_.SetChrA12(backgroundPatternBase_);
+
     auto cycle = startCycle;
     switch (cycle & 0x07)
     {
@@ -320,6 +322,8 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
 void PpuBackground::RunLoad()
 {
+    bus_.SetChrA12(backgroundPatternBase_ != 0);
+
     while (true)
     {
         auto tileAddress = (uint16_t)(0x2000 | CurrentAddress & 0x0fff);

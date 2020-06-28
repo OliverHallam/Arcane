@@ -28,12 +28,23 @@ void Ppu::Tick3()
     if (targetCycle_ >= 340)
     {
         SyncScanline();
+        return;
+    }
+
+    if (bus_.SensitiveToChrA12())
+    {
+        SyncA12();
     }
 }
 
 void Ppu::Sync()
 {
     Sync(targetCycle_);
+}
+
+void Ppu::SyncA12()
+{
+    Sync();
 }
 
 uint8_t Ppu::Read(uint16_t address)
@@ -92,6 +103,8 @@ uint8_t Ppu::Read(uint16_t address)
         }
 
         background_.CurrentAddress += addressIncrement_;
+        background_.CurrentAddress &= 0x7fff;
+        bus_.SetChrA12(background_.CurrentAddress & 0x1000);
         return data;
     }
 
@@ -224,6 +237,9 @@ void Ppu::Write(uint16_t address, uint8_t value)
         }
 
         background_.CurrentAddress += addressIncrement_;
+        background_.CurrentAddress &= 0x7fff;
+        bus_.SetChrA12(background_.CurrentAddress & 0x1000);
+        // TODO: when rendering is enabled, this behaves weirdly.
         return;
     }
 
@@ -248,6 +264,7 @@ void Ppu::RunDeferredUpdate()
     if (updateBaseAddress_)
     {
         Sync(targetCycle_);
+        bus_.SetChrA12((initialAddress_ & 0x1000) != 0);
         background_.CurrentAddress = initialAddress_;
         updateBaseAddress_ = false;
     }
