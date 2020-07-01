@@ -34,6 +34,9 @@ public:
 
     uint16_t EffectivePpuRamAddress(uint16_t address) const;
 
+    bool SensitiveToChrA12();
+    void SetChrA12(bool set);
+
 private:
     void WriteMMC1(uint16_t address, uint8_t value);
     void WriteMMC1Register(uint16_t address, uint8_t value);
@@ -65,13 +68,20 @@ private:
 
     uint32_t prgMode_;
     uint32_t prgBank_;
-    uint32_t prgPlane_;
     uint32_t prgMask32k_;
     uint32_t prgMask16k_;
 
     uint32_t chrMode_;
     uint32_t chrBank0_;
     uint32_t chrBank1_;
+
+    bool chrA12_;
+    uint32_t prgPlane0_;
+    uint32_t prgPlane1_;
+    uint32_t prgRamBank0_;
+    uint32_t prgRamBank1_;
+
+    bool chrA12Sensitive_;
 
     Bus* bus_;
 };

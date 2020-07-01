@@ -8,7 +8,7 @@ class Bus;
 class PpuBackground
 {
 public:
-    PpuBackground(const Bus& bus);
+    PpuBackground(Bus& bus);
 
     void SetBasePatternAddress(uint16_t address);
 
@@ -78,5 +78,5 @@ private:
 
     std::array<uint8_t, 256> backgroundPixels_{};
 
-    const Bus& bus_;
+    Bus& bus_;
 };

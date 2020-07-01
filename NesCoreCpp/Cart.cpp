@@ -16,7 +16,13 @@ Cart::Cart() :
     prgBank_{ 0 },
     chrMode_{ 0 },
     chrBank0_{ 0 },
-    chrBank1_{ 0 }
+    chrBank1_{ 0 },
+    chrA12_{ false },
+    prgPlane0_{ 0 },
+    prgPlane1_{ 0 },
+    prgRamBank0_{ 0 },
+    prgRamBank1_{ 0 },
+    chrA12Sensitive_{ false }
 {
     ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
 }
@@ -145,12 +151,16 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 
 uint8_t Cart::PpuRead(uint16_t address) const
 {
+    //assert(((address & 0x1000) != 0) == chrA12_);
+
     auto bank = ppuBanks_[address >> 12];
     return bank[address & 0x0fff];
 }
 
 uint16_t Cart::PpuReadChr16(uint16_t address) const
 {
+    //assert(((address & 0x1000) != 0) == chrA12_);
+
     auto bank = ppuBanks_[address >> 12];
     auto bankAddress = address & 0x0fff;
     return (bank[bankAddress] << 8) | bank[bankAddress | 8];
@@ -158,6 +168,8 @@ uint16_t Cart::PpuReadChr16(uint16_t address) const
 
 void Cart::PpuWrite(uint16_t address, uint8_t value)
 {
+    //assert(((address & 0x1000) != 0) == chrA12_);
+
     if (chrWriteable_)
     {
         auto bank = ppuBanks_[address >> 12];
@@ -169,6 +181,29 @@ uint16_t Cart::EffectivePpuRamAddress(uint16_t address) const
 {
     auto page = (address >> 10) & 0x03;
     return ppuRamAddressMap_[page] | (address & 0x3ff);
+}
+
+bool Cart::SensitiveToChrA12()
+{
+    return chrA12Sensitive_;
+}
+
+void Cart::SetChrA12(bool set)
+{
+    if (chrA12Sensitive_)
+    {
+        if (set != chrA12_)
+        {
+            chrA12_ = set;
+            UpdatePrgMapMMC1();
+
+            if (cpuBanks_[3])
+                cpuBanks_[3] = chrA12_ ? prgRamBanks_[prgRamBank1_] : prgRamBanks_[prgRamBank0_];
+        }
+        return;
+    }
+
+    chrA12_ = set;
 }
 
 void Cart::WriteMMC1(uint16_t address, uint8_t value)
@@ -238,11 +273,28 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         chrBank0_ = value << 12;
         UpdateChrMapMMC1();
 
+        chrA12Sensitive_ = false;
+
+        // TODO: SNROM PRG RAM disable line
         if (prgData_.size() == 0x80000)
         {
-            // TODO: this needs to toggle when the CHR address changes bit 16
-            prgPlane_ = ((chrBank0_ << 2) & 0x40000);
-            UpdatePrgMapMMC1();
+            prgPlane0_ = ((chrBank0_ << 2) & 0x40000);
+            chrA12Sensitive_ |= prgPlane0_ != prgPlane1_;
+
+            if (!chrA12_)
+                UpdatePrgMapMMC1();
+        }
+
+        if (prgRamBanks_.size() > 1)
+        {
+            if (prgRamBanks_.size() > 2)
+                prgRamBank0_ = (value >> 2) & 0x03;
+            else
+                prgRamBank0_ = (value >> 1) & 0x01;
+
+            chrA12Sensitive_ |= prgRamBank0_ != prgRamBank1_;
+            if (!chrA12_ && cpuBanks_[3])
+                cpuBanks_[3] = prgRamBanks_[prgRamBank0_];
         }
 
         break;
@@ -252,19 +304,41 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         chrBank1_ = value << 12;
         UpdateChrMapMMC1();
 
+        chrA12Sensitive_ = false;
+
+        // TODO: SNROM PRG RAM disable line
         if (prgData_.size() == 0x80000)
         {
-            // TODO: this needs to toggle when the CHR address changes bit 16
-            prgPlane_ = ((chrBank0_ << 2) & 0x40000);
-            UpdatePrgMapMMC1();
+            prgPlane1_ = ((chrBank1_ << 2) & 0x40000);
+            chrA12Sensitive_ |= prgPlane0_ != prgPlane1_;
+
+            if (chrA12_)
+                UpdatePrgMapMMC1();
         }
+
+        // TODO: SZROM maps this differently.
+        if (prgRamBanks_.size() > 1)
+        {
+            if (prgRamBanks_.size() > 2)
+                prgRamBank1_ = (value >> 2) & 0x03;
+            else
+                prgRamBank1_ = (value >> 1) & 0x01;
+
+            chrA12Sensitive_ |= prgRamBank0_ != prgRamBank1_;
+            if (chrA12_ && cpuBanks_[3])
+                cpuBanks_[3] = prgRamBanks_[prgRamBank1_];
+        }
+
         break;
 
     case 7:
         // PRG bank
 
         // enable/disable PRG RAM
-        cpuBanks_[3] = (value & 0x10) ? nullptr : prgRamBanks_[0];
+        if (value & 0x10)
+            cpuBanks_[3] = nullptr;
+        else
+            cpuBanks_[3] = chrA12_ ? prgRamBanks_[prgRamBank1_] : prgRamBanks_[prgRamBank0_];
 
         prgBank_ = (value & 0x0f) << 14;
         UpdatePrgMapMMC1();
@@ -295,12 +369,14 @@ void Cart::UpdateChrMapMMC1()
 
 void Cart::UpdatePrgMapMMC1()
 {
+    auto prgPlane = chrA12_ ? prgPlane1_ : prgPlane0_;
+
     switch (prgMode_)
     {
     case 0:
     case 1:
     {
-        auto base = &prgData_[prgPlane_ | (prgBank_ & prgMask32k_)];
+        auto base = &prgData_[prgPlane | (prgBank_ & prgMask32k_)];
         cpuBanks_[4] = base;
         cpuBanks_[5] = base + 0x2000;
         cpuBanks_[6] = base + 0x4000;
@@ -310,9 +386,9 @@ void Cart::UpdatePrgMapMMC1()
 
     case 2:
     {
-        auto base = &prgData_[prgPlane_ | (prgBank_ & prgMask16k_)];
-        cpuBanks_[4] = &prgData_[prgPlane_];
-        cpuBanks_[5] = &prgData_[prgPlane_ | 0x2000];
+        auto base = &prgData_[prgPlane | (prgBank_ & prgMask16k_)];
+        cpuBanks_[4] = &prgData_[prgPlane];
+        cpuBanks_[5] = &prgData_[prgPlane | 0x2000];
         cpuBanks_[6] = base;
         cpuBanks_[7] = base + 0x2000;
         break;
@@ -320,11 +396,11 @@ void Cart::UpdatePrgMapMMC1()
 
     case 3:
     {
-        auto base = &prgData_[prgPlane_ | (prgBank_ & prgMask16k_)];
+        auto base = &prgData_[prgPlane | (prgBank_ & prgMask16k_)];
         cpuBanks_[4] = base;
         cpuBanks_[5] = base + 0x2000;
-        cpuBanks_[6] = &prgData_[prgPlane_ | ((prgData_.size() - 0x4000) & 0x3ffff)];
-        cpuBanks_[7] = &prgData_[prgPlane_ | ((prgData_.size() - 0x2000) & 0x3ffff)];
+        cpuBanks_[6] = &prgData_[prgPlane | ((prgData_.size() - 0x4000) & 0x3ffff)];
+        cpuBanks_[7] = &prgData_[prgPlane | ((prgData_.size() - 0x2000) & 0x3ffff)];
     }
     }
 }

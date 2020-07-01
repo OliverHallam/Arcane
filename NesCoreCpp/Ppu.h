@@ -18,6 +18,7 @@ public:
 
     void Tick3();
     void Sync();
+    void SyncA12();
 
     uint8_t Read(uint16_t address);
     void Write(uint16_t address, uint8_t value);
@@ -30,7 +31,7 @@ private:
     __declspec(noinline) void SyncScanline();
 
     void Sync(int32_t targetCycle);
-    void SyncComposite();
+    void SyncComposite(int32_t targetCycle);
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
@@ -67,6 +68,7 @@ private:
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
     uint16_t initialAddress_{};
 
+    uint8_t emphasis_{ 0 };
     uint8_t palette_[32];
     uint32_t rgbPalette_[32];
 
