@@ -3,6 +3,8 @@
 #include "Bus.h"
 #include "Display.h"
 
+#include <cassert>
+
 Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
     display_{ display },
@@ -143,6 +145,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
     }
 
     case 1:
+        assert((mask_ & 0x01) == 0 && "grayscale not implemented");
         mask_ = value;
         updateMask_ = true;
         hasDeferredUpdate_ = true;
@@ -219,7 +222,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 palette_[writeAddress] = value;
                 palette_[writeAddress | 0x0010] = value;
 
-                auto rgb = display_.GetPixel(value);
+                auto rgb = display_.GetPixel(value, emphasis_);
                 rgbPalette_[writeAddress] = rgb;
                 rgbPalette_[writeAddress | 0x0010] = rgb;
             }
@@ -228,7 +231,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 writeAddress &= 0x0001f;
 
                 palette_[writeAddress] = value;
-                rgbPalette_[writeAddress] = display_.GetPixel(value);
+                rgbPalette_[writeAddress] = display_.GetPixel(value, emphasis_);
             }
         }
         else
@@ -279,6 +282,20 @@ void Ppu::RunDeferredUpdate()
         enableBackground_ = (mask_ & 0x08) != 0;
         enableForeground_ = (mask_ & 0x10) != 0;
         enableRendering_ = (mask_ & 0x18) != 0;
+
+        auto newEmphasis = (mask_ & 0xe0) >> 5;
+        if (newEmphasis != emphasis_)
+        {
+            SyncComposite(targetCycle_ - 1);
+            emphasis_ = newEmphasis;
+
+            // rebuild palette
+            for (auto index = 0; index < 32; index++)
+            {
+                rgbPalette_[index] = display_.GetPixel(palette_[index], emphasis_);
+            }
+        }
+
         updateMask_ = false;
     }
 
@@ -357,15 +374,15 @@ void Ppu::Sync(int32_t targetCycle)
     }
 }
 
-void Ppu::SyncComposite()
+void Ppu::SyncComposite(int32_t targetCycle)
 {
     if (currentScanline_ >= 240)
         return;
-    if (targetCycle_ < 0 || targetCycle_ > 256)
+    if (targetCycle < 0 || targetCycle > 256)
         return;
 
-    Composite(compositeCycle_, targetCycle_);
-    compositeCycle_ = targetCycle_;
+    Composite(compositeCycle_, targetCycle);
+    compositeCycle_ = targetCycle;
 }
 
 void Ppu::PreRenderScanline(int32_t targetCycle)

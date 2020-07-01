@@ -8,7 +8,7 @@ class Display
 public:
     Display();
 
-    uint32_t GetPixel(uint8_t palleteIndex);
+    uint32_t GetPixel(uint8_t palleteIndex, uint8_t emphasis);
     uint32_t* GetScanlinePtr();
 
     void HBlank();
@@ -23,5 +23,5 @@ private:
     std::array<uint32_t, WIDTH * HEIGHT> buffer_;
     uint32_t* currentPixelAddress_;
 
-    static std::array<uint32_t, 64> Pallette;
+    static std::array<std::array<uint32_t, 64>, 8> Palette;
 };
