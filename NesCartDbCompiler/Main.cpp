@@ -235,7 +235,7 @@ bool WriteBinaryData(const std::vector<CartRecord> & carts)
         if (cart.ChrRam)
             data |= 0x04;
         data |= mirrorMode << 3;
-        data |= subBits << 4;
+        data |= subBits << 5;
 
         binaryData.write(reinterpret_cast<const char*>(&data), sizeof(uint8_t));
     }

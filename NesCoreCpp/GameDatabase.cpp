@@ -63,7 +63,7 @@ std::unique_ptr<CartDescriptor> GameDatabase::DecodeDescriptor(uint8_t mapperByt
     descriptor->MirrorMode = static_cast<MirrorMode>((configByte & 0x18) >> 3);
 
     // special cases
-    auto subMapperBits = configByte >> 4;
+    auto subMapperBits = configByte >> 5;
     if (mapperByte == 5)
     {
         switch (subMapperBits)
