@@ -210,7 +210,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         auto writeAddress = (uint16_t)(background_.CurrentAddress & 0x3fff);
         if (writeAddress >= 0x3f00)
         {
-            SyncComposite();
+            SyncComposite(targetCycle_);
 
             value &= 0x3f;
 
