@@ -35,6 +35,8 @@ void ApuDmc::Enable(bool enabled)
     {
         sampleBytesRemaining_ = 0;
     }
+
+    apu_.SetDmcInterrupt(false);
 }
 
 bool ApuDmc::IsEnabled() const
