@@ -27,6 +27,7 @@ void ApuDmc::Enable(bool enabled)
     {
         if (sampleBytesRemaining_ == 0)
         {
+            currentAddress_ = sampleAddress_;
             sampleBytesRemaining_ = sampleLength_;
         }
     }
