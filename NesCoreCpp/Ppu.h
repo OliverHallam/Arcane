@@ -68,6 +68,7 @@ private:
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
     uint16_t initialAddress_{};
 
+    uint8_t grayscaleMask_{ 0xff };
     uint8_t emphasis_{ 0 };
     uint8_t palette_[32];
     uint32_t rgbPalette_[32];
