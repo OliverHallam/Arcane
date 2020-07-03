@@ -25,7 +25,7 @@ void ApuFrameCounter::SetMode(uint8_t mode)
     if (mode == 1)
     {
         // we will reset in 3/4 cycles time so lets do this by jumping to the end 
-        phase_ = 4;
+        phase_ = 6;
         if (counter_ & 1)
             counter_ = 3;
         else
