@@ -29,6 +29,8 @@ void ApuDmc::Enable(bool enabled)
         {
             currentAddress_ = sampleAddress_;
             sampleBytesRemaining_ = sampleLength_;
+            if (!sampleBufferHasData_ && sampleBytesRemaining_)
+                RequestByte();
         }
     }
     else
@@ -127,33 +129,34 @@ void ApuDmc::Clock()
         outBufferHasData_ = sampleBufferHasData_;
         sampleBufferHasData_ = false;
 
-        if (sampleBytesRemaining_ == 0)
-        {
-            return;
-        }
-
-        apu_.RequestDmcByte(currentAddress_);
-        currentAddress_++;
-        currentAddress_ |= 0x8000;
-        sampleBytesRemaining_--;
-
-        if (sampleBytesRemaining_ == 0)
-        {
-            if (!loop_)
-            {
-                outBuffer_ = 0;
-                outBufferHasData_ = false;
-                if (irqEnabled_)
-                    apu_.SetDmcInterrupt(true);
-                return;
-            }
-
-            sampleBytesRemaining_ = sampleLength_;
-            currentAddress_ = sampleAddress_;
-        }
+        if (sampleBytesRemaining_ != 0)
+            RequestByte();
     }
     else
         sampleShift_++;
+}
+
+void ApuDmc::RequestByte()
+{
+    apu_.RequestDmcByte(currentAddress_);
+    currentAddress_++;
+    currentAddress_ |= 0x8000;
+    sampleBytesRemaining_--;
+
+    if (sampleBytesRemaining_ == 0)
+    {
+        if (!loop_)
+        {
+            outBuffer_ = 0;
+            outBufferHasData_ = false;
+            if (irqEnabled_)
+                apu_.SetDmcInterrupt(true);
+            return;
+        }
+
+        sampleBytesRemaining_ = sampleLength_;
+        currentAddress_ = sampleAddress_;
+    }
 }
 
 uint32_t ApuDmc::GetLinearRate(uint8_t rate)
