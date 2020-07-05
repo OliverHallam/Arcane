@@ -9,21 +9,29 @@ Cpu::Cpu(Bus& bus) :
 
 void Cpu::Reset()
 {
+    // TODO: strictly, this probablys shouldn't unhalt the CPU
     interruptVector_ = 0xfffc;
 }
 
 void Cpu::SetIrq(bool irq)
 {
     irq_ = irq;
-    if (irq_ && !I_ && interruptVector_ == 0)
-        interruptVector_ = 0xfffe;
-    else if (interruptVector_ == 0xfffe)
-        interruptVector_ = 0;
+    if (irq_)
+    {
+        if (!I_ && interruptVector_ == 0)
+            interruptVector_ = 0xfffe;
+    }
+    else
+    {
+        if (interruptVector_ == 0xfffe)
+            interruptVector_ = 0;
+    }
 }
 
 void Cpu::SignalNmi()
 {
-    interruptVector_ = 0xfffa;
+    if (interruptVector_ != 1)
+        interruptVector_ = 0xfffa;
 }
 
 void Cpu::RunInstruction()
@@ -36,6 +44,12 @@ void Cpu::RunInstruction()
         }
         else
         {
+            if (interruptVector_ == 1)
+            {
+                bus_.CpuDummyRead(PC_);
+                return;
+            }
+
             bus_.CpuDummyRead(PC_);
             bus_.CpuDummyRead(PC_);
             Interrupt();
@@ -59,6 +73,23 @@ void Cpu::RunInstruction()
         Ora();
         return;
 
+    case 0x02:
+        Stp();
+        return;
+
+    case 0x03:
+        IndexIndirect();
+        Load();
+        Slo();
+        Store();
+        return;
+
+    case 0x04:
+        ZeroPage();
+        bus_.CpuDummyRead(address_);
+        Nop();
+        return;
+
     case 0x05:
         ZeroPage();
         Load();
@@ -69,6 +100,13 @@ void Cpu::RunInstruction()
         ZeroPage();
         Load();
         Asl();
+        Store();
+        return;
+
+    case 0x07:
+        ZeroPage();
+        Load();
+        Slo();
         Store();
         return;
 
@@ -89,6 +127,17 @@ void Cpu::RunInstruction()
         StoreA();
         return;
 
+    case 0x0b:
+        Immediate();
+        Anc();
+        return;
+
+    case 0x0c:
+        Absolute();
+        bus_.CpuDummyRead(address_);
+        Nop();
+        return;
+
     case 0x0d:
         Absolute();
         Load();
@@ -102,6 +151,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x0f:
+        Absolute();
+        Load();
+        Slo();
+        Store();
+        return;
+
     case 0x10:
         Relative();
         Bpl();
@@ -111,6 +167,23 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         Ora();
+        return;
+
+    case 0x12:
+        Stp();
+        return;
+
+    case 0x13:
+        IndirectIndexRead();
+        Load();
+        Slo();
+        Store();
+        return;
+
+    case 0x14:
+        ZeroPageX();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x15:
@@ -126,6 +199,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x17:
+        ZeroPageX();
+        Load();
+        Slo();
+        Store();
+        return;
+
     case 0x18:
         Implicit();
         Clc();
@@ -135,6 +215,24 @@ void Cpu::RunInstruction()
         AbsoluteYRead();
         Load();
         Ora();
+        return;
+
+    case 0x1a:
+        Implicit();
+        Nop();
+        return;
+
+    case 0x1b:
+        AbsoluteYWrite();
+        Load();
+        Slo();
+        Store();
+        return;
+
+    case 0x1c:
+        AbsoluteXRead();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x1d:
@@ -150,6 +248,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x1f:
+        AbsoluteXWrite();
+        Load();
+        Slo();
+        Store();
+        return;
+
     case 0x20:
         // timings are a little different on this one, so the decoding happens in the instruction
         Jsr();
@@ -159,6 +264,18 @@ void Cpu::RunInstruction()
         IndexIndirect();
         Load();
         And();
+        return;
+
+    case 0x22:
+        Immediate();
+        Stp();
+        return;
+
+    case 0x23:
+        IndexIndirect();
+        Load();
+        Rla();
+        Store();
         return;
 
     case 0x24:
@@ -180,6 +297,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x27:
+        ZeroPage();
+        Load();
+        Rla();
+        Store();
+        return;
+
     case 0x28:
         Implicit();
         Plp();
@@ -195,6 +319,11 @@ void Cpu::RunInstruction()
         LoadA();
         Rol();
         StoreA();
+        return;
+
+    case 0x2b:
+        Immediate();
+        Anc();
         return;
 
     case 0x2c:
@@ -216,6 +345,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x2f:
+        Absolute();
+        Load();
+        Rla();
+        Store();
+        return;
+
     case 0x30:
         Relative();
         Bmi();
@@ -225,6 +361,24 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         And();
+        return;
+
+    case 0x32:
+        Implicit();
+        Stp();
+        return;
+
+    case 0x33:
+        IndirectIndexWrite();
+        Load();
+        Rla();
+        Store();
+        return;
+
+    case 0x34:
+        ZeroPageX();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x35:
@@ -240,6 +394,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x37:
+        ZeroPageX();
+        Load();
+        Rla();
+        Store();
+        return;
+
     case 0x38:
         Implicit();
         Sec();
@@ -249,6 +410,24 @@ void Cpu::RunInstruction()
         AbsoluteYRead();
         Load();
         And();
+        return;
+
+    case 0x3a:
+        Implicit();
+        Nop();
+        return;
+
+    case 0x3b:
+        AbsoluteYWrite();
+        Load();
+        Rla();
+        Store();
+        return;
+
+    case 0x3c:
+        AbsoluteXRead();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x3d:
@@ -264,6 +443,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x3f:
+        AbsoluteXWrite();
+        Load();
+        Rla();
+        Store();
+        return;
+
     case 0x40:
         Implicit();
         Rti();
@@ -273,6 +459,24 @@ void Cpu::RunInstruction()
         IndexIndirect();
         Load();
         Eor();
+        return;
+
+    case 0x42:
+        Implicit();
+        Stp();
+        return;
+
+    case 0x43:
+        IndexIndirect();
+        Load();
+        Sre();
+        Store();
+        return;
+
+    case 0x44:
+        ZeroPage();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x45:
@@ -288,6 +492,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x47:
+        ZeroPage();
+        Load();
+        Sre();
+        Store();
+        return;
+
     case 0x48:
         Implicit();
         Pha();
@@ -300,6 +511,15 @@ void Cpu::RunInstruction()
 
     case 0x4a:
         Implicit();
+        LoadA();
+        Lsr();
+        StoreA();
+        return;
+
+    case 0x4b:
+        // ALR
+        Immediate();
+        And();
         LoadA();
         Lsr();
         StoreA();
@@ -323,6 +543,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x4f:
+        Absolute();
+        Load();
+        Sre();
+        Store();
+        return;
+
     case 0x50:
         Relative();
         Bvc();
@@ -332,6 +559,24 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         Eor();
+        return;
+
+    case 0x52:
+        Implicit();
+        Stp();
+        return;
+
+    case 0x53:
+        IndirectIndexWrite();
+        Load();
+        Sre();
+        Store();
+        return;
+
+    case 0x54:
+        ZeroPageX();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x55:
@@ -347,6 +592,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x57:
+        ZeroPageX();
+        Load();
+        Sre();
+        Store();
+        return;
+
     case 0x58:
         Implicit();
         Cli();
@@ -356,6 +608,24 @@ void Cpu::RunInstruction()
         AbsoluteYRead();
         Load();
         Eor();
+        return;
+
+    case 0x5a:
+        Implicit();
+        Nop();
+        return;
+
+    case 0x5b:
+        AbsoluteYWrite();
+        Load();
+        Sre();
+        Store();
+        return;
+
+    case 0x5c:
+        AbsoluteXRead();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x5d:
@@ -371,6 +641,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x5f:
+        AbsoluteXWrite();
+        Load();
+        Sre();
+        Store();
+        return;
+
     case 0x60:
         Implicit();
         Rts();
@@ -380,6 +657,24 @@ void Cpu::RunInstruction()
         IndexIndirect();
         Load();
         Adc();
+        return;
+
+    case 0x62:
+        Implicit();
+        Stp();
+        return;
+
+    case 0x63:
+        IndexIndirect();
+        Load();
+        Rra();
+        Store();
+        return;
+
+    case 0x64:
+        ZeroPage();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x65:
@@ -395,6 +690,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x67:
+        ZeroPage();
+        Load();
+        Rra();
+        Store();
+        return;
+
     case 0x68:
         Implicit();
         Pla();
@@ -405,8 +707,16 @@ void Cpu::RunInstruction()
         Adc();
         return;
 
-    case 0x6a:
+    case 0x6a: 
         Implicit();
+        LoadA();
+        Ror();
+        StoreA();
+        return;
+
+    case 0x6b:
+        Immediate();
+        And();
         LoadA();
         Ror();
         StoreA();
@@ -430,6 +740,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x6f:
+        Absolute();
+        Load();
+        Rra();
+        Store();
+        return;
+
     case 0x70:
         Relative();
         Bvs();
@@ -439,6 +756,24 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         Adc();
+        return;
+
+    case 0x72:
+        Implicit();
+        Stp();
+        return;
+
+    case 0x73:
+        IndirectIndexWrite();
+        Load();
+        Rra();
+        Store();
+        return;
+
+    case 0x74:
+        ZeroPageX();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x75:
@@ -454,6 +789,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x77:
+        ZeroPageX();
+        Load();
+        Rra();
+        Store();
+        return;
+
     case 0x78:
         Implicit();
         Sei();
@@ -463,6 +805,24 @@ void Cpu::RunInstruction()
         AbsoluteYRead();
         Load();
         Adc();
+        return;
+
+    case 0x7a:
+        Implicit();
+        Nop();
+        return;
+
+    case 0x7b:
+        AbsoluteYWrite();
+        Load();
+        Rra();
+        Store();
+        return;
+
+    case 0x7c:
+        AbsoluteXRead();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0x7d:
@@ -478,9 +838,31 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0x7f:
+        AbsoluteXWrite();
+        Load();
+        Rra();
+        Store();
+        return;
+
+    case 0x80:
+        Immediate();
+        Nop();
+        return;
+
     case 0x81:
         IndexIndirect();
         Sta();
+        return;
+
+    case 0x82:
+        Immediate();
+        Nop();
+        return;
+
+    case 0x83:
+        IndexIndirect();
+        Sax();
         return;
 
     case 0x84:
@@ -498,14 +880,29 @@ void Cpu::RunInstruction()
         Stx();
         return;
 
+    case 0x87:
+        ZeroPage();
+        Sax();
+        return;
+
     case 0x88:
         Implicit();
         Dey();
         return;
 
+    case 0x89:
+        Immediate();
+        Nop();
+        return;
+
     case 0x8a:
         Implicit();
         Txa();
+        return;
+
+    case 0x8b:
+        Immediate();
+        Xaa();
         return;
 
     case 0x8c:
@@ -523,6 +920,11 @@ void Cpu::RunInstruction()
         Stx();
         return;
 
+    case 0x8f:
+        Absolute();
+        Sax();
+        return;
+
     case 0x90:
         Relative();
         Bcc();
@@ -533,6 +935,17 @@ void Cpu::RunInstruction()
         Sta();
         return;
 
+    case 0x92:
+        Implicit();
+        Stp();
+        return;
+
+    case 0x93:
+        IndirectIndexWrite();
+        Load();
+        Axa();
+        Store();
+
     case 0x94:
         ZeroPageX();
         Load();
@@ -541,12 +954,20 @@ void Cpu::RunInstruction()
 
     case 0x95:
         ZeroPageX();
+        Load();
         Sta();
         return;
 
     case 0x96:
         ZeroPageY();
+        Load();
         Stx();
+        return;
+
+    case 0x97:
+        ZeroPageY();
+        Load();
+        Sax();
         return;
 
     case 0x98:
@@ -565,9 +986,37 @@ void Cpu::RunInstruction()
         Txs();
         return;
 
+    case 0x9b:
+        AbsoluteYWrite();
+        Load();
+        Tas();
+        Store();
+        return;
+
+    case 0x9c:
+        AbsoluteXWrite();
+        Load();
+        Shy();
+        Store();
+        return;
+
     case 0x9d:
         AbsoluteXWrite();
         Sta();
+        return;
+
+    case 0x9e:
+        AbsoluteYWrite();
+        Load();
+        Shx();
+        Store();
+        return;
+
+    case 0x9f:
+        AbsoluteYWrite();
+        Load();
+        Ahx();
+        Store();
         return;
 
     case 0xa0:
@@ -584,6 +1033,12 @@ void Cpu::RunInstruction()
     case 0xa2:
         Immediate();
         Ldx();
+        return;
+
+    case 0xa3:
+        IndexIndirect();
+        Load();
+        Lax();
         return;
 
     case 0xa4:
@@ -604,6 +1059,12 @@ void Cpu::RunInstruction()
         Ldx();
         return;
 
+    case 0xa7:
+        ZeroPage();
+        Load();
+        Lax();
+        return;
+
     case 0xa8:
         Implicit();
         Tay();
@@ -617,6 +1078,11 @@ void Cpu::RunInstruction()
     case 0xaa:
         Implicit();
         Tax();
+        return;
+
+    case 0xab:
+        Immediate();
+        Lax();
         return;
 
     case 0xac:
@@ -637,6 +1103,12 @@ void Cpu::RunInstruction()
         Ldx();
         return;
 
+    case 0xaf:
+        Absolute();
+        Load();
+        Lax();
+        return;
+
     case 0xb0:
         Relative();
         Bcs();
@@ -646,6 +1118,17 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         Lda();
+        return;
+
+    case 0xb2:
+        Implicit();
+        Stp();
+        return;
+
+    case 0xb3:
+        IndirectIndexRead();
+        Load();
+        Lax();
         return;
 
     case 0xb4:
@@ -666,6 +1149,12 @@ void Cpu::RunInstruction()
         Ldx();
         return;
 
+    case 0xb7:
+        ZeroPageY();
+        Load();
+        Lax();
+        return;
+
     case 0xb8:
         Implicit();
         Clv();
@@ -680,6 +1169,12 @@ void Cpu::RunInstruction()
     case 0xba:
         Implicit();
         Tsx();
+        return;
+
+    case 0xbb:
+        AbsoluteYRead();
+        Load();
+        Las();
         return;
 
     case 0xbc:
@@ -700,6 +1195,12 @@ void Cpu::RunInstruction()
         Ldx();
         return;
 
+    case 0xbf:
+        AbsoluteYRead();
+        Load();
+        Lax();
+        return;
+
     case 0xc0:
         Immediate();
         Cpy();
@@ -709,6 +1210,19 @@ void Cpu::RunInstruction()
         IndexIndirect();
         Load();
         Cmp();
+        return;
+
+    case 0xc2:
+        Immediate();
+        bus_.CpuDummyRead(address_);
+        Nop();
+        return;
+
+    case 0xc3:
+        IndexIndirect();
+        Load();
+        Dcp();
+        Store();
         return;
 
     case 0xc4:
@@ -730,6 +1244,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xc7:
+        ZeroPage();
+        Load();
+        Dcp();
+        Store();
+        return;
+
     case 0xc8:
         Implicit();
         Iny();
@@ -743,6 +1264,11 @@ void Cpu::RunInstruction()
     case 0xca:
         Implicit();
         Dex();
+        return;
+
+    case 0xcb:
+        Immediate();
+        Axs();
         return;
 
     case 0xcc:
@@ -764,6 +1290,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xcf:
+        Absolute();
+        Load();
+        Dcp();
+        Store();
+        return;
+
     case 0xd0:
         Relative();
         Bne();
@@ -773,6 +1306,24 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         Cmp();
+        return;
+
+    case 0xd2:
+        Implicit();
+        Stp();
+        return;
+
+    case 0xd3:
+        IndirectIndexWrite();
+        Load();
+        Dcp();
+        Store();
+        return;
+
+    case 0xd4:
+        ZeroPageX();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0xd5:
@@ -788,6 +1339,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xd7:
+        ZeroPageX();
+        Load();
+        Dcp();
+        Store();
+        return;
+
     case 0xd8:
         Implicit();
         Cld();
@@ -797,6 +1355,24 @@ void Cpu::RunInstruction()
         AbsoluteYRead();
         Load();
         Cmp();
+        return;
+
+    case 0xda:
+        Implicit();
+        Nop();
+        return;
+
+    case 0xdb:
+        AbsoluteYWrite();
+        Load();
+        Dcp();
+        Store();
+        return;
+
+    case 0xdc:
+        AbsoluteXWrite();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0xdd:
@@ -812,6 +1388,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xdf:
+        AbsoluteXWrite();
+        Load();
+        Dcp();
+        Store();
+        return;
+
     case 0xe0:
         Immediate();
         Cpx();
@@ -821,6 +1404,18 @@ void Cpu::RunInstruction()
         IndexIndirect();
         Load();
         Sbc();
+        return;
+
+    case 0xe2:
+        Immediate();
+        Nop();
+        return;
+
+    case 0xe3:
+        IndexIndirect();
+        Load();
+        Isc();
+        Store();
         return;
 
     case 0xe4:
@@ -842,6 +1437,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xe7:
+        ZeroPage();
+        Load();
+        Isc();
+        Store();
+        return;
+
     case 0xe8:
         Implicit();
         Inx();
@@ -855,6 +1457,11 @@ void Cpu::RunInstruction()
     case 0xea:
         Implicit();
         Nop();
+        return;
+
+    case 0xeb:
+        Immediate();
+        Sbc();
         return;
 
     case 0xec:
@@ -876,6 +1483,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xef:
+        Absolute();
+        Load();
+        Isc();
+        Store();
+        return;
+
     case 0xf0:
         Relative();
         Beq();
@@ -885,6 +1499,24 @@ void Cpu::RunInstruction()
         IndirectIndexRead();
         Load();
         Sbc();
+        return;
+
+    case 0xf2:
+        Implicit();
+        Stp();
+        return;
+
+    case 0xf3:
+        IndirectIndexWrite();
+        Load();
+        Isc();
+        Store();
+        return;
+
+    case 0xf4:
+        ZeroPageX();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0xf5:
@@ -900,6 +1532,13 @@ void Cpu::RunInstruction()
         Store();
         return;
 
+    case 0xf7:
+        ZeroPageX();
+        Load();
+        Isc();
+        Store();
+        return;
+
     case 0xf8:
         Implicit();
         Sed();
@@ -909,6 +1548,24 @@ void Cpu::RunInstruction()
         AbsoluteYRead();
         Load();
         Sbc();
+        return;
+
+    case 0xfa:
+        Implicit();
+        Nop();
+        return;
+
+    case 0xfb:
+        AbsoluteYWrite();
+        Load();
+        Isc();
+        Store();
+        return;
+
+    case 0xfc:
+        AbsoluteXRead();
+        bus_.CpuDummyRead(address_);
+        Nop();
         return;
 
     case 0xfd:
@@ -921,6 +1578,13 @@ void Cpu::RunInstruction()
         AbsoluteXWrite();
         Load();
         Inc();
+        Store();
+        return;
+
+    case 0xff:
+        AbsoluteXWrite();
+        Load();
+        Isc();
         Store();
         return;
 
@@ -1009,7 +1673,7 @@ void Cpu::AbsoluteXWrite()
     address_ = (uint16_t)(lowByte | highByte << 8);
     address_ += X_;
 
-    bus_.CpuDummyRead(lowByte | (address_ * 0xff));
+    bus_.CpuDummyRead((highByte << 8) | (address_ & 0xff));
 }
 
 void Cpu::AbsoluteYRead()
@@ -1155,12 +1819,23 @@ void Cpu::Adc()
     }
 
     V_ = (~(A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
-    C_ = (result & 0x100) != 0;
 
-    A_ = (uint8_t)result;
+    A_ = static_cast<uint8_t>(result);
 
     N_ = (A_ & 0x80) != 0;
     Z_ = A_ == 0;
+    C_ = (result & 0x100) != 0;
+}
+
+void Cpu::Ahx()
+{
+    outValue_ = A_ & X_ & ((address_ >> 1) + 1);
+}
+
+void Cpu::Anc()
+{
+    And();
+    C_ = N_;
 }
 
 void Cpu::And()
@@ -1177,6 +1852,18 @@ void Cpu::Asl()
 
     Z_ = outValue_ == 0;
     N_ = (outValue_ & 0x80) != 0;
+}
+
+void Cpu::Axa()
+{
+    Write(address_, A_ & X_ & ((address_ >> 8) + 1));
+}
+
+void Cpu::Axs()
+{
+    auto result = A_ & X_ - inValue_;
+    X_ = static_cast<uint8_t>(result);
+    SetCompareFlags(result);
 }
 
 void Cpu::Bcc()
@@ -1268,17 +1955,23 @@ void Cpu::Clv()
 
 void Cpu::Cmp()
 {
-    SetCompareFlags(A_);
+    SetCompareFlags(A_ - inValue_);
 }
 
 void Cpu::Cpx()
 {
-    SetCompareFlags(X_);
+    SetCompareFlags(X_ - inValue_);
 }
 
 void Cpu::Cpy()
 {
-    SetCompareFlags(Y_);
+    SetCompareFlags(Y_ - inValue_);
+}
+
+void Cpu::Dcp()
+{
+    outValue_ = inValue_ - 1;
+    SetCompareFlags(A_ - outValue_);
 }
 
 void Cpu::Dec()
@@ -1323,9 +2016,41 @@ void Cpu::Iny()
     SetFlags(Y_);
 }
 
+void Cpu::Isc()
+{
+    outValue_ = inValue_ + 1;
+
+    auto result = (uint16_t)A_ - outValue_;
+    if (!C_)
+    {
+        result--;
+    }
+
+    V_ = ((A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
+
+    A_ = static_cast<uint8_t>(result);
+    SetCompareFlags(result);
+}
+
 void Cpu::Jmp()
 {
     PC_ = address_;
+}
+
+void Cpu::Las()
+{
+    auto value = S_ & inValue_;
+    A_ = value;
+    X_ = value;
+    S_ = value;
+    SetFlags(value);
+}
+
+void Cpu::Lax()
+{
+    A_ = inValue_;
+    X_ = inValue_;
+    SetFlags(inValue_);
 }
 
 void Cpu::Lda()
@@ -1398,6 +2123,20 @@ void Cpu::Plp()
     }
 }
 
+void Cpu::Rla()
+{
+    auto carry = (inValue_ & 0x80) != 0;
+
+    outValue_ = inValue_ << 1;
+
+    if (C_)
+        outValue_ |= 0x01;
+
+    C_ = carry;
+    A_ &= outValue_;
+    SetFlags(A_);
+}
+
 void Cpu::Rol()
 {
     auto carry = (inValue_ & 0x80) != 0;
@@ -1424,6 +2163,26 @@ void Cpu::Ror()
     Z_ = outValue_ == 0;
     N_ = (outValue_ & 0x80) != 0;
     C_ = carry;
+}
+
+void Cpu::Rra()
+{
+    auto carry = (inValue_ & 1);
+
+    outValue_ = inValue_ >> 1;
+
+    if (C_)
+        outValue_ |= 0x80;
+
+    auto result = A_ + outValue_ + carry;
+
+    V_ = (~(A_ ^ outValue_) & (A_ ^ result) & 0x80) != 0;
+
+    A_ = static_cast<uint8_t>(result);
+
+    N_ = (A_ & 0x80) != 0;
+    Z_ = A_ == 0;
+    C_ = (result & 0x100) != 0;
 }
 
 void Cpu::Rti()
@@ -1453,6 +2212,25 @@ void Cpu::Rts()
     PC_ = (uint16_t)(((highByte << 8) | lowByte) + 1);
 }
 
+void Cpu::Sax()
+{
+    Write(address_, A_ & X_);
+}
+
+void Cpu::Sbc()
+{
+    auto result = (uint16_t)A_ - inValue_;
+    if (!C_)
+    {
+        result--;
+    }
+
+    V_ = ((A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
+
+    A_ = static_cast<uint8_t>(result);
+    SetCompareFlags(result);
+}
+
 void Cpu::Sec()
 {
     C_ = true;
@@ -1470,26 +2248,45 @@ void Cpu::Sei()
     // if the IRQ is already set it will still trigger for the next instruction
 }
 
-void Cpu::Sbc()
+void Cpu::Shx()
 {
-    auto result = (uint16_t)A_ - inValue_;
-    if (!C_)
-    {
-        result--;
-    }
+    outValue_ = X_ & ((address_ >> 8) + 1);
+}
 
-    V_ = ((A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
-    C_ = (result & 0x100) == 0;
+void Cpu::Shy()
+{
+    outValue_ = Y_ & ((address_ >> 8) + 1);
+}
 
-    A_ = (uint8_t)result;
+void Cpu::Slo()
+{
+    C_ = (inValue_ & 0x80) != 0;
 
-    N_ = (A_ & 0x80) != 0;
-    Z_ = A_ == 0;
+    outValue_ = inValue_ << 1;
+    A_ |= outValue_;
+
+    SetFlags(A_);
+}
+
+void Cpu::Sre()
+{
+    C_ = (inValue_ & 0x01) != 0;
+
+    outValue_ = inValue_ >> 1;
+
+    A_ ^= outValue_;
+    SetFlags(A_);
 }
 
 void Cpu::Sta()
 {
     Write(address_, A_);
+}
+
+void Cpu::Stp()
+{
+    // as we need to check this every cycle, we will overload the interrupt vector to do this.
+    interruptVector_ = 1;
 }
 
 void Cpu::Stx()
@@ -1500,6 +2297,12 @@ void Cpu::Stx()
 void Cpu::Sty()
 {
     Write(address_, Y_);
+}
+
+void Cpu::Tas()
+{
+    S_ = X_ & A_;
+    outValue_ = ((address_ >> 8) + 1) & S_;
 }
 
 void Cpu::Tax()
@@ -1537,6 +2340,12 @@ void Cpu::Tya()
     SetFlags(A_);
 }
 
+void Cpu::Xaa()
+{
+    A_ = X_ & inValue_;
+    SetFlags(A_);
+}
+
 void Cpu::Jump()
 {
     bus_.CpuDummyRead(PC_);
@@ -1556,12 +2365,9 @@ void Cpu::SetFlags(uint8_t value)
     N_ = (value & 0x80) != 0;
 }
 
-void Cpu::SetCompareFlags(uint8_t reg)
+void Cpu::SetCompareFlags(uint16_t result)
 {
-    auto result = reg - inValue_;
-
-    auto tmp = (uint8_t)result;
-
+    auto tmp = static_cast<uint8_t>(result);
     N_ = (tmp & 0x80) != 0;
     Z_ = tmp == 0;
     C_ = (result & 0x100) == 0;

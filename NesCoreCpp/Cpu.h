@@ -46,8 +46,12 @@ private:
 
     // instructions
     void Adc();
+    void Ahx();
+    void Anc();
     void And();
     void Asl();
+    void Axa();
+    void Axs();
     void Bcc();
     void Bcs();
     void Beq();
@@ -65,6 +69,7 @@ private:
     void Cmp();
     void Cpx();
     void Cpy();
+    void Dcp();
     void Dec();
     void Dex();
     void Dey();
@@ -72,7 +77,10 @@ private:
     void Inc();
     void Inx();
     void Iny();
+    void Isc();
     void Jmp();
+    void Las();
+    void Lax();
     void Lda();
     void Ldx();
     void Ldy();
@@ -83,27 +91,37 @@ private:
     void Php();
     void Pla();
     void Plp();
+    void Rla();
     void Rol();
     void Ror();
+    void Rra();
     void Rti();
     void Rts();
+    void Sax();
     void Sec();
     void Sed();
     void Sei();
     void Sbc();
+    void Shx();
+    void Shy();
+    void Slo();
+    void Sre();
     void Sta();
+    void Stp();
     void Stx();
     void Sty();
+    void Tas();
     void Tax();
     void Tay();
     void Tsx();
     void Txa();
     void Txs();
     void Tya();
+    void Xaa();
 
     void Jump();
     void SetFlags(uint8_t value);
-    void SetCompareFlags(uint8_t reg);
+    void SetCompareFlags(uint16_t result);
 
     uint8_t ReadProgramByte();
     uint8_t ReadData(uint16_t address);
