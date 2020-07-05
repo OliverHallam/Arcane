@@ -24,6 +24,7 @@ public:
 
 private:
     void Clock();
+    void RequestByte();
 
     static uint32_t GetLinearRate(uint8_t rate);
 

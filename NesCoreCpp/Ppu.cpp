@@ -101,7 +101,7 @@ uint8_t Ppu::Read(uint16_t address)
 
         if (ppuAddress >= 0x3f00)
         {
-            data = palette_[ppuAddress & 0x1f];
+            data = palette_[ppuAddress & 0x1f] & grayscaleMask_;
         }
 
         background_.CurrentAddress += addressIncrement_;
@@ -145,7 +145,6 @@ void Ppu::Write(uint16_t address, uint8_t value)
     }
 
     case 1:
-        assert((mask_ & 0x01) == 0 && "grayscale not implemented");
         mask_ = value;
         updateMask_ = true;
         hasDeferredUpdate_ = true;
@@ -222,7 +221,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 palette_[writeAddress] = value;
                 palette_[writeAddress | 0x0010] = value;
 
-                auto rgb = display_.GetPixel(value, emphasis_);
+                auto rgb = display_.GetPixel(value & grayscaleMask_, emphasis_);
                 rgbPalette_[writeAddress] = rgb;
                 rgbPalette_[writeAddress | 0x0010] = rgb;
             }
@@ -231,7 +230,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 writeAddress &= 0x0001f;
 
                 palette_[writeAddress] = value;
-                rgbPalette_[writeAddress] = display_.GetPixel(value, emphasis_);
+                rgbPalette_[writeAddress] = display_.GetPixel(value & grayscaleMask_, emphasis_);
             }
         }
         else
@@ -283,6 +282,7 @@ void Ppu::RunDeferredUpdate()
         enableForeground_ = (mask_ & 0x10) != 0;
         enableRendering_ = (mask_ & 0x18) != 0;
 
+        grayscaleMask_ = (mask_ & 0x01) ? 0x30 : 0xff;
         auto newEmphasis = (mask_ & 0xe0) >> 5;
         if (newEmphasis != emphasis_)
         {
@@ -292,7 +292,7 @@ void Ppu::RunDeferredUpdate()
             // rebuild palette
             for (auto index = 0; index < 32; index++)
             {
-                rgbPalette_[index] = display_.GetPixel(palette_[index], emphasis_);
+                rgbPalette_[index] = display_.GetPixel(palette_[index] & grayscaleMask_, emphasis_);
             }
         }
 
