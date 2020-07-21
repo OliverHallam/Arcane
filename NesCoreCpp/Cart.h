@@ -43,6 +43,8 @@ private:
 
     void WriteUxROM(uint16_t address, uint8_t value);
 
+    void WriteCNROM(uint16_t address, uint8_t value);
+
     void UpdateChrMapMMC1();
     void UpdatePrgMapMMC1();
 
@@ -74,6 +76,7 @@ private:
     uint32_t chrMode_;
     uint32_t chrBank0_;
     uint32_t chrBank1_;
+    uint32_t chrMask_;
 
     bool chrA12_;
     uint32_t prgPlane0_;

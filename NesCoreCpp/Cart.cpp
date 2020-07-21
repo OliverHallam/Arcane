@@ -65,6 +65,9 @@ void Cart::SetChrRom(std::vector<uint8_t> chrData)
 
     ppuBanks_[0] = &chrData_[0];
     ppuBanks_[1] = &chrData_[0x1000];
+
+    assert((chrData_.size() & (chrData_.size() - 1)) == 0);
+    chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
 }
 
 void Cart::SetChrRam()
@@ -119,6 +122,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     case 2:
         WriteUxROM(address, value);
         break;
+
+    case 3:
+        WriteCNROM(address, value);
+        break;
     }
 }
 
@@ -145,6 +152,16 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     case 2:
         bus_->TickCpuWrite();
         WriteUxROM(address, secondValue);
+        break;
+
+    case 3:
+        WriteCNROM(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteCNROM(address, secondValue);
+        break;
+
+    default:
+        bus_->TickCpuWrite();
         break;
     }
 }
@@ -414,6 +431,22 @@ void Cart::WriteUxROM(uint16_t address, uint8_t value)
     cpuBanks_[5] = base + 0x2000;
 }
 
+void Cart::WriteCNROM(uint16_t address, uint8_t value)
+{
+    // TODO: bus conflicts
+    // the actual board only takes 2 bits from the value for bank switching
+    auto bankAddress = (value << 13) & chrMask_;
+
+    auto base = &chrData_[bankAddress];
+
+    if (base != ppuBanks_[0])
+    {
+        bus_->SyncPpu();
+        ppuBanks_[0] = base;
+        ppuBanks_[1] = base + 0x1000;
+    }
+}
+
 std::unique_ptr<Cart> TryCreateCart(
     const CartDescriptor& desc,
     std::vector<uint8_t> prgData,
@@ -447,7 +480,7 @@ std::unique_ptr<Cart> TryCreateCart(
         return nullptr;
     }
 
-    if (desc.Mapper > 2)
+    if (desc.Mapper > 3)
         return nullptr;
 
     cart->SetMapper(desc.Mapper);
