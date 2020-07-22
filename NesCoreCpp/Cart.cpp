@@ -64,7 +64,13 @@ void Cart::SetChrRom(std::vector<uint8_t> chrData)
     chrData_ = std::move(chrData);
 
     ppuBanks_[0] = &chrData_[0];
-    ppuBanks_[1] = &chrData_[0x1000];
+    ppuBanks_[1] = &chrData_[0x0400];
+    ppuBanks_[2] = &chrData_[0x0800];
+    ppuBanks_[3] = &chrData_[0x0c00];
+    ppuBanks_[4] = &chrData_[0x1000];
+    ppuBanks_[5] = &chrData_[0x1400];
+    ppuBanks_[6] = &chrData_[0x1800];
+    ppuBanks_[7] = &chrData_[0x1c00];
 
     assert((chrData_.size() & (chrData_.size() - 1)) == 0);
     chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
@@ -75,7 +81,13 @@ void Cart::SetChrRam()
     chrData_.resize(0x2000);
 
     ppuBanks_[0] = &chrData_[0];
-    ppuBanks_[1] = &chrData_[0x1000];
+    ppuBanks_[1] = &chrData_[0x0400];
+    ppuBanks_[2] = &chrData_[0x0800];
+    ppuBanks_[3] = &chrData_[0x0c00];
+    ppuBanks_[4] = &chrData_[0x1000];
+    ppuBanks_[5] = &chrData_[0x1400];
+    ppuBanks_[6] = &chrData_[0x1800];
+    ppuBanks_[7] = &chrData_[0x1c00];
 
     chrWriteable_ = true;
 }
@@ -126,6 +138,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     case 3:
         WriteCNROM(address, value);
         break;
+
+    case 4:
+        WriteMMC3(address, value);
+        break;
     }
 }
 
@@ -160,6 +176,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteCNROM(address, secondValue);
         break;
 
+    case 4:
+        WriteMMC3(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteMMC3(address, secondValue);
+        break;
+
     default:
         bus_->TickCpuWrite();
         break;
@@ -170,16 +192,16 @@ uint8_t Cart::PpuRead(uint16_t address) const
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
 
-    auto bank = ppuBanks_[address >> 12];
-    return bank[address & 0x0fff];
+    auto bank = ppuBanks_[address >> 10];
+    return bank[address & 0x03ff];
 }
 
 uint16_t Cart::PpuReadChr16(uint16_t address) const
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
 
-    auto bank = ppuBanks_[address >> 12];
-    auto bankAddress = address & 0x0fff;
+    auto bank = ppuBanks_[address >> 10];
+    auto bankAddress = address & 0x03ff;
     return (bank[bankAddress] << 8) | bank[bankAddress | 8];
 }
 
@@ -189,8 +211,8 @@ void Cart::PpuWrite(uint16_t address, uint8_t value)
 
     if (chrWriteable_)
     {
-        auto bank = ppuBanks_[address >> 12];
-        bank[address & 0x0fff] = value;
+        auto bank = ppuBanks_[address >> 10];
+        bank[address & 0x03ff] = value;
     }
 }
 
@@ -372,15 +394,33 @@ void Cart::UpdateChrMapMMC1()
     case 0:
     {
         auto chrBank = static_cast<size_t>(chrBank0_) & 0x1e000;
-        ppuBanks_[0] = &chrData_[chrBank];
-        ppuBanks_[1] = &chrData_[chrBank + 0x1000];
+        auto base = &chrData_[chrBank];
+        ppuBanks_[0] = base;
+        ppuBanks_[1] = base + 0x0400;
+        ppuBanks_[2] = base + 0x0800;
+        ppuBanks_[3] = base + 0x0c00;
+        ppuBanks_[4] = base + 0x1000;
+        ppuBanks_[5] = base + 0x1400;
+        ppuBanks_[6] = base + 0x1800;
+        ppuBanks_[7] = base + 0x1c00;
         break;
     }
 
     case 1:
-        ppuBanks_[0] = &chrData_[chrBank0_ & (chrData_.size() - 1)];
-        ppuBanks_[1] = &chrData_[chrBank1_ & (chrData_.size() - 1)];
+    {
+        auto base0 = &chrData_[chrBank0_ & (chrData_.size() - 1)];
+        ppuBanks_[0] = base0;
+        ppuBanks_[1] = base0 + 0x0400;
+        ppuBanks_[2] = base0 + 0x0800;
+        ppuBanks_[3] = base0 + 0x0c00;
+
+        auto base1 = &chrData_[chrBank1_ & (chrData_.size() - 1)];
+        ppuBanks_[4] = base1;
+        ppuBanks_[5] = base1 + 0x0400;
+        ppuBanks_[6] = base1 + 0x0800;
+        ppuBanks_[7] = base1 + 0x0c00;
         break;
+    }
     }
 }
 
@@ -443,8 +483,113 @@ void Cart::WriteCNROM(uint16_t address, uint8_t value)
     {
         bus_->SyncPpu();
         ppuBanks_[0] = base;
-        ppuBanks_[1] = base + 0x1000;
+        ppuBanks_[1] = base + 0x0400;
+        ppuBanks_[2] = base + 0x0800;
+        ppuBanks_[3] = base + 0x0c00;
+        ppuBanks_[4] = base + 0x1000;
+        ppuBanks_[5] = base + 0x1400;
+        ppuBanks_[6] = base + 0x1800;
+        ppuBanks_[7] = base + 0x1c00;
     }
+}
+
+void Cart::WriteMMC3(uint16_t address, uint8_t value)
+{
+    if (address < 0xa000)
+    {
+        if ((address & 1) == 0)
+        {
+            prgBank_ = value & 0x07;
+            SetPrgModeMMC3((value >> 6) & 1);
+            SetChrModeMMC3((value >> 7) & 1);
+        }
+        else
+        {
+            SetBankMMC3(value);
+        }
+    }
+}
+
+void Cart::SetPrgModeMMC3(uint8_t mode)
+{
+    if (mode != prgMode_)
+    {
+        std::swap(cpuBanks_[4], cpuBanks_[6]);
+
+        prgMode_ = mode;
+    }
+}
+
+void Cart::SetChrModeMMC3(uint8_t mode)
+{
+    if (mode != chrMode_)
+    {
+        std::swap(ppuBanks_[0], ppuBanks_[4]);
+        std::swap(ppuBanks_[1], ppuBanks_[5]);
+        std::swap(ppuBanks_[2], ppuBanks_[6]);
+        std::swap(ppuBanks_[3], ppuBanks_[7]);
+
+        chrMode_ = mode;
+    }
+}
+
+void Cart::SetBankMMC3(uint32_t bank)
+{
+    switch (prgBank_)
+    {
+    case 0:
+        bus_->SyncPpu();
+        SetChrBank2k(chrMode_ ? 4 : 0, bank);
+        break;
+
+    case 1:
+        bus_->SyncPpu();
+        SetChrBank2k(chrMode_ ? 6 : 2, bank);
+        break;
+
+    case 2:
+        bus_->SyncPpu();
+        SetChrBank1k(chrMode_ ? 0 : 4, bank);
+        break;
+
+    case 3:
+        bus_->SyncPpu();
+        SetChrBank1k(chrMode_ ? 1 : 5, bank);
+        break;
+
+    case 4:
+        bus_->SyncPpu();
+        SetChrBank1k(chrMode_ ? 2 : 6, bank);
+        break;
+
+    case 5:
+        bus_->SyncPpu();
+        SetChrBank1k(chrMode_ ? 3 : 7, bank);
+        break;
+
+    case 6:
+        cpuBanks_[prgMode_ ? 6 : 4] = &prgData_[(bank << 13) & prgMask16k_];
+        break;
+
+    case 7:
+        cpuBanks_[5] = &prgData_[(bank << 13) & prgMask16k_];
+        break;
+    }
+}
+
+void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
+{
+    auto bankAddress = (value << 10) & chrMask_;
+    auto base = &chrData_[bankAddress];
+    ppuBanks_[bank] = base;
+}
+
+void Cart::SetChrBank2k(uint32_t bank, uint32_t value)
+{
+    auto bankAddress = (value << 10) & chrMask_ & 0xfffff800;
+    auto base = &chrData_[bankAddress];
+    ppuBanks_[bank] = base;
+    ppuBanks_[bank + 1] = base + 0x0400;
 }
 
 std::unique_ptr<Cart> TryCreateCart(
@@ -480,7 +625,7 @@ std::unique_ptr<Cart> TryCreateCart(
         return nullptr;
     }
 
-    if (desc.Mapper > 3)
+    if (desc.Mapper > 4)
         return nullptr;
 
     cart->SetMapper(desc.Mapper);

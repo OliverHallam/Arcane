@@ -40,19 +40,26 @@ public:
 private:
     void WriteMMC1(uint16_t address, uint8_t value);
     void WriteMMC1Register(uint16_t address, uint8_t value);
+    void UpdateChrMapMMC1();
+    void UpdatePrgMapMMC1();
 
     void WriteUxROM(uint16_t address, uint8_t value);
 
     void WriteCNROM(uint16_t address, uint8_t value);
 
-    void UpdateChrMapMMC1();
-    void UpdatePrgMapMMC1();
+    void WriteMMC3(uint16_t address, uint8_t value);
+    void SetPrgModeMMC3(uint8_t mode);
+    void SetChrModeMMC3(uint8_t mode);
+    void SetBankMMC3(uint32_t bank);
+
+    void SetChrBank1k(uint32_t bank, uint32_t value);
+    void SetChrBank2k(uint32_t bank, uint32_t value);
 
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> cpuBanks_;
 
-    // The PPU address space in 4K banks
-    std::array<uint8_t*, 2> ppuBanks_;
+    // The PPU address space in 1K banks
+    std::array<uint8_t*, 8> ppuBanks_;
     bool chrWriteable_;
 
     std::vector<uint8_t> localPrgRam_;
