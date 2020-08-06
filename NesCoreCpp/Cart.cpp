@@ -194,12 +194,6 @@ uint8_t Cart::PpuRead(uint16_t address) const
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
 
-    if (address >= 0x2000)
-    {
-        auto page = (address >> 10) & 0x03;
-        return ppuRamAddressMap_[page][address & 0x3ff];
-    }
-
     auto bank = ppuBanks_[address >> 10];
     return bank[address & 0x03ff];
 }
@@ -207,14 +201,6 @@ uint8_t Cart::PpuRead(uint16_t address) const
 uint16_t Cart::PpuReadChr16(uint16_t address) const
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
-
-    if (address >= 0x2000)
-    {
-        auto page = (address >> 10) & 0x03;
-        auto bank = ppuRamAddressMap_[page];
-        auto bankAddress = address & 0x3fff;
-        return (bank[bankAddress] << 8) | bank[bankAddress | 8];
-    }
 
     auto bank = ppuBanks_[address >> 10];
     auto bankAddress = address & 0x03ff;
@@ -225,14 +211,7 @@ void Cart::PpuWrite(uint16_t address, uint8_t value)
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
 
-    if (address >= 0x2000)
-    {
-        auto page = (address >> 10) & 0x03;
-        ppuRamAddressMap_[page][address & 0x3ff] = value;
-        return;
-    }
-
-    if (chrWriteable_)
+    if (address >= 0x2000 || chrWriteable_)
     {
         auto bank = ppuBanks_[address >> 10];
         bank[address & 0x03ff] = value;
@@ -599,19 +578,31 @@ void Cart::UpdatePpuMap()
     switch (mirrorMode_)
     {
     case MirrorMode::SingleScreenLow:
-        ppuRamAddressMap_ = { base, base, base, base };
+        ppuBanks_[8] = ppuBanks_[12] = base;
+        ppuBanks_[9] = ppuBanks_[13] = base;
+        ppuBanks_[10] = ppuBanks_[14] = base;
+        ppuBanks_[11] = ppuBanks_[15] = base;
         break;
 
     case MirrorMode::SingleScreenHigh:
-        ppuRamAddressMap_ = { base + 0x400, base + 0x400, base + 0x400, base + 0x400 };
+        ppuBanks_[8] = ppuBanks_[12] = base + 0x400;
+        ppuBanks_[9] = ppuBanks_[13] = base + 0x400;
+        ppuBanks_[10] = ppuBanks_[14] = base + 0x400;
+        ppuBanks_[11] = ppuBanks_[15] = base + 0x400;
         break;
 
     case MirrorMode::Vertical:
-        ppuRamAddressMap_ = { base, base + 0x400, base, base + 0x400 };
+        ppuBanks_[8] = ppuBanks_[12] = base;
+        ppuBanks_[9] = ppuBanks_[13] = base + 0x400;
+        ppuBanks_[10] = ppuBanks_[14] = base;
+        ppuBanks_[11] = ppuBanks_[15] = base + 0x400;
         break;
 
     case MirrorMode::Horizontal:
-        ppuRamAddressMap_ = { base, base, base + 0x400, base + 0x400 };
+        ppuBanks_[8] = ppuBanks_[12] = base + 0x400;
+        ppuBanks_[9] = ppuBanks_[13] = base;
+        ppuBanks_[10] = ppuBanks_[14] = base + 0x400;
+        ppuBanks_[11] = ppuBanks_[15] = base;
         break;
     }
 }

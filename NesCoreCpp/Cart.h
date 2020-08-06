@@ -59,7 +59,7 @@ private:
     std::array<uint8_t*, 8> cpuBanks_;
 
     // The PPU address space in 1K banks
-    std::array<uint8_t*, 8> ppuBanks_;
+    std::array<uint8_t*, 16> ppuBanks_;
     bool chrWriteable_;
 
     std::vector<uint8_t> localPrgRam_;
@@ -69,7 +69,6 @@ private:
     std::vector<uint8_t> chrData_;
 
     MirrorMode mirrorMode_;
-    std::array<uint8_t*, 4> ppuRamAddressMap_;
 
     uint32_t mapper_;
 
