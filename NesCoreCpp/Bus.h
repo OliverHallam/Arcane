@@ -37,6 +37,7 @@ public:
     void CpuWrite(uint16_t address, uint8_t value);
     void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
+    uint8_t* GetPpuRamBase();
     uint8_t PpuRead(uint16_t address) const;
     uint16_t PpuReadChr16(uint16_t address) const;
     void PpuWrite(uint16_t address, uint8_t value);

@@ -20,7 +20,7 @@ public:
     void AddPrgRam(uint8_t* data);
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
-    void SetMirrorMode(bool verticalMirroring);
+    void SetMirrorMode(MirrorMode mirrorMode);
 
     void Attach(Bus* bus);
 
@@ -31,8 +31,6 @@ public:
     uint8_t PpuRead(uint16_t address) const;
     uint16_t PpuReadChr16(uint16_t address) const;
     void PpuWrite(uint16_t address, uint8_t value);
-
-    uint16_t EffectivePpuRamAddress(uint16_t address) const;
 
     bool SensitiveToChrA12();
     void SetChrA12(bool set);
@@ -55,6 +53,8 @@ private:
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 
+    void UpdatePpuMap();
+
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> cpuBanks_;
 
@@ -68,7 +68,8 @@ private:
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
-    std::array<uint16_t, 4> ppuRamAddressMap_;
+    MirrorMode mirrorMode_;
+    std::array<uint8_t*, 4> ppuRamAddressMap_;
 
     uint32_t mapper_;
 

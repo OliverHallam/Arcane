@@ -22,9 +22,9 @@ Cart::Cart() :
     prgPlane1_{ 0 },
     prgRamBank0_{ 0 },
     prgRamBank1_{ 0 },
-    chrA12Sensitive_{ false }
+    chrA12Sensitive_{ false },
+    mirrorMode_{ MirrorMode::Horizontal }
 {
-    ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
 }
 
 void Cart::SetMapper(int mapper)
@@ -92,17 +92,19 @@ void Cart::SetChrRam()
     chrWriteable_ = true;
 }
 
-void Cart::SetMirrorMode(bool verticalMirroring)
+void Cart::SetMirrorMode(MirrorMode mirrorMode)
 {
-    if (verticalMirroring)
-        ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
-    else
-        ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
+    mirrorMode_ = mirrorMode;
+    if (bus_)
+    {
+        UpdatePpuMap();
+    }
 }
 
 void Cart::Attach(Bus* bus)
 {
     bus_ = bus;
+    UpdatePpuMap();
 }
 
 uint8_t Cart::CpuRead(uint16_t address) const
@@ -192,6 +194,12 @@ uint8_t Cart::PpuRead(uint16_t address) const
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
 
+    if (address >= 0x2000)
+    {
+        auto page = (address >> 10) & 0x03;
+        return ppuRamAddressMap_[page][address & 0x3ff];
+    }
+
     auto bank = ppuBanks_[address >> 10];
     return bank[address & 0x03ff];
 }
@@ -199,6 +207,14 @@ uint8_t Cart::PpuRead(uint16_t address) const
 uint16_t Cart::PpuReadChr16(uint16_t address) const
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
+
+    if (address >= 0x2000)
+    {
+        auto page = (address >> 10) & 0x03;
+        auto bank = ppuRamAddressMap_[page];
+        auto bankAddress = address & 0x3fff;
+        return (bank[bankAddress] << 8) | bank[bankAddress | 8];
+    }
 
     auto bank = ppuBanks_[address >> 10];
     auto bankAddress = address & 0x03ff;
@@ -209,17 +225,18 @@ void Cart::PpuWrite(uint16_t address, uint8_t value)
 {
     //assert(((address & 0x1000) != 0) == chrA12_);
 
+    if (address >= 0x2000)
+    {
+        auto page = (address >> 10) & 0x03;
+        ppuRamAddressMap_[page][address & 0x3ff] = value;
+        return;
+    }
+
     if (chrWriteable_)
     {
         auto bank = ppuBanks_[address >> 10];
         bank[address & 0x03ff] = value;
     }
-}
-
-uint16_t Cart::EffectivePpuRamAddress(uint16_t address) const
-{
-    auto page = (address >> 10) & 0x03;
-    return ppuRamAddressMap_[page] | (address & 0x3ff);
 }
 
 bool Cart::SensitiveToChrA12()
@@ -287,24 +304,8 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         UpdatePrgMapMMC1();
 
         // mirroring mode
-        switch (value & 0x03)
-        {
-        case 0:
-            ppuRamAddressMap_ = { 0, 0, 0, 0 };
-            break;
-
-        case 1:
-            ppuRamAddressMap_ = { 0x400, 0x400, 0x400, 0x400 };
-            break;
-
-        case 2:
-            ppuRamAddressMap_ = { 0, 0x400, 0, 0x400 };
-            break;
-
-        case 3:
-            ppuRamAddressMap_ = { 0, 0, 0x400, 0x400 };
-            break;
-        }
+        mirrorMode_ = static_cast<MirrorMode>(value & 0x03);
+        UpdatePpuMap();
         break;
 
     case 5:
@@ -589,7 +590,30 @@ void Cart::SetChrBank2k(uint32_t bank, uint32_t value)
     auto bankAddress = (value << 10) & chrMask_ & 0xfffff800;
     auto base = &chrData_[bankAddress];
     ppuBanks_[bank] = base;
-    ppuBanks_[bank + 1] = base + 0x0400;
+    ppuBanks_[static_cast<size_t>(bank) + 1] = base + 0x0400;
+}
+
+void Cart::UpdatePpuMap()
+{
+    auto base = bus_->GetPpuRamBase();
+    switch (mirrorMode_)
+    {
+    case MirrorMode::SingleScreenLow:
+        ppuRamAddressMap_ = { base, base, base, base };
+        break;
+
+    case MirrorMode::SingleScreenHigh:
+        ppuRamAddressMap_ = { base + 0x400, base + 0x400, base + 0x400, base + 0x400 };
+        break;
+
+    case MirrorMode::Vertical:
+        ppuRamAddressMap_ = { base, base + 0x400, base, base + 0x400 };
+        break;
+
+    case MirrorMode::Horizontal:
+        ppuRamAddressMap_ = { base, base, base + 0x400, base + 0x400 };
+        break;
+    }
 }
 
 std::unique_ptr<Cart> TryCreateCart(
@@ -610,20 +634,13 @@ std::unique_ptr<Cart> TryCreateCart(
         cart->SetChrRom(std::move(chrData));
     }
 
-    switch (desc.MirrorMode)
+    if (desc.MirrorMode == MirrorMode::FourScreen)
     {
-    case MirrorMode::Horizontal:
-        cart->SetMirrorMode(false);
-        break;
-
-    case MirrorMode::Vertical:
-        cart->SetMirrorMode(true);
-        break;
-
-    case MirrorMode::FourScreen:
         // TODO:
         return nullptr;
     }
+
+    cart->SetMirrorMode(desc.MirrorMode);
 
     if (desc.Mapper > 4)
         return nullptr;
