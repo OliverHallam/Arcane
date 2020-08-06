@@ -23,7 +23,11 @@ Cart::Cart() :
     prgRamBank0_{ 0 },
     prgRamBank1_{ 0 },
     chrA12Sensitive_{ false },
-    mirrorMode_{ MirrorMode::Horizontal }
+    mirrorMode_{ MirrorMode::Horizontal },
+    irqEnabled_{ false },
+    reloadCounter_{ false },
+    reloadValue_{ 0 },
+    scanlineCounter_{ 0 }
 {
 }
 
@@ -227,14 +231,7 @@ void Cart::SetChrA12(bool set)
 {
     if (chrA12Sensitive_)
     {
-        if (set != chrA12_)
-        {
-            chrA12_ = set;
-            UpdatePrgMapMMC1();
-
-            if (cpuBanks_[3])
-                cpuBanks_[3] = chrA12_ ? prgRamBanks_[prgRamBank1_] : prgRamBanks_[prgRamBank0_];
-        }
+        SetChrA12Impl(set);
         return;
     }
 
@@ -500,6 +497,33 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
             }
         }
     }
+    else if (address < 0xe000)
+    {
+        if ((address & 1) == 0)
+        {
+            reloadValue_ = value;
+        }
+        else
+        {
+            reloadCounter_ = true;
+        }
+
+        chrA12Sensitive_ = scanlineCounter_ > 0 || (reloadValue_ > 0) || irqEnabled_;
+    }
+    else
+    {
+        if ((address & 1) == 0)
+        {
+            irqEnabled_ = false;
+            bus_->SetCartIrq(false);
+        }
+        else
+        {
+            irqEnabled_ = true;
+        }
+
+        chrA12Sensitive_ = scanlineCounter_ > 0 || (reloadValue_ > 0) || irqEnabled_;
+    }
 }
 
 void Cart::SetPrgModeMMC3(uint8_t mode)
@@ -616,6 +640,44 @@ void Cart::UpdatePpuRamMap()
         ppuBanks_[10] = ppuBanks_[14] = base + 0x400;
         ppuBanks_[11] = ppuBanks_[15] = base + 0x400;
         break;
+    }
+}
+
+void Cart::SetChrA12Impl(bool set)
+{
+    if (set != chrA12_)
+    {
+        chrA12_ = set;
+
+        if (mapper_ == 1)
+        {
+            UpdatePrgMapMMC1();
+
+            if (cpuBanks_[3])
+                cpuBanks_[3] = chrA12_ ? prgRamBanks_[prgRamBank1_] : prgRamBanks_[prgRamBank0_];
+        }
+        else // mapper = 3
+        {
+            if (set)
+            {
+                if (scanlineCounter_ == 0 || reloadCounter_)
+                {
+                    scanlineCounter_ = reloadValue_;
+                    reloadCounter_ = false;
+
+                    chrA12Sensitive_ = scanlineCounter_ > 0 || irqEnabled_;
+                }
+                else
+                {
+                    scanlineCounter_--;
+                }
+
+                if (irqEnabled_ && scanlineCounter_ == 0)
+                {
+                    bus_->SetCartIrq(true);
+                }
+            }
+        }
     }
 }
 

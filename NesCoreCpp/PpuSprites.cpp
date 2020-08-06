@@ -231,6 +231,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
+        bus_.SetChrA12(largeSprites_ || spritePatternBase_ != 0);
         return;
     }
 
@@ -299,6 +300,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 {
                     // address is 000PTTTTTTTY0YYY
                     auto bankAddress = (tileId & 1) << 12;
+                    // TODO: this should happen one cycle sooner
                     bus_.SetChrA12(bankAddress != 0);
 
                     tileId &= 0xfe;

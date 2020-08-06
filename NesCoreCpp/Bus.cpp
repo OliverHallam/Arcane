@@ -16,7 +16,9 @@ Bus::Bus() :
     oamDma_{},
     dmcDma_{},
     dmcDmaAddress_{},
-    oamDmaAddress_{}
+    oamDmaAddress_{},
+    audioIrq_{ false },
+    cartIrq_{ false }
 {
     cpuRam_.fill(0xff);
     ppuRam_.fill(0xff);
@@ -224,9 +226,16 @@ void Bus::SignalNmi()
     cpu_->SignalNmi();
 }
 
-void Bus::SetIrq(bool irq)
+void Bus::SetAudioIrq(bool irq)
 {
-    cpu_->SetIrq(irq);
+    audioIrq_ = irq;
+    cpu_->SetIrq(audioIrq_ | cartIrq_);
+}
+
+void Bus::SetCartIrq(bool irq)
+{
+    cartIrq_ = irq;
+    cpu_->SetIrq(audioIrq_ | cartIrq_);
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)

@@ -228,6 +228,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
         return;
     }
 
+    // TODO this should happen on cycle 324
     bus_.SetChrA12(backgroundPatternBase_);
 
     auto cycle = startCycle;

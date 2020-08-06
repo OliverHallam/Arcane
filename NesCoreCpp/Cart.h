@@ -55,6 +55,8 @@ private:
 
     void UpdatePpuRamMap();
 
+    void SetChrA12Impl(bool set);
+
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> cpuBanks_;
 
@@ -92,6 +94,11 @@ private:
     uint32_t prgRamBank1_;
 
     bool chrA12Sensitive_;
+
+    bool irqEnabled_;
+    bool reloadCounter_;
+    uint32_t scanlineCounter_;
+    uint8_t reloadValue_;
 
     Bus* bus_;
 };

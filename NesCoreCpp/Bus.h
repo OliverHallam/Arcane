@@ -43,7 +43,8 @@ public:
     void PpuWrite(uint16_t address, uint8_t value);
 
     void SignalNmi();
-    void SetIrq(bool irq);
+    void SetAudioIrq(bool irq);
+    void SetCartIrq(bool irq);
 
     void BeginOamDma(uint8_t page);
     void BeginDmcDma(uint16_t address);
@@ -77,4 +78,7 @@ private:
 
     uint16_t oamDmaAddress_;
     uint16_t dmcDmaAddress_;
+
+    bool audioIrq_;
+    bool cartIrq_;
 };
