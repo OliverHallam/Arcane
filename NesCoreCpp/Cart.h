@@ -53,7 +53,7 @@ private:
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 
-    void UpdatePpuMap();
+    void UpdatePpuRamMap();
 
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> cpuBanks_;

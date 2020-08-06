@@ -97,14 +97,14 @@ void Cart::SetMirrorMode(MirrorMode mirrorMode)
     mirrorMode_ = mirrorMode;
     if (bus_)
     {
-        UpdatePpuMap();
+        UpdatePpuRamMap();
     }
 }
 
 void Cart::Attach(Bus* bus)
 {
     bus_ = bus;
-    UpdatePpuMap();
+    UpdatePpuRamMap();
 }
 
 uint8_t Cart::CpuRead(uint16_t address) const
@@ -284,7 +284,7 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
 
         // mirroring mode
         mirrorMode_ = static_cast<MirrorMode>(value & 0x03);
-        UpdatePpuMap();
+        UpdatePpuRamMap();
         break;
 
     case 5:
@@ -488,6 +488,18 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
             SetBankMMC3(value);
         }
     }
+    else if (address < 0xc000)
+    {
+        if (mirrorMode_ != MirrorMode::FourScreen)
+        {
+            auto newMirrorMode = value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical;
+            if (mirrorMode_ != newMirrorMode)
+            {
+                mirrorMode_ = newMirrorMode;
+                UpdatePpuRamMap();
+            }
+        }
+    }
 }
 
 void Cart::SetPrgModeMMC3(uint8_t mode)
@@ -572,7 +584,7 @@ void Cart::SetChrBank2k(uint32_t bank, uint32_t value)
     ppuBanks_[static_cast<size_t>(bank) + 1] = base + 0x0400;
 }
 
-void Cart::UpdatePpuMap()
+void Cart::UpdatePpuRamMap()
 {
     auto base = bus_->GetPpuRamBase();
     switch (mirrorMode_)
@@ -599,10 +611,10 @@ void Cart::UpdatePpuMap()
         break;
 
     case MirrorMode::Horizontal:
-        ppuBanks_[8] = ppuBanks_[12] = base + 0x400;
+        ppuBanks_[8] = ppuBanks_[12] = base;
         ppuBanks_[9] = ppuBanks_[13] = base;
         ppuBanks_[10] = ppuBanks_[14] = base + 0x400;
-        ppuBanks_[11] = ppuBanks_[15] = base;
+        ppuBanks_[11] = ppuBanks_[15] = base + 0x400;
         break;
     }
 }
