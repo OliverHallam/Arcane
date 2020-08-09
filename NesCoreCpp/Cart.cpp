@@ -487,14 +487,21 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
     }
     else if (address < 0xc000)
     {
-        if (mirrorMode_ != MirrorMode::FourScreen)
+        if ((address & 1) == 0)
         {
-            auto newMirrorMode = value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical;
-            if (mirrorMode_ != newMirrorMode)
+            if (mirrorMode_ != MirrorMode::FourScreen)
             {
-                mirrorMode_ = newMirrorMode;
-                UpdatePpuRamMap();
+                auto newMirrorMode = value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical;
+                if (mirrorMode_ != newMirrorMode)
+                {
+                    mirrorMode_ = newMirrorMode;
+                    UpdatePpuRamMap();
+                }
             }
+        }
+        else
+        {
+            //assert(false);
         }
     }
     else if (address < 0xe000)
@@ -672,7 +679,7 @@ void Cart::SetChrA12Impl(bool set)
                     scanlineCounter_--;
                 }
 
-                if (irqEnabled_ && scanlineCounter_ == 0)
+                if (scanlineCounter_ == 0 && irqEnabled_)
                 {
                     bus_->SetCartIrq(true);
                 }

@@ -16,6 +16,8 @@ public:
 
     void EnableLeftColumn(bool enabled);
 
+    void EnableRendering(uint32_t cycle);
+
     void BeginScanline();
 
     uint8_t Render();

@@ -217,6 +217,11 @@ bool PpuSprites::SpriteOverflow()
     return spriteOverflow_;
 }
 
+void PpuSprites::DummyLoad()
+{
+    bus_.SetChrA12(largeSprites_ || spritePatternBase_ != 0);
+}
+
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
     // TODO: should be 321?
