@@ -46,7 +46,16 @@ void Ppu::Sync()
 
 void Ppu::SyncA12()
 {
-    Sync();
+    if (enableRendering_)
+    {
+        if (currentScanline_ < 240)
+        {
+            if (targetCycle_ >= 256 && scanlineCycle_ <= 320)
+            {
+                Sync(targetCycle_);
+            }
+        }
+    }
 }
 
 uint8_t Ppu::Read(uint16_t address)

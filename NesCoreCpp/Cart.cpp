@@ -232,7 +232,6 @@ void Cart::SetChrA12(bool set)
     if (chrA12Sensitive_)
     {
         SetChrA12Impl(set);
-        return;
     }
 
     chrA12_ = set;
@@ -654,14 +653,12 @@ void Cart::SetChrA12Impl(bool set)
 {
     if (set != chrA12_)
     {
-        chrA12_ = set;
-
         if (mapper_ == 1)
         {
             UpdatePrgMapMMC1();
 
             if (cpuBanks_[3])
-                cpuBanks_[3] = chrA12_ ? prgRamBanks_[prgRamBank1_] : prgRamBanks_[prgRamBank0_];
+                cpuBanks_[3] = set ? prgRamBanks_[prgRamBank1_] : prgRamBanks_[prgRamBank0_];
         }
         else // mapper = 3
         {
