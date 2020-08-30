@@ -37,12 +37,14 @@ public:
     void CpuWrite(uint16_t address, uint8_t value);
     void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
+    uint8_t* GetPpuRamBase();
     uint8_t PpuRead(uint16_t address) const;
     uint16_t PpuReadChr16(uint16_t address) const;
     void PpuWrite(uint16_t address, uint8_t value);
 
     void SignalNmi();
-    void SetIrq(bool irq);
+    void SetAudioIrq(bool irq);
+    void SetCartIrq(bool irq);
 
     void BeginOamDma(uint8_t page);
     void BeginDmcDma(uint16_t address);
@@ -76,4 +78,7 @@ private:
 
     uint16_t oamDmaAddress_;
     uint16_t dmcDmaAddress_;
+
+    bool audioIrq_;
+    bool cartIrq_;
 };

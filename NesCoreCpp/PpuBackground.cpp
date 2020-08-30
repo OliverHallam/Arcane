@@ -24,6 +24,18 @@ void PpuBackground::EnableLeftColumn(bool enabled)
     leftCrop_ = enabled ? 0 : 8;
 }
 
+void PpuBackground::EnableRendering(uint32_t cycle)
+{
+    if (cycle >= 320)
+    {
+        loadingIndex_ = (cycle - 320) / 8;
+    }
+    else if (cycle < 256)
+    {
+        loadingIndex_ = (cycle + 16) / 8;
+    }
+}
+
 void PpuBackground::BeginScanline()
 {
     currentTileIndex_ = 0;
@@ -228,6 +240,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
         return;
     }
 
+    // TODO this should happen on cycle 324
     bus_.SetChrA12(backgroundPatternBase_);
 
     auto cycle = startCycle;

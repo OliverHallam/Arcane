@@ -16,7 +16,9 @@ Bus::Bus() :
     oamDma_{},
     dmcDma_{},
     dmcDmaAddress_{},
-    oamDmaAddress_{}
+    oamDmaAddress_{},
+    audioIrq_{ false },
+    cartIrq_{ false }
 {
     cpuRam_.fill(0xff);
     ppuRam_.fill(0xff);
@@ -199,13 +201,14 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     }
 }
 
+uint8_t* Bus::GetPpuRamBase()
+{
+    return &ppuRam_[0];
+}
+
 uint8_t Bus::PpuRead(uint16_t address) const
 {
-    if (address < 0x2000)
-        return cart_->PpuRead(address);
-
-    address = cart_->EffectivePpuRamAddress(address);
-    return ppuRam_[address];
+    return cart_->PpuRead(address);
 }
 
 uint16_t Bus::PpuReadChr16(uint16_t address) const
@@ -215,15 +218,7 @@ uint16_t Bus::PpuReadChr16(uint16_t address) const
 
 void Bus::PpuWrite(uint16_t address, uint8_t value)
 {
-    if (address >= 0x2000)
-    {
-        address = cart_->EffectivePpuRamAddress(address);
-        ppuRam_[address] = value;
-    }
-    else
-    {
-        cart_->PpuWrite(address, value);
-    }
+    cart_->PpuWrite(address, value);
 }
 
 void Bus::SignalNmi()
@@ -231,9 +226,16 @@ void Bus::SignalNmi()
     cpu_->SignalNmi();
 }
 
-void Bus::SetIrq(bool irq)
+void Bus::SetAudioIrq(bool irq)
 {
-    cpu_->SetIrq(irq);
+    audioIrq_ = irq;
+    cpu_->SetIrq(audioIrq_ | cartIrq_);
+}
+
+void Bus::SetCartIrq(bool irq)
+{
+    cartIrq_ = irq;
+    cpu_->SetIrq(audioIrq_ | cartIrq_);
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)

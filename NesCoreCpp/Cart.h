@@ -20,7 +20,7 @@ public:
     void AddPrgRam(uint8_t* data);
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
-    void SetMirrorMode(bool verticalMirroring);
+    void SetMirrorMode(MirrorMode mirrorMode);
 
     void Attach(Bus* bus);
 
@@ -32,27 +32,36 @@ public:
     uint16_t PpuReadChr16(uint16_t address) const;
     void PpuWrite(uint16_t address, uint8_t value);
 
-    uint16_t EffectivePpuRamAddress(uint16_t address) const;
-
     bool SensitiveToChrA12();
     void SetChrA12(bool set);
 
 private:
     void WriteMMC1(uint16_t address, uint8_t value);
     void WriteMMC1Register(uint16_t address, uint8_t value);
+    void UpdateChrMapMMC1();
+    void UpdatePrgMapMMC1();
 
     void WriteUxROM(uint16_t address, uint8_t value);
 
     void WriteCNROM(uint16_t address, uint8_t value);
 
-    void UpdateChrMapMMC1();
-    void UpdatePrgMapMMC1();
+    void WriteMMC3(uint16_t address, uint8_t value);
+    void SetPrgModeMMC3(uint8_t mode);
+    void SetChrModeMMC3(uint8_t mode);
+    void SetBankMMC3(uint32_t bank);
+
+    void SetChrBank1k(uint32_t bank, uint32_t value);
+    void SetChrBank2k(uint32_t bank, uint32_t value);
+
+    void UpdatePpuRamMap();
+
+    void SetChrA12Impl(bool set);
 
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> cpuBanks_;
 
-    // The PPU address space in 4K banks
-    std::array<uint8_t*, 2> ppuBanks_;
+    // The PPU address space in 1K banks
+    std::array<uint8_t*, 16> ppuBanks_;
     bool chrWriteable_;
 
     std::vector<uint8_t> localPrgRam_;
@@ -61,7 +70,7 @@ private:
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
-    std::array<uint16_t, 4> ppuRamAddressMap_;
+    MirrorMode mirrorMode_;
 
     uint32_t mapper_;
 
@@ -85,6 +94,11 @@ private:
     uint32_t prgRamBank1_;
 
     bool chrA12Sensitive_;
+
+    bool irqEnabled_;
+    bool reloadCounter_;
+    uint32_t scanlineCounter_;
+    uint8_t reloadValue_;
 
     Bus* bus_;
 };

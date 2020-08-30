@@ -46,7 +46,16 @@ void Ppu::Sync()
 
 void Ppu::SyncA12()
 {
-    Sync();
+    if (enableRendering_)
+    {
+        if (currentScanline_ < 240)
+        {
+            if (targetCycle_ >= 256 && scanlineCycle_ <= 320)
+            {
+                Sync(targetCycle_);
+            }
+        }
+    }
 }
 
 uint8_t Ppu::Read(uint16_t address)
@@ -275,12 +284,18 @@ void Ppu::RunDeferredUpdate()
         // mask updates after 2 cycles
         Sync(targetCycle_ - 1);
 
-        // TODO: grayscale/emphasis bits
         background_.EnableLeftColumn((mask_ & 0x02) != 0);
         sprites_.EnableLeftColumn((mask_ & 0x04) != 0);
         enableBackground_ = (mask_ & 0x08) != 0;
         enableForeground_ = (mask_ & 0x10) != 0;
+
+        auto prevRenderingEnabled = enableRendering_;
         enableRendering_ = (mask_ & 0x18) != 0;
+
+        if (enableRendering_ && !prevRenderingEnabled & currentScanline_ < 240)
+        {
+            background_.EnableRendering(targetCycle_ - 1);
+        }
 
         grayscaleMask_ = (mask_ & 0x01) ? 0x30 : 0xff;
         auto newEmphasis = (mask_ & 0xe0) >> 5;
@@ -423,6 +438,8 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
     if (scanlineCycle_ < 320)
     {
         auto maxCycle = std::min(targetCycle, 320);
+
+        sprites_.DummyLoad();
 
         if (enableRendering_)
         {

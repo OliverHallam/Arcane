@@ -155,7 +155,7 @@ uint8_t Apu::Read(uint16_t address)
             status |= 0x80;
 
         frameCounterInterrupt_ = false;
-        bus_.SetIrq(dmcInterrupt_);
+        bus_.SetAudioIrq(dmcInterrupt_);
 
         return status;
     }
@@ -186,13 +186,13 @@ void Apu::SetDmcBuffer(uint8_t value)
 void Apu::SetFrameCounterInterrupt(bool interrupt)
 {
     frameCounterInterrupt_ = interrupt;
-    bus_.SetIrq(frameCounterInterrupt_ || dmcInterrupt_);
+    bus_.SetAudioIrq(frameCounterInterrupt_ || dmcInterrupt_);
 }
 
 void Apu::SetDmcInterrupt(bool interrupt)
 {
     dmcInterrupt_ = interrupt;
-    bus_.SetIrq(frameCounterInterrupt_ || dmcInterrupt_);
+    bus_.SetCartIrq(frameCounterInterrupt_ || dmcInterrupt_);
 }
 
 void Apu::Sync()
