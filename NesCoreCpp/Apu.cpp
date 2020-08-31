@@ -1,8 +1,7 @@
 #include "Apu.h"
-
 #include "Bus.h"
 
-#include <assert.h>
+#include <cassert>
 
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
@@ -11,17 +10,15 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     currentSample_(0),
     samplesPerFrame_(samplesPerFrame),
     lastSampleCycle_(29780 / samplesPerFrame),
-    sampleCounter_(29780 / samplesPerFrame),
     pulse1_{true},
     pulse2_{false},
-    dmc_{*this},
-    syncCounter_{}
+    dmc_{*this}
 {
     // account for the fact we start off after VBlank
     currentSample_ = (21 * samplesPerFrame) / 261;
-    lastSampleCycle_ = ((currentSample_ + 1) * 29780) / samplesPerFrame;
+    lastSampleCycle_ = ((currentSample_ + 1) * 29781) / samplesPerFrame;
     auto currentCycle = (21 * 341 / 3);
-    sampleCounter_ = lastSampleCycle_ - currentCycle;
+    bus_.ScheduleApuSample(lastSampleCycle_ - currentCycle);
 }
 
 void Apu::Tick()
@@ -29,16 +26,6 @@ void Apu::Tick()
     frameCounter_.Tick();
 
     pendingCycles_++;
-
-    if (!--syncCounter_)
-    {
-        Sync();
-    }
-
-    if (!--sampleCounter_)
-    {
-        Sample();
-    }
 }
 
 void Apu::QuarterFrame()
@@ -63,12 +50,11 @@ void Apu::HalfFrame()
 
 void Apu::SyncFrame()
 {
-    Sync();
-
     assert(currentSample_ == samplesPerFrame_);
 
     currentSample_ = 0;
-    lastSampleCycle_ = sampleCounter_ = 29780 / samplesPerFrame_;
+    lastSampleCycle_ = 0;
+    Sample();
 }
 
 void Apu::Write(uint16_t address, uint8_t value)
@@ -109,9 +95,10 @@ void Apu::Write(uint16_t address, uint8_t value)
     case 0x4011:
     case 0x4012:
     case 0x4013:
+    {
         dmc_.Write(address, value);
-        syncCounter_ = dmc_.CyclesUntilNextDma();
         break;
+    }
 
     case 0x4015:
         pulse1_.Enabled(value & 0x01);
@@ -173,6 +160,11 @@ const int16_t* Apu::Samples() const
     return frameBuffer_.get();
 }
 
+void Apu::ScheduleDmc(uint32_t cycles)
+{
+    bus_.ScheduleApuSync(cycles);
+}
+
 void Apu::RequestDmcByte(uint16_t address)
 {
     bus_.BeginDmcDma(address);
@@ -204,8 +196,6 @@ void Apu::Sync()
     dmc_.Run(pendingCycles_);
 
     pendingCycles_ = 0;
-
-    syncCounter_ = dmc_.CyclesUntilNextDma();
 }
 
 void Apu::Sample()
@@ -221,7 +211,11 @@ void Apu::Sample()
         (noise_.Sample() << 7) +
         (dmc_.Sample() << 7);
 
-    auto nextSampleCycle = (29780 * (currentSample_ + 1)) / samplesPerFrame_;
-    sampleCounter_ = nextSampleCycle - lastSampleCycle_;
-    lastSampleCycle_ = nextSampleCycle;
+    // we'll let the PPU kick start the next frame, due to the fact that the cycles don't quite line up
+    if (currentSample_ != samplesPerFrame_)
+    {
+        auto nextSampleCycle = (29781 * currentSample_) / samplesPerFrame_;
+        bus_.ScheduleApuSample(nextSampleCycle - lastSampleCycle_);
+        lastSampleCycle_ = nextSampleCycle;
+    }
 }

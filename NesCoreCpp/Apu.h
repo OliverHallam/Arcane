@@ -28,15 +28,18 @@ public:
     uint32_t SamplesPerFrame() const;
     const int16_t* Samples() const;
 
+    void ScheduleDmc(uint32_t cycles);
+
     void RequestDmcByte(uint16_t address);
     void SetDmcBuffer(uint8_t value);
 
     void SetFrameCounterInterrupt(bool interrupt);
     void SetDmcInterrupt(bool interrupt);
 
-private:
-    void Sync();
     void Sample();
+    void Sync();
+
+private:
 
     Bus& bus_;
 
@@ -53,9 +56,6 @@ private:
     uint32_t samplesPerFrame_;
     uint32_t currentSample_;
     uint32_t lastSampleCycle_;
-
-    uint32_t sampleCounter_;
-    uint32_t syncCounter_;
 
     uint32_t pendingCycles_{};
 

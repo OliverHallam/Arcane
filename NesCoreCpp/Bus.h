@@ -9,6 +9,7 @@
 #include "Cpu.h"
 #include "Ppu.h"
 #include "Apu.h"
+#include "EventQueue.h"
 
 class Bus
 {
@@ -51,6 +52,9 @@ public:
 
     void OnFrame();
 
+    void ScheduleApuSample(uint32_t cycles);
+    void ScheduleApuSync(uint32_t cycles);
+
 private:
     void Tick();
 
@@ -81,4 +85,6 @@ private:
 
     bool audioIrq_;
     bool cartIrq_;
+
+    EventQueue syncQueue_;
 };

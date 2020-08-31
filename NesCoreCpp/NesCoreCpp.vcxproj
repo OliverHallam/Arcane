@@ -146,6 +146,7 @@
     <ClInclude Include="Cpu.h" />
     <ClInclude Include="Crc32.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="EventQueue.h" />
     <ClInclude Include="GameDatabase.h" />
     <ClInclude Include="RomFile.h" />
     <ClInclude Include="MirrorMode.h" />
@@ -153,6 +154,7 @@
     <ClInclude Include="Ppu.h" />
     <ClInclude Include="PpuBackground.h" />
     <ClInclude Include="PpuSprites.h" />
+    <ClInclude Include="SyncEvent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Apu.cpp" />
@@ -170,6 +172,7 @@
     <ClCompile Include="Cpu.cpp" />
     <ClCompile Include="Crc32.cpp" />
     <ClCompile Include="Display.cpp" />
+    <ClCompile Include="EventQueue.cpp" />
     <ClCompile Include="GameDatabase.cpp" />
     <ClCompile Include="RomFile.cpp" />
     <ClCompile Include="NesSystem.cpp" />

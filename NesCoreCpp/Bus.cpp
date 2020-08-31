@@ -275,12 +275,36 @@ void Bus::OnFrame()
     apu_->SyncFrame();
 }
 
+void Bus::ScheduleApuSample(uint32_t cycles)
+{
+    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuSample);
+}
+
+void Bus::ScheduleApuSync(uint32_t cycles)
+{
+    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuSync);
+}
+
 void Bus::Tick()
 {
     cycleCount_++;
 
     apu_->Tick();
     ppu_->Tick3();
+
+    while (!syncQueue_.Empty() && cycleCount_ == syncQueue_.GetNextEventTime())
+    {
+        switch (syncQueue_.PopEvent())
+        {
+        case SyncEvent::ApuSample:
+            apu_->Sample();
+            break;
+
+        case SyncEvent::ApuSync:
+            apu_->Sync();
+            break;
+        }
+    }
 }
 
 void Bus::RunDma()

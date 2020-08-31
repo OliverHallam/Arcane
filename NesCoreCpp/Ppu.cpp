@@ -292,7 +292,7 @@ void Ppu::RunDeferredUpdate()
         auto prevRenderingEnabled = enableRendering_;
         enableRendering_ = (mask_ & 0x18) != 0;
 
-        if (enableRendering_ && !prevRenderingEnabled & currentScanline_ < 240)
+        if (enableRendering_ && !prevRenderingEnabled && (currentScanline_ < 240))
         {
             background_.EnableRendering(targetCycle_ - 1);
         }

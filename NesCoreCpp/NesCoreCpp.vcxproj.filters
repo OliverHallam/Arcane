@@ -31,6 +31,8 @@
     <ClInclude Include="GameDatabase.h" />
     <ClInclude Include="CartData.h" />
     <ClInclude Include="Crc32.h" />
+    <ClInclude Include="EventQueue.h" />
+    <ClInclude Include="SyncEvent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -54,5 +56,6 @@
     <ClCompile Include="RomFile.cpp" />
     <ClCompile Include="GameDatabase.cpp" />
     <ClCompile Include="Crc32.cpp" />
+    <ClCompile Include="EventQueue.cpp" />
   </ItemGroup>
 </Project>
