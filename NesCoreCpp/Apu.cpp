@@ -18,13 +18,12 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     currentSample_ = (21 * samplesPerFrame) / 261;
     lastSampleCycle_ = ((currentSample_ + 1) * 29781) / samplesPerFrame;
     auto currentCycle = (21 * 341 / 3);
-    bus_.ScheduleApuSample(lastSampleCycle_ - currentCycle);
+    bus_.Schedule(lastSampleCycle_ - currentCycle, SyncEvent::ApuSample);
+    bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
 }
 
 void Apu::Tick()
 {
-    frameCounter_.Tick();
-
     pendingCycles_++;
 }
 
@@ -110,7 +109,8 @@ void Apu::Write(uint16_t address, uint8_t value)
 
     case 0x4017:
         frameCounter_.EnableInterrupt((value & 0x40) == 0);
-        frameCounter_.SetMode(value >> 7);
+        auto nextTick = frameCounter_.SetMode(value >> 7);
+        bus_.RescheduleFrameCounter(nextTick);
         break;
     }
 }
@@ -162,7 +162,7 @@ const int16_t* Apu::Samples() const
 
 void Apu::ScheduleDmc(uint32_t cycles)
 {
-    bus_.ScheduleApuSync(cycles);
+    bus_.Schedule(cycles, SyncEvent::ApuSync);
 }
 
 void Apu::RequestDmcByte(uint16_t address)
@@ -198,6 +198,12 @@ void Apu::Sync()
     pendingCycles_ = 0;
 }
 
+void Apu::ActivateFrameCounter()
+{
+    auto cycles = frameCounter_.Activate();
+    bus_.Schedule(cycles, SyncEvent::ApuFrameCounter);
+}
+
 void Apu::Sample()
 {
     Sync();
@@ -215,7 +221,7 @@ void Apu::Sample()
     if (currentSample_ != samplesPerFrame_)
     {
         auto nextSampleCycle = (29781 * currentSample_) / samplesPerFrame_;
-        bus_.ScheduleApuSample(nextSampleCycle - lastSampleCycle_);
+        bus_.Schedule(nextSampleCycle - lastSampleCycle_, SyncEvent::ApuSample);
         lastSampleCycle_ = nextSampleCycle;
     }
 }

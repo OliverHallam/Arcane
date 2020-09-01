@@ -13,6 +13,19 @@ void EventQueue::Schedule(uint32_t cycles, SyncEvent value)
     std::push_heap(begin(heap_), end_);
 }
 
+void EventQueue::Unschedule(SyncEvent value)
+{
+    auto current = begin(heap_);
+    for (auto current = begin(heap_); current != end_; ++current)
+    {
+        if (current->Value == value)
+        {
+            current->Value = SyncEvent::None;
+            return;
+        }
+    }
+}
+
 bool EventQueue::Empty() const
 {
     return begin(heap_) == end_;

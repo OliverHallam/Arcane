@@ -52,8 +52,8 @@ public:
 
     void OnFrame();
 
-    void ScheduleApuSample(uint32_t cycles);
-    void ScheduleApuSync(uint32_t cycles);
+    void Schedule(uint32_t cycles, SyncEvent evt);
+    void RescheduleFrameCounter(uint32_t cycles);
 
 private:
     void Tick();

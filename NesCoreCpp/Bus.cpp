@@ -275,14 +275,19 @@ void Bus::OnFrame()
     apu_->SyncFrame();
 }
 
-void Bus::ScheduleApuSample(uint32_t cycles)
+void Bus::Schedule(uint32_t cycles, SyncEvent evt)
 {
-    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuSample);
+    syncQueue_.Schedule(cycleCount_ + cycles, evt);
 }
 
-void Bus::ScheduleApuSync(uint32_t cycles)
+void Bus::RescheduleFrameCounter(uint32_t cycles)
 {
-    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuSync);
+    // sync to audio clock
+    if (cycleCount_ & 1)
+        cycles++;
+
+    syncQueue_.Unschedule(SyncEvent::ApuFrameCounter);
+    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuFrameCounter);
 }
 
 void Bus::Tick()
@@ -302,6 +307,10 @@ void Bus::Tick()
 
         case SyncEvent::ApuSync:
             apu_->Sync();
+            break;
+
+        case SyncEvent::ApuFrameCounter:
+            apu_->ActivateFrameCounter();
             break;
         }
     }

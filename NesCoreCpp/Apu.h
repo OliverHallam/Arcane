@@ -38,6 +38,7 @@ public:
 
     void Sample();
     void Sync();
+    void ActivateFrameCounter();
 
 private:
 

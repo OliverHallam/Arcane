@@ -10,14 +10,11 @@ public:
     ApuFrameCounter(Apu& apu);
 
     void EnableInterrupt(bool enable);
-    void SetMode(uint8_t mode);
+    uint32_t SetMode(uint8_t mode);
 
-    void Tick();
+    uint32_t Activate();
 
 private:
-    void Activate();
-
-    uint_fast16_t counter_;
     uint_fast8_t phase_;
 
     uint8_t mode_{};
