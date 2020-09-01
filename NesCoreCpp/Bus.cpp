@@ -308,6 +308,10 @@ void Bus::Tick()
             apu_->ActivateFrameCounter();
             break;
 
+        case SyncEvent::PpuStateUpdate:
+            ppu_->SyncState();
+            break;
+
         case SyncEvent::PpuScanline:
             ppu_->SyncScanline();
             break;

@@ -49,9 +49,15 @@ EventQueue::Event::Event(uint32_t cycles, SyncEvent value)
 {
 }
 
+uint64_t EventQueue::Event::GetCompareValue()
+{
+    return (static_cast<uint64_t>(Cycles) << 32) | static_cast<uint32_t>(Value);
+}
+
 bool EventQueue::Event::operator<(Event other)
 {
-    // this should handle integer wraparound properly
-    auto cmp = static_cast<int>(Cycles - other.Cycles);
+    auto thisValue = GetCompareValue();
+    auto otherValue = other.GetCompareValue();
+    auto cmp = static_cast<int64_t>(thisValue - otherValue);
     return cmp > 0;
 }

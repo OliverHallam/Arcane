@@ -23,11 +23,6 @@ void Ppu::Tick3()
 {
     targetCycle_ += 3;
 
-    if (hasDeferredUpdate_)
-    {
-        RunDeferredUpdate();
-    }
-
     if (bus_.SensitiveToChrA12())
     {
         SyncA12();
@@ -142,7 +137,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         if (enableVBlankInterrupt_ && !wasVblankInterruptEnabled && inVBlank_)
         {
             signalVBlank_ = true;
-            hasDeferredUpdate_ = true;
+            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
         return;
@@ -151,7 +146,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
     case 1:
         mask_ = value;
         updateMask_ = true;
-        hasDeferredUpdate_ = true;
+        bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         return;
 
     case 3:
@@ -201,7 +196,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
             initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
             // update the address in 3 cycles time.
             updateBaseAddress_ = true;
-            hasDeferredUpdate_ = true;
+            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
+
             addressLatch_ = false;
         }
         return;
@@ -259,7 +255,7 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
-void Ppu::RunDeferredUpdate()
+void Ppu::SyncState()
 {
     if (signalVBlank_)
     {
@@ -308,8 +304,6 @@ void Ppu::RunDeferredUpdate()
 
         updateMask_ = false;
     }
-
-    hasDeferredUpdate_ = false;
 }
 
 void Ppu::SyncScanline()
@@ -344,7 +338,7 @@ void Ppu::SyncScanline()
         {
             // otherwise we process the VBlank on the next update
             signalVBlank_ = true;
-            hasDeferredUpdate_ = true;
+            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
         currentScanline_ = 241;

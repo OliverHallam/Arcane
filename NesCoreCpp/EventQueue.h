@@ -29,6 +29,8 @@ private:
         uint32_t Cycles;
         SyncEvent Value;
 
+        uint64_t GetCompareValue();
+
         bool operator<(Event other);
     };
 
