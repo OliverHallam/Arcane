@@ -28,7 +28,6 @@ public:
 
 private:
     void Sync(int32_t targetCycle);
-    void SyncA12();
     void SyncComposite(int32_t targetCycle);
 
     void PreRenderScanline(int32_t targetCycle);

@@ -10,4 +10,5 @@ enum class SyncEvent : uint32_t
     ApuSync,
     PpuStateUpdate,
     PpuScanline,
+    PpuSync
 };

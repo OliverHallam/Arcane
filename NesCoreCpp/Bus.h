@@ -58,6 +58,9 @@ public:
 private:
     void Tick();
 
+    __declspec(noinline)
+    void RunEvent();
+
     uint8_t DmcDmaRead(uint16_t address);
     void OamDmaWrite(uint8_t value);
 

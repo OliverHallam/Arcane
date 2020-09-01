@@ -22,30 +22,11 @@ uint32_t Ppu::FrameCount()
 void Ppu::Tick3()
 {
     targetCycle_ += 3;
-
-    if (bus_.SensitiveToChrA12())
-    {
-        SyncA12();
-    }
 }
 
 void Ppu::Sync()
 {
     Sync(targetCycle_);
-}
-
-void Ppu::SyncA12()
-{
-    if (enableRendering_)
-    {
-        if (currentScanline_ < 240)
-        {
-            if (targetCycle_ >= 256 && scanlineCycle_ <= 320)
-            {
-                Sync(targetCycle_);
-            }
-        }
-    }
 }
 
 uint8_t Ppu::Read(uint16_t address)
@@ -356,6 +337,11 @@ void Ppu::SyncScanline()
     // the target cycle starts at -1 which gives us our extra tick at the start of the line
     scanlineCycle_ = 0;
     targetCycle_ -= 341;
+
+    // For A12 we want to sync when we start the sprites.
+    if (enableRendering_ && bus_.SensitiveToChrA12() && currentScanline_ < 240)
+        bus_.Schedule((259 - targetCycle_) / 3, SyncEvent::PpuSync);
+
     bus_.Schedule((342 - targetCycle_) / 3, SyncEvent::PpuScanline);
 }
 
@@ -501,17 +487,13 @@ void Ppu::RenderScanline(int32_t targetCycle)
             return;
     }
 
-    if (scanlineCycle_ == 256)
-    {
-        FinishRender();
-
-        scanlineCycle_ = 257;
-        if (scanlineCycle_ == targetCycle)
-            return;
-    }
-
     if (scanlineCycle_ < 320)
     {
+        if (scanlineCycle_ == 256)
+        {
+            FinishRender();
+        }
+
         auto maxIndex = std::min(320, targetCycle);
 
         if (enableRendering_)

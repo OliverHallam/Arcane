@@ -294,28 +294,37 @@ void Bus::Tick()
 
     while (!syncQueue_.Empty() && cycleCount_ == syncQueue_.GetNextEventTime())
     {
-        switch (syncQueue_.PopEvent())
-        {
-        case SyncEvent::ApuSample:
-            apu_->Sample();
-            break;
+        RunEvent();
+    }
+}
 
-        case SyncEvent::ApuSync:
-            apu_->Sync();
-            break;
+void Bus::RunEvent()
+{
+    switch (syncQueue_.PopEvent())
+    {
+    case SyncEvent::ApuSample:
+        apu_->Sample();
+        break;
 
-        case SyncEvent::ApuFrameCounter:
-            apu_->ActivateFrameCounter();
-            break;
+    case SyncEvent::ApuSync:
+        apu_->Sync();
+        break;
 
-        case SyncEvent::PpuStateUpdate:
-            ppu_->SyncState();
-            break;
+    case SyncEvent::ApuFrameCounter:
+        apu_->ActivateFrameCounter();
+        break;
 
-        case SyncEvent::PpuScanline:
-            ppu_->SyncScanline();
-            break;
-        }
+    case SyncEvent::PpuStateUpdate:
+        ppu_->SyncState();
+        break;
+
+    case SyncEvent::PpuScanline:
+        ppu_->SyncScanline();
+        break;
+
+    case SyncEvent::PpuSync:
+        ppu_->Sync();
+        break;
     }
 }
 
