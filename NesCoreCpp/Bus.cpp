@@ -292,7 +292,8 @@ void Bus::Tick()
 
     ppu_->Tick3();
 
-    while (!syncQueue_.Empty() && cycleCount_ == syncQueue_.GetNextEventTime())
+    // there is always at least one event scheduled so we can skip the check that the queue is empty
+    while (cycleCount_ == syncQueue_.GetNextEventTime())
     {
         RunEvent();
     }
