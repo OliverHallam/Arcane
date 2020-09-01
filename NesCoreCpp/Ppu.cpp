@@ -11,6 +11,7 @@ Ppu::Ppu(Bus& bus, Display& display) :
     background_{ bus },
     sprites_{ bus }
 {
+    bus_.Schedule(342 / 3, SyncEvent::PpuScanline);
 }
 
 uint32_t Ppu::FrameCount()
@@ -25,12 +26,6 @@ void Ppu::Tick3()
     if (hasDeferredUpdate_)
     {
         RunDeferredUpdate();
-    }
-
-    if (targetCycle_ >= 340)
-    {
-        SyncScanline();
-        return;
     }
 
     if (bus_.SensitiveToChrA12())
@@ -319,6 +314,9 @@ void Ppu::RunDeferredUpdate()
 
 void Ppu::SyncScanline()
 {
+    if (targetCycle_ < 340)
+        return;
+
     // we're at the end of the scanline, so lets render the whole thing
     if (currentScanline_ < 240)
     {
@@ -330,6 +328,8 @@ void Ppu::SyncScanline()
         {
             RenderScanline(340);
         }
+
+        currentScanline_++;
     }
     else if (currentScanline_ == 240)
     {
@@ -347,26 +347,22 @@ void Ppu::SyncScanline()
             hasDeferredUpdate_ = true;
         }
 
-        scanlineCycle_ = 0;
         currentScanline_ = 241;
-        targetCycle_ -= 341;
-
-        return;
     }
     else if (currentScanline_ == 261)
     {
         PreRenderScanline(340);
-        scanlineCycle_ = 0;
         currentScanline_ = 0;
-        targetCycle_ -= 341;
-        return;
+    }
+    else
+    {
+        currentScanline_++;
     }
 
-    scanlineCycle_ = 0;
-    currentScanline_++;
-
     // the target cycle starts at -1 which gives us our extra tick at the start of the line
+    scanlineCycle_ = 0;
     targetCycle_ -= 341;
+    bus_.Schedule((342 - targetCycle_) / 3, SyncEvent::PpuScanline);
 }
 
 void Ppu::Sync(int32_t targetCycle)

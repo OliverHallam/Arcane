@@ -8,4 +8,5 @@ enum class SyncEvent : uint32_t
     ApuFrameCounter,
     ApuSample,
     ApuSync,
+    PpuScanline,
 };

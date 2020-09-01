@@ -18,6 +18,7 @@ public:
 
     void Tick3();
     void Sync();
+    void SyncScanline();
 
     uint8_t Read(uint16_t address);
     void Write(uint16_t address, uint8_t value);
@@ -27,7 +28,6 @@ public:
 private:
     // this allows the general case of Tick3 to be inlined
     __declspec(noinline) void RunDeferredUpdate();
-    __declspec(noinline) void SyncScanline();
 
     void Sync(int32_t targetCycle);
     void SyncA12();
