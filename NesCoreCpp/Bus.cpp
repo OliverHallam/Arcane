@@ -282,10 +282,6 @@ void Bus::Schedule(uint32_t cycles, SyncEvent evt)
 
 void Bus::RescheduleFrameCounter(uint32_t cycles)
 {
-    // sync to audio clock
-    if (cycleCount_ & 1)
-        cycles++;
-
     syncQueue_.Unschedule(SyncEvent::ApuFrameCounter);
     syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuFrameCounter);
 }
@@ -294,7 +290,6 @@ void Bus::Tick()
 {
     cycleCount_++;
 
-    apu_->Tick();
     ppu_->Tick3();
 
     while (!syncQueue_.Empty() && cycleCount_ == syncQueue_.GetNextEventTime())

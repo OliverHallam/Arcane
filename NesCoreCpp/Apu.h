@@ -16,7 +16,6 @@ class Apu
 public:
     Apu(Bus& bus, uint32_t samplesPerFrame);
 
-    void Tick();
     void QuarterFrame();
     void HalfFrame();
 
@@ -41,7 +40,6 @@ public:
     void ActivateFrameCounter();
 
 private:
-
     Bus& bus_;
 
     ApuFrameCounter frameCounter_;
@@ -57,8 +55,8 @@ private:
     uint32_t samplesPerFrame_;
     uint32_t currentSample_;
     uint32_t lastSampleCycle_;
-
-    uint32_t pendingCycles_{};
+    
+    uint32_t lastSyncCycle_{};
 
     bool dmcInterrupt_{};
     bool frameCounterInterrupt_{};

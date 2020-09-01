@@ -5,13 +5,14 @@
 
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
-    frameCounter_{*this},
-    frameBuffer_{new int16_t[samplesPerFrame]},
+    frameCounter_{ *this },
+    frameBuffer_{ new int16_t[samplesPerFrame] },
     currentSample_(0),
     samplesPerFrame_(samplesPerFrame),
     lastSampleCycle_(29780 / samplesPerFrame),
-    pulse1_{true},
-    pulse2_{false},
+    lastSyncCycle_{ 0 },
+    pulse1_{ true },
+    pulse2_{ false },
     dmc_{*this}
 {
     // account for the fact we start off after VBlank
@@ -20,11 +21,6 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     auto currentCycle = (21 * 341 / 3);
     bus_.Schedule(lastSampleCycle_ - currentCycle, SyncEvent::ApuSample);
     bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
-}
-
-void Apu::Tick()
-{
-    pendingCycles_++;
 }
 
 void Apu::QuarterFrame()
@@ -110,6 +106,11 @@ void Apu::Write(uint16_t address, uint8_t value)
     case 0x4017:
         frameCounter_.EnableInterrupt((value & 0x40) == 0);
         auto nextTick = frameCounter_.SetMode(value >> 7);
+
+        // sync to audio clock
+        if (bus_.CycleCount() & 1)
+            nextTick++;
+
         bus_.RescheduleFrameCounter(nextTick);
         break;
     }
@@ -189,13 +190,16 @@ void Apu::SetDmcInterrupt(bool interrupt)
 
 void Apu::Sync()
 {
-    pulse1_.Run(pendingCycles_);
-    pulse2_.Run(pendingCycles_);
-    triangle_.Run(pendingCycles_);
-    noise_.Run(pendingCycles_);
-    dmc_.Run(pendingCycles_);
+    auto cycle = bus_.CycleCount();
+    auto pendingCycles = cycle - lastSyncCycle_;
 
-    pendingCycles_ = 0;
+    pulse1_.Run(pendingCycles);
+    pulse2_.Run(pendingCycles);
+    triangle_.Run(pendingCycles);
+    noise_.Run(pendingCycles);
+    dmc_.Run(pendingCycles);
+
+    lastSyncCycle_ = cycle;
 }
 
 void Apu::ActivateFrameCounter()
