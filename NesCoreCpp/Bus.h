@@ -59,6 +59,9 @@ private:
     void Tick();
 
     __declspec(noinline)
+    uint8_t CpuReadProgramDataRare(uint16_t address);
+
+    __declspec(noinline)
     void RunEvent();
 
     uint8_t DmcDmaRead(uint16_t address);

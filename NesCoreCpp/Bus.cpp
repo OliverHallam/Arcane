@@ -95,11 +95,11 @@ uint8_t Bus::CpuReadData(uint16_t address)
 
     if (address < 0x2000)
         return cpuRam_[address & 0x7ff];
-    else if (address < 0x4000)
-        return ppu_->Read(address);
     else if (address < 0x4020)
     {
-        if (address == 0x4016)
+        if (address < 0x4000)
+            return ppu_->Read(address);
+        else if (address == 0x4016)
             return -controller_->Read();
         else
             return apu_->Read(address);
@@ -122,19 +122,8 @@ uint8_t Bus::CpuReadProgramData(uint16_t address)
         else
             return 0;
     }
-    else if (address < 0x2000)
-        return cpuRam_[address & 0x7ff];
-    else if (address < 0x4000)
-        return ppu_->Read(address);
-    else if (address < 0x4020)
-    {
-        if (address == 0x4016)
-            return controller_->Read();
-        else
-            return apu_->Read(address);
-    }
-    else
-        return 0;
+
+    return CpuReadProgramDataRare(address);
 }
 
 void Bus::CpuWrite(uint16_t address, uint8_t value)
@@ -297,6 +286,23 @@ void Bus::Tick()
     {
         RunEvent();
     }
+}
+
+uint8_t Bus::CpuReadProgramDataRare(uint16_t address)
+{
+    if (address < 0x2000)
+        return cpuRam_[address & 0x7ff];
+    else if (address < 0x4000)
+        return ppu_->Read(address);
+    else if (address < 0x4020)
+    {
+        if (address == 0x4016)
+            return controller_->Read();
+        else
+            return apu_->Read(address);
+    }
+    else
+        return 0;
 }
 
 void Bus::RunEvent()
