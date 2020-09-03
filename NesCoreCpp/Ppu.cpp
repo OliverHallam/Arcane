@@ -450,78 +450,138 @@ void Ppu::RenderScanline(int32_t targetCycle)
 {
     if (scanlineCycle_ == 0)
     {
-        background_.BeginScanline();
+        goto RenderVisible;
     }
 
-    if (scanlineCycle_ < 256)
+    if (scanlineCycle_ <= 256)
     {
-        auto maxIndex = std::min(256, targetCycle);
+        if (scanlineCycle_ < 256)
+            RenderScanlineVisible(targetCycle);
 
-        if (enableRendering_)
+        if (targetCycle <= 256)
+            goto EndRender;
+
+        FinishRender();
+
+        if (!enableRendering_)
+            goto EndRender;
+
+        goto LoadSprites;
+    }
+
+    if (!enableRendering_)
+        goto EndRender;
+
+    if (scanlineCycle_ < 320)
+    {
+        if (targetCycle >= 320)
         {
-            background_.RunLoad(scanlineCycle_, maxIndex);
+            sprites_.RunLoad(currentScanline_, scanlineCycle_, 320);
+            goto LoadBackground;
+        }
+        else
+        {
+            sprites_.RunLoad(currentScanline_, scanlineCycle_, targetCycle);
+            goto EndRender;
+        }
+    }
 
-            if (enableBackground_)
-            {
-                background_.RunRender(scanlineCycle_, maxIndex);
-            }
-            else
-            {
-                background_.RunRenderDisabled(scanlineCycle_, maxIndex);
-            }
+    if (scanlineCycle_ < 336)
+    {
+        auto maxIndex = std::min(336, targetCycle);
+        background_.RunLoad(scanlineCycle_, maxIndex);
+    }
 
-            if (enableForeground_ && currentScanline_ != 0)
-            {
-                sprites_.RunRender(scanlineCycle_, maxIndex, background_.ScanlinePixels());
-            }
+    goto EndRender;
 
-            sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
+RenderVisible:
+    background_.BeginScanline();
+
+    if (targetCycle >= 256)
+    {
+        RenderScanlineVisible();
+
+        if (targetCycle == 256)
+            goto EndRender;
+
+        FinishRender();
+    }
+    else
+    {
+        RenderScanlineVisible(targetCycle);
+        goto EndRender;
+    }
+
+    if (!enableRendering_)
+        goto EndRender;
+
+LoadSprites:
+    if (targetCycle >= 320)
+    {
+        sprites_.RunLoad(currentScanline_, 256, 320);
+    }
+    else
+    {
+        sprites_.RunLoad(currentScanline_, 256, targetCycle);
+        goto EndRender;
+    }
+
+LoadBackground:
+    background_.RunLoad(320, targetCycle);
+
+EndRender:
+    scanlineCycle_ = targetCycle;
+}
+
+void Ppu::RenderScanlineVisible(int32_t targetCycle)
+{
+    auto maxIndex = std::min(256, targetCycle);
+
+    if (enableRendering_)
+    {
+        background_.RunLoad(scanlineCycle_, maxIndex);
+
+        if (enableBackground_)
+        {
+            background_.RunRender(scanlineCycle_, maxIndex);
         }
         else
         {
             background_.RunRenderDisabled(scanlineCycle_, maxIndex);
         }
 
-        scanlineCycle_ = maxIndex;
-        if (scanlineCycle_ >= targetCycle)
-            return;
-    }
+        if (enableForeground_ && currentScanline_ != 0)
+        {
+            sprites_.RunRender(scanlineCycle_, maxIndex, background_.ScanlinePixels());
+        }
 
-    if (scanlineCycle_ < 320)
+        sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
+    }
+    else
     {
-        if (scanlineCycle_ == 256)
-        {
-            FinishRender();
-        }
-
-        auto maxIndex = std::min(320, targetCycle);
-
-        if (enableRendering_)
-        {
-            sprites_.RunLoad(currentScanline_, scanlineCycle_, maxIndex);
-        }
-
-        scanlineCycle_ = maxIndex;
-        if (scanlineCycle_ == targetCycle)
-            return;
+        background_.RunRenderDisabled(scanlineCycle_, maxIndex);
     }
 
-    if (scanlineCycle_ < 336)
-    {
-        auto maxIndex = std::min(336, targetCycle);
-        if (enableRendering_)
-        {
-            background_.RunLoad(scanlineCycle_, maxIndex);
-        }
-    }
-
-    scanlineCycle_ = targetCycle;
+    scanlineCycle_ = maxIndex;
 }
 
 void Ppu::RenderScanline()
 {
     background_.BeginScanline();
 
+    RenderScanlineVisible();
+
+    FinishRender();
+
+    if (enableRendering_)
+    {
+        sprites_.RunLoad(currentScanline_);
+        background_.RunLoad(320, 336);
+    }
+}
+
+void Ppu::RenderScanlineVisible()
+{
     // TODO: we can optimize the disabled case here
     if (enableRendering_)
     {
@@ -546,14 +606,6 @@ void Ppu::RenderScanline()
     else
     {
         background_.RunRenderDisabled(0, 256);
-    }
-
-    FinishRender();
-
-    if (enableRendering_)
-    {
-        sprites_.RunLoad(currentScanline_);
-        background_.RunLoad(320, 336);
     }
 }
 

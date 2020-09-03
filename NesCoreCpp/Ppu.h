@@ -32,8 +32,10 @@ private:
 
     void PreRenderScanline(int32_t targetCycle);
     void RenderScanline(int32_t targetCycle);
+    void RenderScanlineVisible(int32_t targetCycle);
 
     void RenderScanline();
+    void RenderScanlineVisible();
 
     void Composite(int32_t startCycle, int32_t endCycle);
     void FinishRender();
