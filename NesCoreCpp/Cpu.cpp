@@ -945,6 +945,7 @@ void Cpu::RunInstruction()
         Load();
         Axa();
         Store();
+        return;
 
     case 0x94:
         ZeroPageX();
