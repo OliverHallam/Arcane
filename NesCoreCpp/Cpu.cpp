@@ -2423,7 +2423,8 @@ uint8_t Cpu::ReadDataZeroPage(uint16_t address)
 
 uint8_t Cpu::Pop()
 {
-    return bus_.CpuReadData((uint16_t)(0x100 + ++S_));
+    // technically not zero page, but page 1 works the same
+    return bus_.CpuReadZeroPage((uint16_t)(0x100 + ++S_));
 }
 
 void Cpu::Write(uint16_t address, uint8_t value)
@@ -2438,7 +2439,8 @@ void Cpu::WriteZeroPage(uint16_t address, uint8_t value)
 
 void Cpu::Push(uint8_t value)
 {
-    bus_.CpuWrite((uint16_t)(0x100 + S_--), value);
+    // technically not zero page, but page 1 works the same
+    bus_.CpuWriteZeroPage((uint16_t)(0x100 + S_--), value);
 }
 
 uint8_t Cpu::P()
