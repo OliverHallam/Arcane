@@ -110,6 +110,13 @@ uint8_t Bus::CpuReadData(uint16_t address)
         return 0;
 }
 
+uint8_t Bus::CpuReadZeroPage(uint16_t address)
+{
+    TickCpuRead();
+
+    return cpuRam_[address];
+}
+
 uint8_t Bus::CpuReadProgramData(uint16_t address)
 {
     TickCpuRead();
@@ -147,6 +154,13 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     {
         cart_->CpuWrite(address, value);
     }
+}
+
+void Bus::CpuWriteZeroPage(uint16_t address, uint8_t value)
+{
+    TickCpuWrite();
+
+    cpuRam_[address] = value;
 }
 
 void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)

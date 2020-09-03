@@ -69,7 +69,7 @@ void Cpu::RunInstruction()
 
     case 0x01:
         IndexIndirect();
-        Load();
+        LoadZeroPage();
         Ora();
         return;
 
@@ -92,22 +92,22 @@ void Cpu::RunInstruction()
 
     case 0x05:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Ora();
         return;
 
     case 0x06:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Asl();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x07:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Slo();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x08:
@@ -188,22 +188,22 @@ void Cpu::RunInstruction()
 
     case 0x15:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Ora();
         return;
 
     case 0x16:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Asl();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x17:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Slo();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x18:
@@ -280,28 +280,28 @@ void Cpu::RunInstruction()
 
     case 0x24:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Bit();
         return;
 
     case 0x25:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         And();
         return;
 
     case 0x26:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Rol();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x27:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Rla();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x28:
@@ -383,22 +383,22 @@ void Cpu::RunInstruction()
 
     case 0x35:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         And();
         return;
 
     case 0x36:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Rol();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x37:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Rla();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x38:
@@ -481,22 +481,22 @@ void Cpu::RunInstruction()
 
     case 0x45:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Eor();
         return;
 
     case 0x46:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Lsr();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x47:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Sre();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x48:
@@ -581,22 +581,22 @@ void Cpu::RunInstruction()
 
     case 0x55:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Eor();
         return;
 
     case 0x56:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Lsr();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x57:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Sre();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x58:
@@ -679,22 +679,22 @@ void Cpu::RunInstruction()
 
     case 0x65:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Adc();
         return;
 
     case 0x66:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Ror();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x67:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Rra();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x68:
@@ -778,22 +778,22 @@ void Cpu::RunInstruction()
 
     case 0x75:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Adc();
         return;
 
     case 0x76:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Ror();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x77:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Rra();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0x78:
@@ -867,22 +867,22 @@ void Cpu::RunInstruction()
 
     case 0x84:
         ZeroPage();
-        Sty();
+        StyZeroPage();
         return;
 
     case 0x85:
         ZeroPage();
-        Sta();
+        StaZeroPage();
         return;
 
     case 0x86:
         ZeroPage();
-        Stx();
+        StxZeroPage();
         return;
 
     case 0x87:
         ZeroPage();
-        Sax();
+        SaxZeroPage();
         return;
 
     case 0x88:
@@ -949,25 +949,25 @@ void Cpu::RunInstruction()
 
     case 0x94:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Sty();
         return;
 
     case 0x95:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Sta();
         return;
 
     case 0x96:
         ZeroPageY();
-        Load();
+        LoadZeroPage();
         Stx();
         return;
 
     case 0x97:
         ZeroPageY();
-        Load();
+        LoadZeroPage();
         Sax();
         return;
 
@@ -1044,25 +1044,25 @@ void Cpu::RunInstruction()
 
     case 0xa4:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Ldy();
         return;
 
     case 0xa5:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Lda();
         return;
 
     case 0xa6:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Ldx();
         return;
 
     case 0xa7:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Lax();
         return;
 
@@ -1134,25 +1134,25 @@ void Cpu::RunInstruction()
 
     case 0xb4:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Ldy();
         return;
 
     case 0xb5:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Lda();
         return;
 
     case 0xb6:
         ZeroPageY();
-        Load();
+        LoadZeroPage();
         Ldx();
         return;
 
     case 0xb7:
         ZeroPageY();
-        Load();
+        LoadZeroPage();
         Lax();
         return;
 
@@ -1228,28 +1228,28 @@ void Cpu::RunInstruction()
 
     case 0xc4:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Cpy();
         return;
 
     case 0xc5:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Cmp();
         return;
 
     case 0xc6:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Dec();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xc7:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Dcp();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xc8:
@@ -1329,22 +1329,22 @@ void Cpu::RunInstruction()
 
     case 0xd5:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Cmp();
         return;
 
     case 0xd6:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Dec();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xd7:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Dcp();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xd8:
@@ -1421,28 +1421,28 @@ void Cpu::RunInstruction()
 
     case 0xe4:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Cpx();
         return;
 
     case 0xe5:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Sbc();
         return;
 
     case 0xe6:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Inc();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xe7:
         ZeroPage();
-        Load();
+        LoadZeroPage();
         Isc();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xe8:
@@ -1522,22 +1522,22 @@ void Cpu::RunInstruction()
 
     case 0xf5:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Sbc();
         return;
 
     case 0xf6:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Inc();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xf7:
         ZeroPageX();
-        Load();
+        LoadZeroPage();
         Isc();
-        Store();
+        StoreZeroPage();
         return;
 
     case 0xf8:
@@ -1795,9 +1795,21 @@ void Cpu::Load()
     inValue_ = ReadData(address_);
 }
 
+void Cpu::LoadZeroPage()
+{
+    inValue_ = ReadDataZeroPage(address_);
+}
+
 void Cpu::Store()
 {
     bus_.CpuWrite2(address_, inValue_, outValue_);
+}
+
+void Cpu::StoreZeroPage()
+{
+    // the first value can't have any side effects
+    bus_.TickCpuWrite();
+    bus_.CpuWriteZeroPage(address_, outValue_);
 }
 
 void Cpu::LoadA()
@@ -2218,6 +2230,11 @@ void Cpu::Sax()
     Write(address_, A_ & X_);
 }
 
+void Cpu::SaxZeroPage()
+{
+    WriteZeroPage(address_, A_ & X_);
+}
+
 void Cpu::Sbc()
 {
     auto result = (uint16_t)A_ - inValue_;
@@ -2284,6 +2301,11 @@ void Cpu::Sta()
     Write(address_, A_);
 }
 
+void Cpu::StaZeroPage()
+{
+    WriteZeroPage(address_, A_);
+}
+
 void Cpu::Stp()
 {
     // as we need to check this every cycle, we will overload the interrupt vector to do this.
@@ -2295,9 +2317,19 @@ void Cpu::Stx()
     Write(address_, X_);
 }
 
+void Cpu::StxZeroPage()
+{
+    WriteZeroPage(address_, X_);
+}
+
 void Cpu::Sty()
 {
     Write(address_, Y_);
+}
+
+void Cpu::StyZeroPage()
+{
+    WriteZeroPage(address_, Y_);
 }
 
 void Cpu::Tas()
@@ -2384,6 +2416,11 @@ uint8_t Cpu::ReadData(uint16_t address)
     return bus_.CpuReadData(address);
 }
 
+uint8_t Cpu::ReadDataZeroPage(uint16_t address)
+{
+    return bus_.CpuReadZeroPage(address);
+}
+
 uint8_t Cpu::Pop()
 {
     return bus_.CpuReadData((uint16_t)(0x100 + ++S_));
@@ -2392,6 +2429,11 @@ uint8_t Cpu::Pop()
 void Cpu::Write(uint16_t address, uint8_t value)
 {
     bus_.CpuWrite(address, value);
+}
+
+void Cpu::WriteZeroPage(uint16_t address, uint8_t value)
+{
+    bus_.CpuWriteZeroPage(address, value);
 }
 
 void Cpu::Push(uint8_t value)

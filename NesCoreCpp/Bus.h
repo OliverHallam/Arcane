@@ -34,8 +34,10 @@ public:
 
     void CpuDummyRead(uint16_t address);
     uint8_t CpuReadData(uint16_t address);
+    uint8_t CpuReadZeroPage(uint16_t address);
     uint8_t CpuReadProgramData(uint16_t address);
     void CpuWrite(uint16_t address, uint8_t value);
+    void CpuWriteZeroPage(uint16_t address, uint8_t value);
     void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
     uint8_t* GetPpuRamBase();

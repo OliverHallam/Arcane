@@ -40,7 +40,9 @@ private:
 
     // load/store "steps" for in-memory operations
     void Load();
+    void LoadZeroPage();
     void Store();
+    void StoreZeroPage();
     void LoadA();
     void StoreA();
 
@@ -98,6 +100,7 @@ private:
     void Rti();
     void Rts();
     void Sax();
+    void SaxZeroPage();
     void Sec();
     void Sed();
     void Sei();
@@ -107,9 +110,12 @@ private:
     void Slo();
     void Sre();
     void Sta();
+    void StaZeroPage();
     void Stp();
     void Stx();
+    void StxZeroPage();
     void Sty();
+    void StyZeroPage();
     void Tas();
     void Tax();
     void Tay();
@@ -125,9 +131,11 @@ private:
 
     uint8_t ReadProgramByte();
     uint8_t ReadData(uint16_t address);
+    uint8_t ReadDataZeroPage(uint16_t address);
     uint8_t Pop();
 
     void Write(uint16_t address, uint8_t value);
+    void WriteZeroPage(uint16_t address, uint8_t value);
     void Push(uint8_t value);
 
     Bus& bus_;
