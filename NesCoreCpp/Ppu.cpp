@@ -11,6 +11,7 @@ Ppu::Ppu(Bus& bus, Display& display) :
     background_{ bus },
     sprites_{ bus }
 {
+    bus_.Schedule(342 / 3, SyncEvent::PpuScanline);
 }
 
 uint32_t Ppu::FrameCount()
@@ -21,41 +22,11 @@ uint32_t Ppu::FrameCount()
 void Ppu::Tick3()
 {
     targetCycle_ += 3;
-
-    if (hasDeferredUpdate_)
-    {
-        RunDeferredUpdate();
-    }
-
-    if (targetCycle_ >= 340)
-    {
-        SyncScanline();
-        return;
-    }
-
-    if (bus_.SensitiveToChrA12())
-    {
-        SyncA12();
-    }
 }
 
 void Ppu::Sync()
 {
     Sync(targetCycle_);
-}
-
-void Ppu::SyncA12()
-{
-    if (enableRendering_)
-    {
-        if (currentScanline_ < 240)
-        {
-            if (targetCycle_ >= 256 && scanlineCycle_ <= 320)
-            {
-                Sync(targetCycle_);
-            }
-        }
-    }
 }
 
 uint8_t Ppu::Read(uint16_t address)
@@ -147,7 +118,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
         if (enableVBlankInterrupt_ && !wasVblankInterruptEnabled && inVBlank_)
         {
             signalVBlank_ = true;
-            hasDeferredUpdate_ = true;
+            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
         return;
@@ -156,7 +127,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
     case 1:
         mask_ = value;
         updateMask_ = true;
-        hasDeferredUpdate_ = true;
+        bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         return;
 
     case 3:
@@ -206,7 +177,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
             initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
             // update the address in 3 cycles time.
             updateBaseAddress_ = true;
-            hasDeferredUpdate_ = true;
+            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
+
             addressLatch_ = false;
         }
         return;
@@ -264,7 +236,7 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
-void Ppu::RunDeferredUpdate()
+void Ppu::SyncState()
 {
     if (signalVBlank_)
     {
@@ -292,7 +264,7 @@ void Ppu::RunDeferredUpdate()
         auto prevRenderingEnabled = enableRendering_;
         enableRendering_ = (mask_ & 0x18) != 0;
 
-        if (enableRendering_ && !prevRenderingEnabled & currentScanline_ < 240)
+        if (enableRendering_ && !prevRenderingEnabled && (currentScanline_ < 240))
         {
             background_.EnableRendering(targetCycle_ - 1);
         }
@@ -313,12 +285,13 @@ void Ppu::RunDeferredUpdate()
 
         updateMask_ = false;
     }
-
-    hasDeferredUpdate_ = false;
 }
 
 void Ppu::SyncScanline()
 {
+    if (targetCycle_ < 340)
+        return;
+
     // we're at the end of the scanline, so lets render the whole thing
     if (currentScanline_ < 240)
     {
@@ -330,6 +303,8 @@ void Ppu::SyncScanline()
         {
             RenderScanline(340);
         }
+
+        currentScanline_++;
     }
     else if (currentScanline_ == 240)
     {
@@ -344,29 +319,30 @@ void Ppu::SyncScanline()
         {
             // otherwise we process the VBlank on the next update
             signalVBlank_ = true;
-            hasDeferredUpdate_ = true;
+            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
-        scanlineCycle_ = 0;
         currentScanline_ = 241;
-        targetCycle_ -= 341;
-
-        return;
     }
     else if (currentScanline_ == 261)
     {
         PreRenderScanline(340);
-        scanlineCycle_ = 0;
         currentScanline_ = 0;
-        targetCycle_ -= 341;
-        return;
+    }
+    else
+    {
+        currentScanline_++;
     }
 
-    scanlineCycle_ = 0;
-    currentScanline_++;
-
     // the target cycle starts at -1 which gives us our extra tick at the start of the line
+    scanlineCycle_ = 0;
     targetCycle_ -= 341;
+
+    // For A12 we want to sync when we start the sprites.
+    if (enableRendering_ && bus_.SensitiveToChrA12() && currentScanline_ < 240)
+        bus_.Schedule((259 - targetCycle_) / 3, SyncEvent::PpuSync);
+
+    bus_.Schedule((342 - targetCycle_) / 3, SyncEvent::PpuScanline);
 }
 
 void Ppu::Sync(int32_t targetCycle)
@@ -511,17 +487,13 @@ void Ppu::RenderScanline(int32_t targetCycle)
             return;
     }
 
-    if (scanlineCycle_ == 256)
-    {
-        FinishRender();
-
-        scanlineCycle_ = 257;
-        if (scanlineCycle_ == targetCycle)
-            return;
-    }
-
     if (scanlineCycle_ < 320)
     {
+        if (scanlineCycle_ == 256)
+        {
+            FinishRender();
+        }
+
         auto maxIndex = std::min(320, targetCycle);
 
         if (enableRendering_)

@@ -1,44 +1,26 @@
 #include "Apu.h"
-
 #include "Bus.h"
 
-#include <assert.h>
+#include <cassert>
 
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
-    frameCounter_{*this},
-    frameBuffer_{new int16_t[samplesPerFrame]},
+    frameCounter_{ *this },
+    frameBuffer_{ new int16_t[samplesPerFrame] },
     currentSample_(0),
     samplesPerFrame_(samplesPerFrame),
     lastSampleCycle_(29780 / samplesPerFrame),
-    sampleCounter_(29780 / samplesPerFrame),
-    pulse1_{true},
-    pulse2_{false},
-    dmc_{*this},
-    syncCounter_{}
+    lastSyncCycle_{ 0 },
+    pulse1_{ true },
+    pulse2_{ false },
+    dmc_{*this}
 {
     // account for the fact we start off after VBlank
     currentSample_ = (21 * samplesPerFrame) / 261;
-    lastSampleCycle_ = ((currentSample_ + 1) * 29780) / samplesPerFrame;
+    lastSampleCycle_ = ((currentSample_ + 1) * 29781) / samplesPerFrame;
     auto currentCycle = (21 * 341 / 3);
-    sampleCounter_ = lastSampleCycle_ - currentCycle;
-}
-
-void Apu::Tick()
-{
-    frameCounter_.Tick();
-
-    pendingCycles_++;
-
-    if (!--syncCounter_)
-    {
-        Sync();
-    }
-
-    if (!--sampleCounter_)
-    {
-        Sample();
-    }
+    bus_.Schedule(lastSampleCycle_ - currentCycle, SyncEvent::ApuSample);
+    bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
 }
 
 void Apu::QuarterFrame()
@@ -63,12 +45,11 @@ void Apu::HalfFrame()
 
 void Apu::SyncFrame()
 {
-    Sync();
-
     assert(currentSample_ == samplesPerFrame_);
 
     currentSample_ = 0;
-    lastSampleCycle_ = sampleCounter_ = 29780 / samplesPerFrame_;
+    lastSampleCycle_ = 0;
+    Sample();
 }
 
 void Apu::Write(uint16_t address, uint8_t value)
@@ -109,9 +90,10 @@ void Apu::Write(uint16_t address, uint8_t value)
     case 0x4011:
     case 0x4012:
     case 0x4013:
+    {
         dmc_.Write(address, value);
-        syncCounter_ = dmc_.CyclesUntilNextDma();
         break;
+    }
 
     case 0x4015:
         pulse1_.Enabled(value & 0x01);
@@ -123,7 +105,13 @@ void Apu::Write(uint16_t address, uint8_t value)
 
     case 0x4017:
         frameCounter_.EnableInterrupt((value & 0x40) == 0);
-        frameCounter_.SetMode(value >> 7);
+        auto nextTick = frameCounter_.SetMode(value >> 7);
+
+        // sync to audio clock
+        if (bus_.CycleCount() & 1)
+            nextTick++;
+
+        bus_.RescheduleFrameCounter(nextTick);
         break;
     }
 }
@@ -173,6 +161,11 @@ const int16_t* Apu::Samples() const
     return frameBuffer_.get();
 }
 
+void Apu::ScheduleDmc(uint32_t cycles)
+{
+    bus_.Schedule(cycles, SyncEvent::ApuSync);
+}
+
 void Apu::RequestDmcByte(uint16_t address)
 {
     bus_.BeginDmcDma(address);
@@ -197,15 +190,22 @@ void Apu::SetDmcInterrupt(bool interrupt)
 
 void Apu::Sync()
 {
-    pulse1_.Run(pendingCycles_);
-    pulse2_.Run(pendingCycles_);
-    triangle_.Run(pendingCycles_);
-    noise_.Run(pendingCycles_);
-    dmc_.Run(pendingCycles_);
+    auto cycle = bus_.CycleCount();
+    auto pendingCycles = cycle - lastSyncCycle_;
 
-    pendingCycles_ = 0;
+    pulse1_.Run(pendingCycles);
+    pulse2_.Run(pendingCycles);
+    triangle_.Run(pendingCycles);
+    noise_.Run(pendingCycles);
+    dmc_.Run(pendingCycles);
 
-    syncCounter_ = dmc_.CyclesUntilNextDma();
+    lastSyncCycle_ = cycle;
+}
+
+void Apu::ActivateFrameCounter()
+{
+    auto cycles = frameCounter_.Activate();
+    bus_.Schedule(cycles, SyncEvent::ApuFrameCounter);
 }
 
 void Apu::Sample()
@@ -221,7 +221,11 @@ void Apu::Sample()
         (noise_.Sample() << 7) +
         (dmc_.Sample() << 7);
 
-    auto nextSampleCycle = (29780 * (currentSample_ + 1)) / samplesPerFrame_;
-    sampleCounter_ = nextSampleCycle - lastSampleCycle_;
-    lastSampleCycle_ = nextSampleCycle;
+    // we'll let the PPU kick start the next frame, due to the fact that the cycles don't quite line up
+    if (currentSample_ != samplesPerFrame_)
+    {
+        auto nextSampleCycle = (29781 * currentSample_) / samplesPerFrame_;
+        bus_.Schedule(nextSampleCycle - lastSampleCycle_, SyncEvent::ApuSample);
+        lastSampleCycle_ = nextSampleCycle;
+    }
 }

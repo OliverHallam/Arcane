@@ -1,0 +1,14 @@
+#pragma once
+
+#include <cstdint>
+
+enum class SyncEvent : uint32_t
+{
+    None,
+    ApuFrameCounter,
+    ApuSample,
+    ApuSync,
+    PpuStateUpdate,
+    PpuScanline,
+    PpuSync
+};

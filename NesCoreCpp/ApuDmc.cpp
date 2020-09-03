@@ -51,25 +51,39 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
     switch (address & 0x0003)
     {
     case 0:
+    {
+        auto prevIrqEnabled = irqEnabled_;
         irqEnabled_ = value & 0x80;
         loop_ = value & 0x40;
         rate_ = GetLinearRate(value & 0x0f);
+
         if (!irqEnabled_)
             apu_.SetDmcInterrupt(false);
-        return;
+        else if (!sampleBytesRemaining_ && !prevIrqEnabled)
+            apu_.ScheduleDmc(timer_ + (7 - sampleShift_) * rate_);
+
+        break;
+    }
 
     case 1:
         // TODO: this can be missed if a clock is happening at the same time
         level_ = value & 0x7f;
-        return;
+        break;
 
     case 2:
         currentAddress_ = sampleAddress_ = 0xc000 | (value << 6);
-        return;
+        break;
 
     case 3:
+    {
+        auto prevSampleBytesRemaining = sampleBytesRemaining_;
         sampleBytesRemaining_ = sampleLength_ = (value << 4) + 1;
+
+        if (!prevSampleBytesRemaining && !irqEnabled_)
+            apu_.ScheduleDmc(timer_ + (7 - sampleShift_) * rate_);
+
         break;
+    }
     }
 }
 
@@ -93,15 +107,6 @@ void ApuDmc::SetBuffer(uint8_t value)
 uint8_t ApuDmc::Sample() const
 {
     return level_;
-}
-
-uint32_t ApuDmc::CyclesUntilNextDma()
-{
-    // TODO: this could be tighter - if we've raised the IRQ there's nothing more we need to sync with the bus.
-    if (!sampleBytesRemaining_ && !irqEnabled_)
-        return 0xffffffff;
-
-    return timer_ + (7 - sampleShift_) * rate_;
 }
 
 void ApuDmc::Clock()
@@ -131,6 +136,9 @@ void ApuDmc::Clock()
 
         if (sampleBytesRemaining_ != 0)
             RequestByte();
+
+        if (sampleBytesRemaining_ > 1 || irqEnabled_)
+            apu_.ScheduleDmc(timer_ + 7 * rate_);
     }
     else
         sampleShift_++;

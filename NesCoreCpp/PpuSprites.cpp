@@ -225,7 +225,7 @@ void PpuSprites::DummyLoad()
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
     // TODO: should be 321?
-    if (scanlineCycle == 257 && targetCycle == 320)
+    if (scanlineCycle == 256 && targetCycle == 320)
     {
         RunLoad(currentScanline);
         return;
@@ -250,17 +250,17 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
     case 0:
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+                break;
 
     case 1:
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+                break;
 
     case 2:
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+                break;
 
     case 3:
             scanlineCycle++;
@@ -270,7 +270,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
     case 4:
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+                break;
 
     case 5:
             {
@@ -327,12 +327,18 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+            {
+                if (bus_.SensitiveToChrA12() && largeSprites_)
+                {
+                    // we'll need to sync when we read the next sprite
+                    bus_.Schedule(8, SyncEvent::PpuSync);
+                }
+            }
 
     case 6:
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+                break;
 
     case 7:
             // address is 000PTTTTTTTT1YYY
@@ -349,9 +355,10 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-                return;
+                break;
         }
     }
+
 }
 
 void PpuSprites::RunLoad(uint32_t currentScanline)

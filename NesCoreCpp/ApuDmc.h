@@ -20,8 +20,6 @@ public:
 
     uint8_t Sample() const;
 
-    uint32_t CyclesUntilNextDma();
-
 private:
     void Clock();
     void RequestByte();

@@ -18,6 +18,8 @@ public:
 
     void Tick3();
     void Sync();
+    void SyncScanline();
+    void SyncState();
 
     uint8_t Read(uint16_t address);
     void Write(uint16_t address, uint8_t value);
@@ -25,12 +27,7 @@ public:
     void DmaWrite(uint8_t value);
 
 private:
-    // this allows the general case of Tick3 to be inlined
-    __declspec(noinline) void RunDeferredUpdate();
-    __declspec(noinline) void SyncScanline();
-
     void Sync(int32_t targetCycle);
-    void SyncA12();
     void SyncComposite(int32_t targetCycle);
 
     void PreRenderScanline(int32_t targetCycle);
@@ -80,8 +77,6 @@ private:
 
     PpuBackground background_;
     PpuSprites sprites_;
-
-    bool hasDeferredUpdate_{};
 
     // a 3-cycle delay for updating the background address
     bool updateBaseAddress_{};

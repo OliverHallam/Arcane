@@ -9,6 +9,7 @@
 #include "Cpu.h"
 #include "Ppu.h"
 #include "Apu.h"
+#include "EventQueue.h"
 
 class Bus
 {
@@ -51,8 +52,14 @@ public:
 
     void OnFrame();
 
+    void Schedule(uint32_t cycles, SyncEvent evt);
+    void RescheduleFrameCounter(uint32_t cycles);
+
 private:
     void Tick();
+
+    __declspec(noinline)
+    void RunEvent();
 
     uint8_t DmcDmaRead(uint16_t address);
     void OamDmaWrite(uint8_t value);
@@ -81,4 +88,6 @@ private:
 
     bool audioIrq_;
     bool cartIrq_;
+
+    EventQueue syncQueue_;
 };

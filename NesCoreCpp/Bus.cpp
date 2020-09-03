@@ -275,12 +275,58 @@ void Bus::OnFrame()
     apu_->SyncFrame();
 }
 
+void Bus::Schedule(uint32_t cycles, SyncEvent evt)
+{
+    syncQueue_.Schedule(cycleCount_ + cycles, evt);
+}
+
+void Bus::RescheduleFrameCounter(uint32_t cycles)
+{
+    syncQueue_.Unschedule(SyncEvent::ApuFrameCounter);
+    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuFrameCounter);
+}
+
 void Bus::Tick()
 {
     cycleCount_++;
 
-    apu_->Tick();
     ppu_->Tick3();
+
+    // there is always at least one event scheduled so we can skip the check that the queue is empty
+    while (cycleCount_ == syncQueue_.GetNextEventTime())
+    {
+        RunEvent();
+    }
+}
+
+void Bus::RunEvent()
+{
+    switch (syncQueue_.PopEvent())
+    {
+    case SyncEvent::ApuSample:
+        apu_->Sample();
+        break;
+
+    case SyncEvent::ApuSync:
+        apu_->Sync();
+        break;
+
+    case SyncEvent::ApuFrameCounter:
+        apu_->ActivateFrameCounter();
+        break;
+
+    case SyncEvent::PpuStateUpdate:
+        ppu_->SyncState();
+        break;
+
+    case SyncEvent::PpuScanline:
+        ppu_->SyncScanline();
+        break;
+
+    case SyncEvent::PpuSync:
+        ppu_->Sync();
+        break;
+    }
 }
 
 void Bus::RunDma()
