@@ -42,8 +42,7 @@ public:
 private:
     struct alignas(uint32_t) Tile
     {
-        uint8_t PatternByteHigh{};
-        uint8_t PatternByteLow{};
+        uint16_t PatternBytes{};
         uint8_t AttributeBits{};
 
         bool operator == (const Tile& other)

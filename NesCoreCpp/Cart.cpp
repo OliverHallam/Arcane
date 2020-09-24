@@ -208,7 +208,7 @@ uint16_t Cart::PpuReadChr16(uint16_t address) const
 
     auto bank = ppuBanks_[address >> 10];
     auto bankAddress = address & 0x03ff;
-    return (bank[bankAddress] << 8) | bank[bankAddress | 8];
+    return (bank[bankAddress | 8] << 8) | bank[bankAddress];
 }
 
 void Cart::PpuWrite(uint16_t address, uint8_t value)

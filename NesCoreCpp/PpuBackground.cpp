@@ -44,9 +44,10 @@ void PpuBackground::BeginScanline()
 
 uint8_t PpuBackground::Render()
 {
+    auto patternBytes = currentTile_.PatternBytes >> patternBitShift_;
     auto index = (uint8_t)(
-        ((currentTile_.PatternByteHigh >> patternBitShift_) & 1) << 1) |
-        ((currentTile_.PatternByteLow >> patternBitShift_) & 1);
+        ((patternBytes >> 7) & 2) |
+        (patternBytes & 1));
 
     // this looks inefficient but compiles to a cmov instead of a conditional jump
     index |= currentTile_.AttributeBits; // palette
@@ -108,42 +109,41 @@ void PpuBackground::RenderScanline()
 
     // push out first tile
     auto tile = scanlineTiles_[tileIndex++];
-    auto patternHigh = tile.PatternByteHigh;
-    auto patternLow = tile.PatternByteLow;
+    auto patternBytes = tile.PatternBytes;
     auto attributeBits = tile.AttributeBits;
 
     switch (patternBitShift_)
     {
     case 7:
-        index = (uint8_t)(attributeBits | ((patternHigh >> 6) & 2) | ((patternLow >> 7) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 14) & 2) | ((patternBytes >> 7) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 6:
-        index = (uint8_t)(attributeBits | ((patternHigh >> 5) & 2) | ((patternLow >> 6) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 13) & 2) | ((patternBytes >> 6) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 5:
-        index = (uint8_t)(attributeBits | ((patternHigh >> 4) & 2) | ((patternLow >> 5) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 12) & 2) | ((patternBytes >> 5) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 4:
-        index = (uint8_t)(attributeBits | ((patternHigh >> 3) & 2) | ((patternLow >> 4) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 11) & 2) | ((patternBytes >> 4) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 3:
-        index = (uint8_t)(attributeBits | ((patternHigh >> 2) & 2) | ((patternLow >> 3) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 10) & 2) | ((patternBytes >> 3) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 2:
-        index = (uint8_t)(attributeBits | ((patternHigh >> 1) & 2) | ((patternLow >> 2) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 9) & 2) | ((patternBytes >> 2) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 1:
-        index = (uint8_t)(attributeBits | (patternHigh & 2) | ((patternLow >> 1) & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 8) & 2) | ((patternBytes >> 1) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     case 0:
-        index = (uint8_t)(attributeBits | ((patternHigh << 1) & 2) | (patternLow & 1));
+        index = (uint8_t)(attributeBits | ((patternBytes >> 7) & 2) | (patternBytes & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     }
 
@@ -155,12 +155,12 @@ void PpuBackground::RenderScanline()
         tile = scanlineTiles_[tileIndex];
         if (tile != prevTile)
         {
-            uint64_t tileLowBits = tile.PatternByteLow;
+            uint64_t tileLowBits = tile.PatternBytes;
             tileLowBits = (tileLowBits | (tileLowBits << 36)) & 0x000000f0000000f0;
             tileLowBits = (tileLowBits | (tileLowBits << 18)) & 0x00c000c000c000c0;
             tileLowBits = (tileLowBits | (tileLowBits << 9)) & 0x8080808080808080;
 
-            uint64_t tileHighBits = tile.PatternByteHigh;
+            uint64_t tileHighBits = tile.PatternBytes >> 8;
             tileHighBits = (tileHighBits | (tileHighBits << 36)) & 0x000000f0000000f0;
             tileHighBits = (tileHighBits | (tileHighBits << 18)) & 0x00c000c000c000c0;
             tileHighBits = (tileHighBits | (tileHighBits << 9)) & 0x8080808080808080;
@@ -189,44 +189,43 @@ void PpuBackground::RenderScanline()
 
     // and finally render the last bit of the last tile
     tile = scanlineTiles_[32];
-    patternHigh = tile.PatternByteHigh;
-    patternLow = tile.PatternByteLow;
+    patternBytes = tile.PatternBytes;
     attributeBits = tile.AttributeBits;
 
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | ((patternHigh >> 6) & 2) | ((patternLow >> 7) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 14) & 2) | ((patternBytes >> 7) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | ((patternHigh >> 5) & 2) | ((patternLow >> 6) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 13) & 2) | ((patternBytes >> 6) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | ((patternHigh >> 4) & 2) | ((patternLow >> 5) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 12) & 2) | ((patternBytes >> 5) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | ((patternHigh >> 3) & 2) | ((patternLow >> 4) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 11) & 2) | ((patternBytes >> 4) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | ((patternHigh >> 2) & 2) | ((patternLow >> 3) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 10) & 2) | ((patternBytes >> 3) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | ((patternHigh >> 1) & 2) | ((patternLow >> 2) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 9) & 2) | ((patternBytes >> 2) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
     if (pixelIndex == 256)
         return;
 
-    index = (uint8_t)(attributeBits | (patternHigh & 2) | ((patternLow >> 1) & 1));
+    index = (uint8_t)(attributeBits | ((patternBytes >> 8) & 2) | ((patternBytes >> 1) & 1));
     backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
 
     // we never need the last pixel
@@ -298,7 +297,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                 return;
 
     case 5:
-            scanlineTiles_[loadingIndex_].PatternByteLow = bus_.PpuRead(patternAddress_);
+            scanlineTiles_[loadingIndex_].PatternBytes = bus_.PpuRead(patternAddress_);
             cycle++;
 
     case 6:
@@ -308,7 +307,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
     case 7:
             // address is 000PTTTTTTTT1YYY
-            scanlineTiles_[loadingIndex_].PatternByteHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+            scanlineTiles_[loadingIndex_].PatternBytes |= bus_.PpuRead((uint16_t)(patternAddress_ | 8)) << 8;
 
 
             // increment the x part of the address
@@ -363,10 +362,10 @@ void PpuBackground::RunLoad()
                 (CurrentAddress >> 12)); // fineY
 
         auto pattern = bus_.PpuReadChr16(patternAddress_);
-        scanlineTiles_[loadingIndex_].PatternByteLow = pattern >> 8;
 
-        // address is 000PTTTTTTTT1YYY
-        scanlineTiles_[loadingIndex_].PatternByteHigh = static_cast<uint8_t>(pattern);
+        // low address is 000PTTTTTTTT1YYY
+        // high address is 000PTTTTTTTT1YYY
+        scanlineTiles_[loadingIndex_].PatternBytes = pattern;
 
         if (loadingIndex_ == 32)
         {
