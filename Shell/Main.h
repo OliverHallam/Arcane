@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Error.h"
+#include "Host.h"
 
 #include "../NesCoreCpp/NesSystem.h"
 #include "../NesCoreCpp/RomFile.h"
 
-extern std::unique_ptr<NesSystem> System;
+extern Host NesHost;
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,

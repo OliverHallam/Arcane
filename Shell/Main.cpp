@@ -18,7 +18,7 @@
 #include <iostream>
 #include <sstream>
 
-std::unique_ptr<NesSystem> System;
+Host NesHost;
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
@@ -135,27 +135,40 @@ int WINAPI WinMain(
             return -1;
         }
 
-        System = std::make_unique<NesSystem>(wasapi.SampleRate());
-        System->InsertCart(std::move(cart));
-        System->Reset();
+        NesHost.SetSampleRate(wasapi.SampleRate());
+        NesHost.Load(std::move(cart));
 
         while (true)
         {
             MSG msg;
-            if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
+            if (NesHost.Running())
             {
-                if (msg.message == WM_QUIT)
-                    return 0;
+                if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
+                {
+                    if (msg.message == WM_QUIT)
+                        return 0;
 
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
+                else
+                {
+                    NesHost.RunFrame();
+
+                    d3d.RenderFrame(NesHost.PixelData());
+                    wasapi.WriteSamples(NesHost.AudioSamples(), NesHost.SamplesPerFrame());
+                }
             }
             else
             {
-                System->RunFrame();
+                if (GetMessage(&msg, NULL, 0U, 0U))
+                {
+                    if (msg.message == WM_QUIT)
+                        return 0;
 
-                d3d.RenderFrame(System->Display().Buffer());
-                wasapi.WriteSamples(System->Apu().Samples(), System->Apu().SamplesPerFrame());
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
             }
         }
     }
@@ -188,36 +201,47 @@ bool ProcessKey(WPARAM key, bool down)
     switch (key)
     {
     case VK_UP:
-        System->Controller().Up(down);
+        NesHost.Up(down);
         return true;
 
     case VK_DOWN:
-        System->Controller().Down(down);
+        NesHost.Down(down);
         return true;
 
     case VK_LEFT:
-        System->Controller().Left(down);
+        NesHost.Left(down);
         return true;
 
     case VK_RIGHT:
-        System->Controller().Right(down);
+        NesHost.Right(down);
         return true;
 
     case 'Z':
-        System->Controller().B(down);
+        NesHost.B(down);
         return true;
 
     case 'X':
-        System->Controller().A(down);
+        NesHost.A(down);
         return true;
 
     case VK_RETURN:
-        System->Controller().Start(down);
+        NesHost.Start(down);
         return true;
 
     case VK_SHIFT:
-        System->Controller().Select(down);
+        NesHost.Select(down);
         return true;
+
+    case VK_ESCAPE:
+        if (down)
+        {
+            if (NesHost.Running())
+                NesHost.Stop();
+            else
+                NesHost.Start();
+        }
+        return true;
+
     }
 
     return false;

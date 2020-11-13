@@ -47,7 +47,8 @@ void Bus::Attach(Controller* controller)
 void Bus::Attach(std::unique_ptr<Cart> cart)
 {
     cart_ = std::move(cart);
-    cart_->Attach(this);
+    if (cart_)
+        cart_->Attach(this);
 }
 
 void Bus::TickCpuRead()
