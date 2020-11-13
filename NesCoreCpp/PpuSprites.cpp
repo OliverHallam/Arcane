@@ -13,9 +13,19 @@ void PpuSprites::SetLargeSprites(bool enabled)
     largeSprites_ = enabled;
 }
 
+bool PpuSprites::LargeSprites() const
+{
+    return largeSprites_;
+}
+
 void PpuSprites::SetBasePatternAddress(uint16_t address)
 {
     spritePatternBase_ = address;
+}
+
+uint16_t PpuSprites::BasePatternAddress() const
+{
+    return spritePatternBase_;
 }
 
 void PpuSprites::EnableLeftColumn(bool enabled)
@@ -202,6 +212,16 @@ const std::array<uint8_t, 256>& PpuSprites::ScanlinePixels() const
     return scanlineData_;
 }
 
+#if DIAGNOSTIC
+void PpuSprites::MarkSprites(uint32_t* diagnosticPixels)
+{
+    for (auto i = 0; i < scanlineSpriteCount_; i++)
+    {
+        diagnosticPixels[sprites_[i].X] = 0xff00ff00;
+    }
+}
+#endif
+
 bool PpuSprites::Sprite0Visible()
 {
     return sprite0Visible_;
@@ -242,6 +262,16 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     if (!largeSprites_)
         bus_.SetChrA12(spritePatternBase_ != 0);
+    else
+    {
+        if (targetCycle < 262)
+        {
+            // TODO: we may need to be really precise exactly at what point in each CPU cycle the memory access happens to schedule this right!
+            // come back when we load the first sprite
+            bus_.Schedule((262 - targetCycle + 2) / 3, SyncEvent::PpuSync);
+        }
+    }
+    
 
     switch (scanlineCycle & 0x07)
     {
@@ -313,6 +343,15 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                     tileFineY &= 0x07;
                     patternAddress_ = (uint16_t)
                         (bankAddress | (tileId << 4) | tileFineY);
+
+                    if (bus_.SensitiveToChrA12())
+                    {
+                        if (targetCycle <= scanlineCycle + 8)
+                        {
+                            // we'll need to sync when we read the next sprite
+                            bus_.Schedule((scanlineCycle + 9 - targetCycle + 2) / 3, SyncEvent::PpuSync);
+                        }
+                    }
                 }
                 else
                 {
@@ -325,15 +364,10 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
             }
 
+
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
-            {
-                if (bus_.SensitiveToChrA12() && largeSprites_)
-                {
-                    // we'll need to sync when we read the next sprite
-                    bus_.Schedule(8, SyncEvent::PpuSync);
-                }
-            }
+                break;
 
     case 6:
             scanlineCycle++;

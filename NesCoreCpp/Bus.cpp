@@ -354,6 +354,10 @@ void Bus::RunEvent()
         ppu_->SyncScanline();
         break;
 
+    case SyncEvent::PpuSyncA12:
+        ppu_->SyncA12();
+        break;
+
     case SyncEvent::PpuSync:
         ppu_->Sync();
         break;

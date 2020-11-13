@@ -289,6 +289,18 @@ void Ppu::SyncState()
     }
 }
 
+void Ppu::SyncA12()
+{
+    // in the simple case the only effect we care about here is that the flag toggles, and we don't need to sync.
+    if (!sprites_.LargeSprites())
+    {
+        bus_.SetChrA12(sprites_.BasePatternAddress()!= 0);
+        return;
+    }
+
+    Sync();
+}
+
 void Ppu::SyncScanline()
 {
     if (targetCycle_ < 340)
@@ -342,7 +354,7 @@ void Ppu::SyncScanline()
 
     // For A12 we want to sync when we start the sprites.
     if (enableRendering_ && bus_.SensitiveToChrA12() && currentScanline_ < 240)
-        bus_.Schedule((259 - targetCycle_) / 3, SyncEvent::PpuSync);
+        bus_.Schedule((259 - targetCycle_) / 3, SyncEvent::PpuSyncA12);
 
     bus_.Schedule((342 - targetCycle_) / 3, SyncEvent::PpuScanline);
 }
@@ -661,6 +673,8 @@ void Ppu::FinishRender()
     compositeCycle_ = 0;
 
 #if DIAGNOSTIC
+    sprites_.MarkSprites(&diagnosticOverlay_[0]);
+
     auto pDisplay = display_.GetScanlinePtr();
     for (auto i = 256; i < Display::WIDTH; i++)
     {

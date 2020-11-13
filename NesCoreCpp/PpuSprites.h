@@ -10,7 +10,11 @@ public:
     PpuSprites(Bus& bus);
 
     void SetLargeSprites(bool enabled);
+    bool LargeSprites() const;
+
     void SetBasePatternAddress(uint16_t address);
+    uint16_t BasePatternAddress() const;
+
     void EnableLeftColumn(bool enabled);
 
     void SetOamAddress(uint8_t value);
@@ -36,6 +40,10 @@ public:
 
     const std::array<uint8_t, 256>& ScanlineAttributes() const;
     const std::array<uint8_t, 256>& ScanlinePixels() const;
+
+#if DIAGNOSTIC
+    void MarkSprites(uint32_t* diagnosticPixels);
+#endif
 
 private:
     struct Sprite

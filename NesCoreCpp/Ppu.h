@@ -18,6 +18,7 @@ public:
 
     void Tick3();
     void Sync();
+    void SyncA12();
     void SyncScanline();
     void SyncState();
 
