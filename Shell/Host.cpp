@@ -3,7 +3,8 @@
 #include "Host.h"
 
 Host::Host()
-    : sampleRate_{ 0 }
+    : sampleRate_{ 0 },
+    running_ { false }
 {
 }
 
@@ -23,15 +24,12 @@ void Host::Load(std::unique_ptr<Cart> cartridge)
 
 void Host::Unload()
 {
-    if (system_)
-    {
-        system_->RemoveCart();
-    }
+    system_.release();
 }
 
 void Host::Start()
 {
-    if (system_->HasCart())
+    if (system_)
     {
         running_ = true;
         step_ = false;
@@ -51,7 +49,7 @@ void Host::Step()
 
 bool Host::Loaded() const
 {
-    return system_->HasCart();
+    return !!system_;
 }
 
 bool Host::Running() const
