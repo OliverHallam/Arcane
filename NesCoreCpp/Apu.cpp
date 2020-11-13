@@ -214,12 +214,14 @@ void Apu::Sample()
 
     assert(currentSample_ < samplesPerFrame_);
 
-    frameBuffer_[currentSample_++] =
+    frameBuffer_[currentSample_ > 0 ? currentSample_ - 1 : samplesPerFrame_ - 1] =
         (pulse1_.Sample() << 7) +
         (pulse2_.Sample() << 7) +
         (triangle_.Sample() << 7) +
         (noise_.Sample() << 7) +
         (dmc_.Sample() << 7);
+
+    currentSample_++;
 
     // we'll let the PPU kick start the next frame, due to the fact that the cycles don't quite line up
     if (currentSample_ != samplesPerFrame_)
