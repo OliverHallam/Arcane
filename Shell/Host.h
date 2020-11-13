@@ -14,6 +14,7 @@ public:
 
     void Start();
     void Stop();
+    void Step();
 
     bool Running() const;
 
@@ -38,4 +39,5 @@ private:
     std::unique_ptr<NesSystem> system_;
 
     bool running_;
+    bool step_;
 };

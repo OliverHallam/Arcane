@@ -137,6 +137,7 @@ int WINAPI WinMain(
 
         NesHost.SetSampleRate(wasapi.SampleRate());
         NesHost.Load(std::move(cart));
+        NesHost.Start();
 
         while (true)
         {
@@ -161,14 +162,11 @@ int WINAPI WinMain(
             }
             else
             {
-                if (GetMessage(&msg, NULL, 0U, 0U))
-                {
-                    if (msg.message == WM_QUIT)
-                        return 0;
+                if (!GetMessage(&msg, NULL, 0U, 0U))
+                    return 0;
 
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
-                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
             }
         }
     }
@@ -242,6 +240,12 @@ bool ProcessKey(WPARAM key, bool down)
         }
         return true;
 
+#if DIAGNOSTIC
+    case VK_SPACE:
+        if (down)
+            NesHost.Step();
+        return true;
+#endif
     }
 
     return false;

@@ -31,6 +31,12 @@ void Host::Stop()
     running_ = false;
 }
 
+void Host::Step()
+{
+    running_ = true;
+    step_ = true;
+}
+
 bool Host::Running() const
 {
     return running_;
@@ -39,6 +45,9 @@ bool Host::Running() const
 void Host::RunFrame()
 {
     system_->RunFrame();
+
+    if (step_)
+        running_ = false;
 }
 
 const uint32_t* Host::PixelData() const
