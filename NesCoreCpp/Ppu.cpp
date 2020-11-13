@@ -698,6 +698,8 @@ void Ppu::EnterVBlank()
 
     lastCycleCount = bus_.CycleCount();
 
+    bus_.OnFrame();
+
     frameCount_++;
 }
 

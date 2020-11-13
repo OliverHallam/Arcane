@@ -6,10 +6,10 @@
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
     frameCounter_{ *this },
-    frameBuffer_{ new int16_t[samplesPerFrame] },
+    backBuffer_{ new int16_t[samplesPerFrame] },
+    sampleBuffer_{ new int16_t[samplesPerFrame] },
     currentSample_(0),
     samplesPerFrame_(samplesPerFrame),
-    lastSampleCycle_(29780 / samplesPerFrame),
     lastSyncCycle_{ 0 },
     pulse1_{ true },
     pulse2_{ false },
@@ -17,9 +17,9 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
 {
     // account for the fact we start off after VBlank
     currentSample_ = (21 * samplesPerFrame) / 261;
-    lastSampleCycle_ = ((currentSample_ + 1) * 29781) / samplesPerFrame;
+    sampleCycle_ = GetSampleCycle(currentSample_ + 1);
     auto currentCycle = (21 * 341 / 3);
-    bus_.Schedule(lastSampleCycle_ - currentCycle, SyncEvent::ApuSample);
+    bus_.Schedule(sampleCycle_ - currentCycle, SyncEvent::ApuSample);
     bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
 }
 
@@ -47,8 +47,10 @@ void Apu::SyncFrame()
 {
     assert(currentSample_ == samplesPerFrame_);
 
+    std::swap(sampleBuffer_, backBuffer_);
+
     currentSample_ = 0;
-    lastSampleCycle_ = 0;
+    sampleCycle_ = 0;
     Sample();
 }
 
@@ -158,7 +160,7 @@ uint32_t Apu::SamplesPerFrame() const
 
 const int16_t* Apu::Samples() const
 {
-    return frameBuffer_.get();
+    return sampleBuffer_.get();
 }
 
 void Apu::ScheduleDmc(uint32_t cycles)
@@ -214,7 +216,7 @@ void Apu::Sample()
 
     assert(currentSample_ < samplesPerFrame_);
 
-    frameBuffer_[currentSample_ > 0 ? currentSample_ - 1 : samplesPerFrame_ - 1] =
+    backBuffer_[currentSample_] =
         (pulse1_.Sample() << 7) +
         (pulse2_.Sample() << 7) +
         (triangle_.Sample() << 7) +
@@ -222,12 +224,17 @@ void Apu::Sample()
         (dmc_.Sample() << 7);
 
     currentSample_++;
-
-    // we'll let the PPU kick start the next frame, due to the fact that the cycles don't quite line up
-    if (currentSample_ != samplesPerFrame_)
+    if (currentSample_ < samplesPerFrame_)
     {
-        auto nextSampleCycle = (29781 * currentSample_) / samplesPerFrame_;
-        bus_.Schedule(nextSampleCycle - lastSampleCycle_, SyncEvent::ApuSample);
-        lastSampleCycle_ = nextSampleCycle;
+        // sometimes the PPU skips a cycle - because we are locking our 60Hz output to the PPU we'll need to slightly
+        // abbreviate the last sample in that case.  For that reason, we let the PPU trigger the last cycle.
+        auto nextSampleCycle = GetSampleCycle(currentSample_);
+        bus_.Schedule(nextSampleCycle - sampleCycle_, SyncEvent::ApuSample);
+        sampleCycle_ = nextSampleCycle;
     }
+}
+
+uint32_t Apu::GetSampleCycle(uint32_t sample) const
+{
+    return (29781 * sample / samplesPerFrame_);
 }

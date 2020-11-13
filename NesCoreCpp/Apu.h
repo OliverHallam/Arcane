@@ -40,6 +40,8 @@ public:
     void ActivateFrameCounter();
 
 private:
+    uint32_t GetSampleCycle(uint32_t sample) const;
+
     Bus& bus_;
 
     ApuFrameCounter frameCounter_;
@@ -50,12 +52,13 @@ private:
     ApuNoise noise_;
     ApuDmc dmc_;
 
-    std::unique_ptr<int16_t[]> frameBuffer_;
+    std::unique_ptr<int16_t[]> sampleBuffer_;
+    std::unique_ptr<int16_t[]> backBuffer_;
 
     uint32_t samplesPerFrame_;
     uint32_t currentSample_;
-    uint32_t lastSampleCycle_;
-    
+    uint32_t sampleCycle_;
+
     uint32_t lastSyncCycle_{};
 
     bool dmcInterrupt_{};
