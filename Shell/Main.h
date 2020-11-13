@@ -6,8 +6,6 @@
 #include "../NesCoreCpp/NesSystem.h"
 #include "../NesCoreCpp/RomFile.h"
 
-extern Host NesHost;
-
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -19,10 +17,15 @@ void ReportError(HWND window, const wchar_t* title, const winrt::hresult_error& 
 
 HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow);
 
+std::unique_ptr<Cart> LoadGame(HWND wnd, const std::wstring& romPath);
 std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath);
+
+void Open(HWND window);
 
 LRESULT CALLBACK WindowProc(
     HWND hWnd,
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam);
+
+bool ProcessKey(HWND window, WPARAM key, bool down);

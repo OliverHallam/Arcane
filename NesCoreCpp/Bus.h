@@ -22,6 +22,10 @@ public:
     void Attach(Controller* controller);
     void Attach(std::unique_ptr<Cart> cart);
 
+    std::unique_ptr<Cart> DetachCart();
+
+    bool HasCart() const;
+
     void TickCpuRead();
     void TickCpuWrite();
 

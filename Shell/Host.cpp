@@ -21,10 +21,18 @@ void Host::Load(std::unique_ptr<Cart> cartridge)
     system_->Reset();
 }
 
+void Host::Unload()
+{
+    system_->RemoveCart();
+}
+
 void Host::Start()
 {
-    running_ = true;
-    step_ = false;
+    if (system_->HasCart())
+    {
+        running_ = true;
+        step_ = false;
+    }
 }
 
 void Host::Stop()

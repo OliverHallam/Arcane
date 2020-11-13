@@ -1,4 +1,5 @@
 #include "NesSystem.h"
+#include "NesSystem.h"
 
 NesSystem::NesSystem(uint32_t audioSampleRate)
     : display_{},
@@ -32,6 +33,16 @@ const Apu& NesSystem::Apu() const
 void NesSystem::InsertCart(std::unique_ptr<Cart> cart)
 {
     bus_.Attach(std::move(cart));
+}
+
+void NesSystem::RemoveCart()
+{
+    bus_.DetachCart();
+}
+
+bool NesSystem::HasCart() const
+{
+    return bus_.HasCart();
 }
 
 void NesSystem::Reset()

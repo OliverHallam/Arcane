@@ -51,6 +51,16 @@ void Bus::Attach(std::unique_ptr<Cart> cart)
         cart_->Attach(this);
 }
 
+std::unique_ptr<Cart> Bus::DetachCart()
+{
+    return std::move(cart_);
+}
+
+bool Bus::HasCart() const
+{
+    return !!cart_;
+}
+
 void Bus::TickCpuRead()
 {
     if (dma_)

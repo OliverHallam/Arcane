@@ -19,6 +19,8 @@ public:
     const Apu& Apu() const;
 
     void InsertCart(std::unique_ptr<Cart> cart);
+    void RemoveCart();
+    bool HasCart() const;
 
     void Reset();
 

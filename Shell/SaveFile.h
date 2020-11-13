@@ -4,6 +4,7 @@ class SaveFile
 {
 public:
     void Create(const std::wstring& path);
+    void Close();
 
     uint8_t* Data();
 

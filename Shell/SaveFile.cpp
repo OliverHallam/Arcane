@@ -45,6 +45,13 @@ void SaveFile::Create(const std::wstring& path)
         winrt::throw_last_error();
 }
 
+void SaveFile::Close()
+{
+    data_ = nullptr;
+    mapping_.close();
+    hFile_.close();
+}
+
 uint8_t* SaveFile::Data()
 {
     return data_;

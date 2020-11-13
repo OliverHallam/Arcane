@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include "commdlg.h"
+
 #include "resource.h"
 
 #include "Main.h"
@@ -19,6 +21,7 @@
 #include <sstream>
 
 Host NesHost;
+SaveFile Save;
 
 int WINAPI WinMain(
     _In_ HINSTANCE hInstance,
@@ -80,60 +83,9 @@ int WINAPI WinMain(
             return -1;
         }
 
-        std::unique_ptr<RomFile> romFile;
-        try
-        {
-            romFile = LoadCart(romPath);
-        }
-        catch (const Error& e)
-        {
-            ReportError(wnd, L"Error loading cartridge", e);
-            return -1;
-        }
-        catch (const winrt::hresult_error& e)
-        {
-            ReportError(wnd, L"Error loading cartridge", e);
-            return -1;
-        }
-
-        SaveFile saveFile;
-        auto batteryBackedMemorySize = romFile->Descriptor.PrgBatteryRamSize;
-        if (batteryBackedMemorySize)
-        {
-            try
-            {
-                auto dotPos = romPath.find_last_of('.');
-                auto withoutExtension = romPath.substr(0, dotPos);
-                auto savPath = withoutExtension + L".sav";
-
-                saveFile.Create(savPath);
-            }
-            catch (const Error& e)
-            {
-                auto message = std::wstring(L"There was a problem loading the save file.  The game will run without saving.\n" + e.Message());
-                MessageBox(wnd, e.Message().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
-            }
-            catch (const winrt::hresult_error& e)
-            {
-                std::wstringstream ss;
-                ss << L"There was a problem loading the save file.  The game will run without saving.\n"
-                    << L"HRESULT: 0x" << std::hex << e.code() << L"\n" << e.message().c_str();
-
-                MessageBox(wnd, ss.str().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
-            }
-        }
-
-        auto cart = TryCreateCart(
-            romFile->Descriptor,
-            std::move(romFile->PrgData),
-            std::move(romFile->ChrData),
-            saveFile.Data());
-
+        auto cart = LoadGame(wnd, romPath);
         if (!cart)
-        {
-            MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
             return -1;
-        }
 
         NesHost.SetSampleRate(wasapi.SampleRate());
         NesHost.Load(std::move(cart));
@@ -194,63 +146,6 @@ void ReportError(HWND window, const wchar_t* title, const winrt::hresult_error& 
     MessageBox(window, ss.str().c_str(), title, MB_ICONERROR | MB_OK);
 }
 
-bool ProcessKey(WPARAM key, bool down)
-{
-    switch (key)
-    {
-    case VK_UP:
-        NesHost.Up(down);
-        return true;
-
-    case VK_DOWN:
-        NesHost.Down(down);
-        return true;
-
-    case VK_LEFT:
-        NesHost.Left(down);
-        return true;
-
-    case VK_RIGHT:
-        NesHost.Right(down);
-        return true;
-
-    case 'Z':
-        NesHost.B(down);
-        return true;
-
-    case 'X':
-        NesHost.A(down);
-        return true;
-
-    case VK_RETURN:
-        NesHost.Start(down);
-        return true;
-
-    case VK_SHIFT:
-        NesHost.Select(down);
-        return true;
-
-    case VK_ESCAPE:
-        if (down)
-        {
-            if (NesHost.Running())
-                NesHost.Stop();
-            else
-                NesHost.Start();
-        }
-        return true;
-
-#if DIAGNOSTIC
-    case VK_SPACE:
-        if (down)
-            NesHost.Step();
-        return true;
-#endif
-    }
-
-    return false;
-}
-
 HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
 {
     auto icon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON));
@@ -302,6 +197,65 @@ HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
     return wnd;
 }
 
+std::unique_ptr<Cart> LoadGame(HWND wnd, const std::wstring& romPath)
+{
+    std::unique_ptr<RomFile> romFile;
+    try
+    {
+        romFile = LoadCart(romPath);
+    }
+    catch (const Error& e)
+    {
+        ReportError(wnd, L"Error loading cartridge", e);
+        return nullptr;
+    }
+    catch (const winrt::hresult_error& e)
+    {
+        ReportError(wnd, L"Error loading cartridge", e);
+        return nullptr;
+    }
+
+    auto batteryBackedMemorySize = romFile->Descriptor.PrgBatteryRamSize;
+    if (batteryBackedMemorySize)
+    {
+        try
+        {
+            auto dotPos = romPath.find_last_of('.');
+            auto withoutExtension = romPath.substr(0, dotPos);
+            auto savPath = withoutExtension + L".sav";
+
+            Save.Create(savPath);
+        }
+        catch (const Error& e)
+        {
+            auto message = std::wstring(L"There was a problem loading the save file.  The game will run without saving.\n" + e.Message());
+            MessageBox(wnd, e.Message().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
+        }
+        catch (const winrt::hresult_error& e)
+        {
+            std::wstringstream ss;
+            ss << L"There was a problem loading the save file.  The game will run without saving.\n"
+                << L"HRESULT: 0x" << std::hex << e.code() << L"\n" << e.message().c_str();
+
+            MessageBox(wnd, ss.str().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
+        }
+    }
+
+    auto cart = TryCreateCart(
+        romFile->Descriptor,
+        std::move(romFile->PrgData),
+        std::move(romFile->ChrData),
+        Save.Data());
+
+    if (!cart)
+    {
+        MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
+        return nullptr;
+    }
+
+    return cart;
+}
+
 std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath)
 {
     winrt::file_handle hFile {
@@ -351,6 +305,54 @@ std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath)
     return std::move(romFile);
 }
 
+void Open(HWND window)
+{
+    WCHAR fileName[MAX_PATH];
+    ZeroMemory(fileName, sizeof(fileName));
+
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.hwndOwner = window;
+    ofn.hInstance = NULL;
+    ofn.lpstrFilter = L"iNES ROM File\0*.nes\0";
+    ofn.lpstrCustomFilter = NULL;
+    ofn.nMaxCustFilter = 0;
+    ofn.nFilterIndex = 0;
+    ofn.lpstrFile = fileName;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.lpstrTitle = L"Open ROM";
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+    ofn.nFileOffset = 0;
+    ofn.nFileExtension = 0;
+    ofn.lpstrDefExt = L"nes";
+    ofn.lCustData = NULL;
+    ofn.lpfnHook = NULL;
+    ofn.lpTemplateName = NULL;
+    ofn.pvReserved = NULL;
+    ofn.dwReserved = NULL;
+    ofn.FlagsEx = 0;
+
+    if (!GetOpenFileName(&ofn))
+        return;
+
+    NesHost.Stop();
+    NesHost.Unload();
+    Save.Close();
+
+    std::wstring romPath(ofn.lpstrFile);
+    auto cart = LoadGame(window, romPath);
+
+    if (cart)
+    {
+        NesHost.Load(std::move(cart));
+        NesHost.Start();
+    }
+}
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -360,12 +362,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_KEYDOWN:
-        if (ProcessKey(wParam, true))
+        if (ProcessKey(hWnd, wParam, true))
             return 0;
         break;
 
     case WM_KEYUP:
-        if (ProcessKey(wParam, false))
+        if (ProcessKey(hWnd, wParam, false))
             return 0;
         break;
     }
@@ -373,3 +375,67 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
+bool ProcessKey(HWND window, WPARAM key, bool down)
+{
+    switch (key)
+    {
+    case VK_UP:
+        NesHost.Up(down);
+        return true;
+
+    case VK_DOWN:
+        NesHost.Down(down);
+        return true;
+
+    case VK_LEFT:
+        NesHost.Left(down);
+        return true;
+
+    case VK_RIGHT:
+        NesHost.Right(down);
+        return true;
+
+    case 'Z':
+        NesHost.B(down);
+        return true;
+
+    case 'X':
+        NesHost.A(down);
+        return true;
+
+    case VK_RETURN:
+        NesHost.Start(down);
+        return true;
+
+    case VK_SHIFT:
+        NesHost.Select(down);
+        return true;
+
+    case 'O':
+        if (GetKeyState(VK_CONTROL) & 0x8000)
+        {
+            Open(window);
+            return true;
+        }
+        return false;
+
+#if DIAGNOSTIC
+    case VK_ESCAPE:
+        if (down)
+        {
+            if (NesHost.Running())
+                NesHost.Stop();
+            else
+                NesHost.Start();
+        }
+        return true;
+
+    case VK_SPACE:
+        if (down)
+            NesHost.Step();
+        return true;
+#endif
+    }
+
+    return false;
+}

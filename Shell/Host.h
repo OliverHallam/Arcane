@@ -11,6 +11,7 @@ public:
     void SetSampleRate(uint32_t sampleRate);
 
     void Load(std::unique_ptr<Cart> cartridge);
+    void Unload();
 
     void Start();
     void Stop();
