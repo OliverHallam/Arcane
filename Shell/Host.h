@@ -17,6 +17,7 @@ public:
     void Stop();
     void Step();
 
+    bool Loaded() const;
     bool Running() const;
 
     void RunFrame();

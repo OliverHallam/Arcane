@@ -15,6 +15,7 @@ public:
     void PrepareRenderState();
 
     void RenderFrame(const uint32_t* buffer);
+    void RenderClear();
 
 private:
     void CreateDevice();
@@ -49,11 +50,9 @@ private:
     winrt::com_ptr<ID3D11Buffer> indexBuffer_;
     winrt::com_ptr<ID3D11Texture2D> frameBuffer_;
 
-
     struct Vertex
     {
         float x;
         float y;
     };
-
 };

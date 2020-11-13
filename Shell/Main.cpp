@@ -60,6 +60,7 @@ int WINAPI WinMain(
         {
             d3d.Initialize(wnd);
             d3d.PrepareRenderState();
+            d3d.RenderClear();
         }
         catch (const winrt::hresult_error& e)
         {
@@ -83,18 +84,27 @@ int WINAPI WinMain(
             return -1;
         }
 
-        auto cart = LoadGame(wnd, romPath);
-        if (!cart)
-            return -1;
-
         NesHost.SetSampleRate(wasapi.SampleRate());
-        NesHost.Load(std::move(cart));
-        NesHost.Start();
 
+        if (romPath.size())
+        {
+            auto cart = LoadGame(wnd, romPath);
+            if (!cart)
+                return -1;
+
+            NesHost.Load(std::move(cart));
+            NesHost.Start();
+        }
+        else
+        {
+            Open(wnd);
+        }
+
+        bool running = NesHost.Running();
         while (true)
         {
             MSG msg;
-            if (NesHost.Running())
+            if (running)
             {
                 if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
                 {
@@ -106,10 +116,19 @@ int WINAPI WinMain(
                 }
                 else
                 {
-                    NesHost.RunFrame();
+                    if (NesHost.Loaded())
+                    {
+                        NesHost.RunFrame();
 
-                    d3d.RenderFrame(NesHost.PixelData());
-                    wasapi.WriteSamples(NesHost.AudioSamples(), NesHost.SamplesPerFrame());
+                        d3d.RenderFrame(NesHost.PixelData());
+                        wasapi.WriteSamples(NesHost.AudioSamples(), NesHost.SamplesPerFrame());
+                    }
+                    else
+                    {
+                        d3d.RenderClear();
+                    }
+
+                    running = NesHost.Running();
                 }
             }
             else
@@ -119,6 +138,8 @@ int WINAPI WinMain(
 
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
+
+                running = NesHost.Running();
             }
         }
     }

@@ -23,7 +23,10 @@ void Host::Load(std::unique_ptr<Cart> cartridge)
 
 void Host::Unload()
 {
-    system_->RemoveCart();
+    if (system_)
+    {
+        system_->RemoveCart();
+    }
 }
 
 void Host::Start()
@@ -44,6 +47,11 @@ void Host::Step()
 {
     running_ = true;
     step_ = true;
+}
+
+bool Host::Loaded() const
+{
+    return system_->HasCart();
 }
 
 bool Host::Running() const

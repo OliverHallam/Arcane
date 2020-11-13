@@ -18,17 +18,17 @@ CommandLine::~CommandLine()
 
 void CommandLine::Parse()
 {
-    if (argCount_ == 1)
+    if (argCount_ > 1)
     {
-        throw Error(L"Please specify the ROM to load on the command line");
+        romPath_ = args_[1];
     }
-    else if (argCount_ != 2)
+
+    if (argCount_ > 2)
     {
         throw Error(L"The command line parameters were invalid");
     }
-
-    romPath_ = args_[1];
 }
+
 
 std::wstring CommandLine::RomPath() const
 {

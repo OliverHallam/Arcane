@@ -6,8 +6,8 @@
 #include "PixelShader.h"
 
 D3DRenderer::D3DRenderer(uint32_t width, uint32_t height)
-    : width_{width},
-    height_{height}
+    : width_{ width },
+    height_{ height }
 {
 }
 
@@ -24,7 +24,6 @@ void D3DRenderer::Initialize(HWND window)
     CreateShaderParameters();
     CreateRasterizerState();
 }
-
 
 void D3DRenderer::PrepareRenderState()
 {
@@ -79,6 +78,15 @@ void D3DRenderer::RenderFrame(const uint32_t* buffer)
     deviceContext_->DrawIndexed(6, 0, 0);
 
     hr = swapChain_->Present(1, 0);
+    winrt::check_hresult(hr);
+}
+
+void D3DRenderer::RenderClear()
+{
+    FLOAT grey[4]{ 0.125, 0.125, 0.125, 1.0 };
+    deviceContext_->ClearRenderTargetView(renderTargetView_.get(), grey);
+
+    auto hr = swapChain_->Present(1, 0);
     winrt::check_hresult(hr);
 }
 
