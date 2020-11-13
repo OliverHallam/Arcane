@@ -9,6 +9,7 @@
 #include "CommandLine.h"
 #include "D3DRenderer.h"
 #include "Error.h"
+#include "Menu.h"
 #include "SaveFile.h"
 #include "WasapiRenderer.h"
 
@@ -45,9 +46,11 @@ int WINAPI WinMain(
             return -1;
         }
 
+        Menu menu;
+
         try
         {
-            wnd = InitializeWindow(hInstance, nCmdShow);
+            wnd = InitializeWindow(hInstance, menu.Get(), nCmdShow);
         }
         catch (Error& e)
         {
@@ -111,8 +114,11 @@ int WINAPI WinMain(
                     if (msg.message == WM_QUIT)
                         return 0;
 
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
+                    if (!TranslateAccelerator(wnd, menu.AcceleratorTable(), &msg))
+                    {
+                        TranslateMessage(&msg);
+                        DispatchMessage(&msg);
+                    }
                 }
                 else
                 {
@@ -136,8 +142,11 @@ int WINAPI WinMain(
                 if (!GetMessage(&msg, NULL, 0U, 0U))
                     return 0;
 
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                if (!TranslateAccelerator(wnd, menu.AcceleratorTable(), &msg))
+                {
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
 
                 running = NesHost.Running();
             }
@@ -167,7 +176,7 @@ void ReportError(HWND window, const wchar_t* title, const winrt::hresult_error& 
     MessageBox(window, ss.str().c_str(), title, MB_ICONERROR | MB_OK);
 }
 
-HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
+HWND InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow)
 {
     auto icon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPICON));
 
@@ -205,7 +214,7 @@ HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
         rc.right - rc.left,
         rc.bottom - rc.top,
         NULL,
-        NULL,
+        menu,
         hInstance,
         0);
 
@@ -391,6 +400,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (ProcessKey(hWnd, wParam, false))
             return 0;
         break;
+
+    case WM_COMMAND:
+        if (ProcessCommand(hWnd, LOWORD(wParam)))
+            return 0;
+        break;
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -432,14 +446,6 @@ bool ProcessKey(HWND window, WPARAM key, bool down)
         NesHost.Select(down);
         return true;
 
-    case 'O':
-        if (GetKeyState(VK_CONTROL) & 0x8000)
-        {
-            Open(window);
-            return true;
-        }
-        return false;
-
 #if DIAGNOSTIC
     case VK_ESCAPE:
         if (down)
@@ -459,4 +465,13 @@ bool ProcessKey(HWND window, WPARAM key, bool down)
     }
 
     return false;
+}
+
+bool ProcessCommand(HWND window, WORD command)
+{
+    if (command == static_cast<WORD>(MenuCommand::Open))
+    {
+        Open(window);
+        return true;
+    }
 }

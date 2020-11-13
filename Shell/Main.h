@@ -15,7 +15,7 @@ int WINAPI WinMain(
 void ReportError(HWND window, const wchar_t* title, const Error& error);
 void ReportError(HWND window, const wchar_t* title, const winrt::hresult_error& error);
 
-HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow);
+HWND InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow);
 
 std::unique_ptr<Cart> LoadGame(HWND wnd, const std::wstring& romPath);
 std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath);
@@ -29,3 +29,5 @@ LRESULT CALLBACK WindowProc(
     LPARAM lParam);
 
 bool ProcessKey(HWND window, WPARAM key, bool down);
+
+bool ProcessCommand(HWND window, WORD command);

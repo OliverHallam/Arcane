@@ -227,6 +227,7 @@
     <ClCompile Include="Host.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Error.cpp" />
+    <ClCompile Include="Menu.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">Create</PrecompiledHeader>
@@ -249,6 +250,7 @@
     <ClInclude Include="Error.h" />
     <ClInclude Include="Host.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Menu.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="resource.h" />
