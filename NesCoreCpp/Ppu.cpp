@@ -9,7 +9,9 @@ Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
     display_{ display },
     background_{ bus },
-    sprites_{ bus }
+    sprites_{ bus },
+    palette_{},
+    rgbPalette_{}
 {
     bus_.Schedule(342 / 3, SyncEvent::PpuScanline);
 }

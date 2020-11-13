@@ -232,13 +232,13 @@ void Bus::SignalNmi()
 void Bus::SetAudioIrq(bool irq)
 {
     audioIrq_ = irq;
-    cpu_->SetIrq(audioIrq_ | cartIrq_);
+    cpu_->SetIrq(audioIrq_ || cartIrq_);
 }
 
 void Bus::SetCartIrq(bool irq)
 {
     cartIrq_ = irq;
-    cpu_->SetIrq(audioIrq_ | cartIrq_);
+    cpu_->SetIrq(audioIrq_ || cartIrq_);
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)
