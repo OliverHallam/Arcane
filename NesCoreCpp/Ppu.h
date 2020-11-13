@@ -89,4 +89,8 @@ private:
 
     // the next tick should trigger the VBlank interrupt
     bool signalVBlank_{};
+
+#if DIAGNOSTIC
+    std::array<uint32_t, 341> diagnosticOverlay_;
+#endif
 };

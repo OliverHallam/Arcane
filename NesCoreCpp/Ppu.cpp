@@ -350,6 +350,10 @@ void Ppu::Sync(int32_t targetCycle)
     if (targetCycle <= scanlineCycle_)
         return;
 
+#if DIAGNOSTIC
+    diagnosticOverlay_[targetCycle] = 0xffff0000;
+#endif
+
     if (currentScanline_ < 240)
     {
         RenderScanline(targetCycle);
@@ -654,6 +658,24 @@ void Ppu::FinishRender()
     Composite(compositeCycle_, 256);
     compositeCycle_ = 0;
 
+#if DIAGNOSTIC
+    auto pDisplay = display_.GetScanlinePtr();
+    for (auto i = 256; i < Display::WIDTH; i++)
+    {
+        pDisplay[i] = 0;
+    }
+
+    for (auto pixel : diagnosticOverlay_)
+    {
+        if (pixel)
+            *pDisplay = pixel;
+
+        pDisplay++;
+    }
+
+    diagnosticOverlay_.fill(0);
+#endif
+
     sprites_.HReset();
     display_.HBlank();
 
@@ -663,11 +685,19 @@ void Ppu::FinishRender()
         background_.HResetRenderDisabled();
 }
 
+#include "windows.h"
+#include <string>
+
 void Ppu::EnterVBlank()
 {
     display_.VBlank();
 
-    bus_.OnFrame();
+    static int lastCycleCount = 0;
+
+    OutputDebugString((std::to_string(bus_.CycleCount() - lastCycleCount) + "\n").c_str());
+
+    lastCycleCount = bus_.CycleCount();
+
     frameCount_++;
 }
 

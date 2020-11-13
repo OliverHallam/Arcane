@@ -244,8 +244,8 @@ HWND InitializeWindow(HINSTANCE hInstance, int nCmdShow)
     if (!RegisterClass(&wndClass))
         throw Error(L"Failed to register window class");
 
-    const int defaultWidth = 1024;
-    const int defaultHeight = 960;
+    const int defaultWidth = Display::WIDTH * 4;
+    const int defaultHeight = Display::HEIGHT * 4;
 
     RECT rc;
     SetRect(&rc, 0, 0, defaultWidth, defaultHeight);

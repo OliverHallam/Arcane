@@ -16,8 +16,13 @@ public:
 
     const uint32_t* Buffer() const;
 
+#ifdef DIAGNOSTIC
+    static const int WIDTH{ 341 };
+    static const int HEIGHT{ 261 };
+#else
     static const int WIDTH{ 256 };
     static const int HEIGHT{ 240 };
+#endif
 
 private:
     std::array<uint32_t, WIDTH * HEIGHT> buffer_;
