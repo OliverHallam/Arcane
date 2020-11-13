@@ -24,9 +24,14 @@ void PpuBackground::EnableLeftColumn(bool enabled)
     leftCrop_ = enabled ? 0 : 8;
 }
 
-void PpuBackground::EnableRendering(uint32_t cycle)
+void PpuBackground::EnableRendering(int32_t cycle)
 {
-    if (cycle >= 320)
+    if (cycle <= 0)
+    {
+        // this happens between scanlines.
+        loadingIndex_ = 2;
+    }
+    else if (cycle >= 320)
     {
         loadingIndex_ = (cycle - 320) / 8;
     }

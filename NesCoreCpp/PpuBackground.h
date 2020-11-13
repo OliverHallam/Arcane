@@ -16,7 +16,7 @@ public:
 
     void EnableLeftColumn(bool enabled);
 
-    void EnableRendering(uint32_t cycle);
+    void EnableRendering(int32_t cycle);
 
     void BeginScanline();
 
@@ -63,6 +63,7 @@ private:
     uint8_t nextTileId_{};
 
     uint32_t loadingIndex_{2};
+
     std::array<Tile, 34> scanlineTiles_;
 
     uint32_t currentTileIndex_{};
