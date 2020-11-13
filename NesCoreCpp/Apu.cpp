@@ -217,11 +217,11 @@ void Apu::Sample()
     assert(currentSample_ < samplesPerFrame_);
 
     backBuffer_[currentSample_] =
-        (pulse1_.Sample() << 7) +
-        (pulse2_.Sample() << 7) +
-        (triangle_.Sample() << 7) +
-        (noise_.Sample() << 7) +
-        (dmc_.Sample() << 7);
+        (pulse1_.Sample() << 5) +
+        (pulse2_.Sample() << 5) +
+        (triangle_.Sample() << 5) +
+        (noise_.Sample() << 5) +
+        (dmc_.Sample() << 5);
 
     currentSample_++;
     if (currentSample_ < samplesPerFrame_)
