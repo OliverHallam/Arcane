@@ -24,6 +24,7 @@ void Host::Load(std::unique_ptr<Cart> cartridge)
 void Host::Start()
 {
     running_ = true;
+    step_ = false;
 }
 
 void Host::Stop()
