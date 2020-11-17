@@ -35,6 +35,6 @@ private:
     };
 
 
-    std::array<Event, MAX_EVENTS>::iterator end_;
+    uint32_t count_;
     std::array<Event, MAX_EVENTS> heap_;
 };

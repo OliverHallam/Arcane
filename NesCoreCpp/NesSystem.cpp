@@ -1,5 +1,5 @@
 #include "NesSystem.h"
-#include "NesSystem.h"
+#include "SystemState.h"
 
 NesSystem::NesSystem(uint32_t audioSampleRate)
     : display_{},
@@ -32,7 +32,8 @@ const Apu& NesSystem::Apu() const
 
 void NesSystem::InsertCart(std::unique_ptr<Cart> cart)
 {
-    bus_.Attach(std::move(cart));
+    cart_ = std::move(cart);
+    bus_.Attach(cart_.get());
 }
 
 void NesSystem::RemoveCart()
@@ -58,4 +59,23 @@ void NesSystem::RunFrame()
     {
         cpu_.RunInstruction();
     } while (ppu_.FrameCount() == currentFrame);
+}
+
+void NesSystem::CaptureState(SystemState* state) const
+{
+    bus_.CaptureState(&state->BusState);
+    cpu_.CaptureState(&state->CpuState);
+    ppu_.CaptureState(&state->PpuState);
+    apu_.CaptureState(&state->ApuState);
+    controller_.CaptureState(&state->ControllerState);
+    cart_->CaptureState(&state->CartState);
+}
+void NesSystem::RestoreState(const SystemState& state)
+{
+    bus_.RestoreState(state.BusState);
+    cpu_.RestoreState(state.CpuState);
+    ppu_.RestoreState(state.PpuState);
+    apu_.RestoreState(state.ApuState);
+    controller_.RestoreState(state.ControllerState);
+    cart_->RestoreState(state.CartState);
 }

@@ -11,17 +11,8 @@ Bus::Bus() :
     ppu_(nullptr),
     apu_(nullptr),
     controller_(nullptr),
-    cycleCount_{0},
-    dma_{},
-    oamDma_{},
-    dmcDma_{},
-    dmcDmaAddress_{},
-    oamDmaAddress_{},
-    audioIrq_{ false },
-    cartIrq_{ false }
+    cart_(nullptr)
 {
-    cpuRam_.fill(0xff);
-    ppuRam_.fill(0xff);
 }
 
 void Bus::Attach(Cpu* cpu)
@@ -44,16 +35,16 @@ void Bus::Attach(Controller* controller)
     controller_ = controller;
 }
 
-void Bus::Attach(std::unique_ptr<Cart> cart)
+void Bus::Attach(Cart* cart)
 {
     cart_ = std::move(cart);
     if (cart_)
         cart_->Attach(this);
 }
 
-std::unique_ptr<Cart> Bus::DetachCart()
+void Bus::DetachCart()
 {
-    return std::move(cart_);
+    cart_ = nullptr;
 }
 
 bool Bus::HasCart() const
@@ -63,7 +54,7 @@ bool Bus::HasCart() const
 
 void Bus::TickCpuRead()
 {
-    if (dma_)
+    if (state_.Dma)
         RunDma();
 
     Tick();
@@ -76,7 +67,7 @@ void Bus::TickCpuWrite()
 
 uint32_t Bus::CycleCount() const
 {
-    return cycleCount_;
+    return state_.CycleCount;
 }
 
 void Bus::SyncPpu()
@@ -105,7 +96,7 @@ uint8_t Bus::CpuReadData(uint16_t address)
     TickCpuRead();
 
     if (address < 0x2000)
-        return cpuRam_[address & 0x7ff];
+        return state_.CpuRam[address & 0x7ff];
     else if (address < 0x4020)
     {
         if (address < 0x4000)
@@ -125,7 +116,7 @@ uint8_t Bus::CpuReadZeroPage(uint16_t address)
 {
     TickCpuRead();
 
-    return cpuRam_[address];
+    return state_.CpuRam[address];
 }
 
 uint8_t Bus::CpuReadProgramData(uint16_t address)
@@ -149,7 +140,7 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     TickCpuWrite();
 
     if (address < 0x2000)
-        cpuRam_[address & 0x7ff] = value;
+        state_.CpuRam[address & 0x7ff] = value;
     else if (address < 0x4000)
         ppu_->Write(address, value);
     else if (address < 0x4020)
@@ -171,7 +162,7 @@ void Bus::CpuWriteZeroPage(uint16_t address, uint8_t value)
 {
     TickCpuWrite();
 
-    cpuRam_[address] = value;
+    state_.CpuRam[address] = value;
 }
 
 void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
@@ -181,7 +172,7 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     if (address < 0x2000)
     {
         Tick();
-        cpuRam_[address & 0x7ff] = secondValue;
+        state_.CpuRam[address & 0x7ff] = secondValue;
     }
     else if (address < 0x4000)
     {
@@ -217,7 +208,7 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 
 uint8_t* Bus::GetPpuRamBase()
 {
-    return &ppuRam_[0];
+    return &state_.PpuRam[0];
 }
 
 uint8_t Bus::PpuRead(uint16_t address) const
@@ -242,14 +233,14 @@ void Bus::SignalNmi()
 
 void Bus::SetAudioIrq(bool irq)
 {
-    audioIrq_ = irq;
-    cpu_->SetIrq(audioIrq_ || cartIrq_);
+    state_.AudioIrq = irq;
+    cpu_->SetIrq(state_.AudioIrq || state_.CartIrq);
 }
 
 void Bus::SetCartIrq(bool irq)
 {
-    cartIrq_ = irq;
-    cpu_->SetIrq(audioIrq_ || cartIrq_);
+    state_.CartIrq = irq;
+    cpu_->SetIrq(state_.AudioIrq || state_.CartIrq);
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)
@@ -272,16 +263,16 @@ void Bus::OamDmaWrite(uint8_t value)
 
 void Bus::BeginOamDma(uint8_t page)
 {
-    oamDmaAddress_ = (uint16_t)(page << 8);
-    oamDma_ = true;
-    dma_ = true;
+    state_.OamDmaAddress = (uint16_t)(page << 8);
+    state_.OamDma = true;
+    state_.Dma = true;
 }
 
 void Bus::BeginDmcDma(uint16_t address)
 {
-    dmcDmaAddress_ = address;
-    dmcDma_ = true;
-    dma_ = true;
+    state_.DmcDmaAddress = address;
+    state_.DmcDma = true;
+    state_.Dma = true;
 }
 
 void Bus::OnFrame()
@@ -291,23 +282,33 @@ void Bus::OnFrame()
 
 void Bus::Schedule(uint32_t cycles, SyncEvent evt)
 {
-    syncQueue_.Schedule(cycleCount_ + cycles, evt);
+    state_.SyncQueue.Schedule(state_.CycleCount + cycles, evt);
 }
 
 void Bus::RescheduleFrameCounter(uint32_t cycles)
 {
-    syncQueue_.Unschedule(SyncEvent::ApuFrameCounter);
-    syncQueue_.Schedule(cycleCount_ + cycles, SyncEvent::ApuFrameCounter);
+    state_.SyncQueue.Unschedule(SyncEvent::ApuFrameCounter);
+    state_.SyncQueue.Schedule(state_.CycleCount + cycles, SyncEvent::ApuFrameCounter);
+}
+
+void Bus::CaptureState(BusState* state) const
+{
+    *state = state_;
+}
+
+void Bus::RestoreState(const BusState& state)
+{
+    state_ = state;
 }
 
 void Bus::Tick()
 {
-    cycleCount_++;
+    state_.CycleCount++;
 
     ppu_->Tick3();
 
     // there is always at least one event scheduled so we can skip the check that the queue is empty
-    while (cycleCount_ == syncQueue_.GetNextEventTime())
+    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
     {
         RunEvent();
     }
@@ -316,7 +317,7 @@ void Bus::Tick()
 uint8_t Bus::CpuReadProgramDataRare(uint16_t address)
 {
     if (address < 0x2000)
-        return cpuRam_[address & 0x7ff];
+        return state_.CpuRam[address & 0x7ff];
     else if (address < 0x4000)
         return ppu_->Read(address);
     else if (address < 0x4020)
@@ -332,7 +333,7 @@ uint8_t Bus::CpuReadProgramDataRare(uint16_t address)
 
 void Bus::RunEvent()
 {
-    switch (syncQueue_.PopEvent())
+    switch (state_.SyncQueue.PopEvent())
     {
     case SyncEvent::ApuSample:
         apu_->Sample();
@@ -366,13 +367,13 @@ void Bus::RunEvent()
 
 void Bus::RunDma()
 {
-    if (oamDma_)
+    if (state_.OamDma)
     {
         RunOamDma();
         return;
     }
 
-    if (dmcDma_)
+    if (state_.DmcDma)
     {
         RunDmcDma();
         return;
@@ -381,10 +382,10 @@ void Bus::RunDma()
 
 void Bus::RunOamDma()
 {
-    oamDma_ = false;
-    dma_ = false;
+    state_.OamDma = false;
+    state_.Dma = false;
 
-    bool dmcStarted = dmcDma_;
+    bool dmcStarted = state_.DmcDma;
 
     // TODO: phantom read.
     Tick();
@@ -395,25 +396,25 @@ void Bus::RunOamDma()
         Tick();
     }
 
-    auto address = oamDmaAddress_;
+    auto address = state_.OamDmaAddress;
     auto endAddress = (uint16_t)(address + 0x100);
 
     while (address != endAddress)
     {
         if (dmcStarted)
         {
-            auto value = DmcDmaRead(dmcDmaAddress_);
+            auto value = DmcDmaRead(state_.DmcDmaAddress);
             apu_->SetDmcBuffer(value);
 
             // dummy read
             Tick();
 
-            dmcDma_ = false;
-            dma_ = false;
+            state_.DmcDma = false;
+            state_.Dma = false;
         }
 
         // it takes two cycles for the dmc to kick in
-        dmcStarted = dmcDma_;
+        dmcStarted = state_.DmcDma;
 
         auto value = CpuReadData(address++);
         OamDmaWrite(value);
@@ -421,23 +422,23 @@ void Bus::RunOamDma()
 
     if (dmcStarted)
     {
-        auto value = DmcDmaRead(dmcDmaAddress_);
+        auto value = DmcDmaRead(state_.DmcDmaAddress);
         apu_->SetDmcBuffer(value);
 
-        dmcDma_ = false;
-        dma_ = false;
+        state_.DmcDma = false;
+        state_.Dma = false;
     }
 }
 
 void Bus::RunDmcDma()
 {
-    dmcDma_ = false;
-    dma_ = false;
+    state_.DmcDma = false;
+    state_.Dma = false;
 
     // TODO: phantom read.
     Tick();
     Tick();
 
-    auto value = DmcDmaRead(dmcDmaAddress_);
+    auto value = DmcDmaRead(state_.DmcDmaAddress);
     apu_->SetDmcBuffer(value);
 }

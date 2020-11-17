@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ControllerState.h"
+
 #include <cstdint>
 
 class Controller
@@ -19,14 +21,11 @@ public:
     uint8_t Read();
     void Write(uint8_t data);
 
+    void CaptureState(ControllerState* state) const;
+    void RestoreState(const ControllerState& state);
+
 private:
     void CaptureState();
 
-    bool up_, down_, left_, right_;
-    bool a_, b_;
-    bool select_, start_;
-
-    bool strobe_;
-    uint8_t noise_;
-    uint8_t state_;
+    ControllerState state_;
 };

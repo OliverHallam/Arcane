@@ -4,12 +4,14 @@
 #include "ApuFrameCounter.h"
 #include "ApuNoise.h"
 #include "ApuPulse.h"
+#include "ApuState.h"
 #include "ApuTriangle.h"
 
 #include <memory>
 #include <cstdint>
 
 class Bus;
+struct ApuState;
 
 class Apu
 {
@@ -39,6 +41,9 @@ public:
     void Sync();
     void ActivateFrameCounter();
 
+    void CaptureState(ApuState* state) const;
+    void RestoreState(const ApuState& state);
+
 private:
     uint32_t GetSampleCycle(uint32_t sample) const;
 
@@ -52,15 +57,10 @@ private:
     ApuNoise noise_;
     ApuDmc dmc_;
 
-    std::unique_ptr<int16_t[]> sampleBuffer_;
+    ApuCoreState state_;
+
     std::unique_ptr<int16_t[]> backBuffer_;
+    std::unique_ptr<int16_t[]> sampleBuffer_;
 
     uint32_t samplesPerFrame_;
-    uint32_t currentSample_;
-    uint32_t sampleCycle_;
-
-    uint32_t lastSyncCycle_{};
-
-    bool dmcInterrupt_{};
-    bool frameCounterInterrupt_{};
 };

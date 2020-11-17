@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "ApuLengthCounterState.h"
+
 class ApuLengthCounter
 {
 public:
@@ -13,10 +15,11 @@ public:
 
     bool IsEnabled() const;
 
+    void CaptureState(ApuLengthCounterState* state) const;
+    void RestoreState(const ApuLengthCounterState& state);
+
 private:
     uint8_t GetLinearLength(uint8_t length);
 
-    bool enabled_{};
-    bool halt_{};
-    uint8_t length_{};
+    ApuLengthCounterState state_;
 };

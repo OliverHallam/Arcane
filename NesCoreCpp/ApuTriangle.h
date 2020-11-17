@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ApuLengthCounter.h"
+#include "ApuTriangleCoreState.h"
+#include "ApuTriangleState.h"
 
 class ApuTriangle
 {
@@ -17,17 +19,11 @@ public:
 
     int8_t Sample() const;
 
+    void CaptureState(ApuTriangleState* state) const;
+    void RestoreState(const ApuTriangleState& state);
+
 private:
     ApuLengthCounter lengthCounter_;
 
-    uint32_t period_{};
-    uint32_t period2_{2};
-    int32_t timer_{};
-
-    int waveformCycle_{};
-
-    uint32_t linearCounter_{};
-    bool linearCounterReload_{};
-    uint32_t linearCounterReloadValue_{};
-    bool control_{};
+    ApuTriangleCoreState state_;
 };

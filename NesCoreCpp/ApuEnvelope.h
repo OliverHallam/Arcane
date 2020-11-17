@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "ApuEnvelopeState.h"
+
 class ApuEnvelope
 {
 public:
@@ -14,13 +16,9 @@ public:
 
     uint8_t Sample() const;
 
+    void CaptureState(ApuEnvelopeState* state) const;
+    void RestoreState(const ApuEnvelopeState& state);
+
 private:
-    bool start_{};
-    bool loop_{};
-
-    bool constantVolume_{ true };
-    uint8_t envelope_{};
-    uint8_t decayLevel_{};
-
-    uint8_t dividerCounter_{};
+    ApuEnvelopeState state_;
 };

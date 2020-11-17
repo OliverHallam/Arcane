@@ -2,6 +2,7 @@
 
 #include "Bus.h"
 #include "Display.h"
+#include "PpuState.h"
 
 #include <cassert>
 
@@ -9,26 +10,24 @@ Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
     display_{ display },
     background_{ bus },
-    sprites_{ bus },
-    palette_{},
-    rgbPalette_{}
+    sprites_{ bus }
 {
     bus_.Schedule(342 / 3, SyncEvent::PpuScanline);
 }
 
 uint32_t Ppu::FrameCount()
 {
-    return frameCount_;
+    return state_.FrameCount;
 }
 
 void Ppu::Tick3()
 {
-    targetCycle_ += 3;
+    state_.TargetCycle += 3;
 }
 
 void Ppu::Sync()
 {
-    Sync(targetCycle_);
+    Sync(state_.TargetCycle);
 }
 
 uint8_t Ppu::Read(uint16_t address)
@@ -37,29 +36,29 @@ uint8_t Ppu::Read(uint16_t address)
 
     if (address == 0x02)
     {
-        addressLatch_ = false;
+        state_.AddressLatch = false;
 
         uint8_t status = 0;
 
-        if (inVBlank_)
+        if (state_.InVBlank)
         {
             status |= 0x80;
-            inVBlank_ = false;
+            state_.InVBlank = false;
         }
 
         // if the status is read at the point we were about to signal a vblank, that can cause it to be skipped.
-        signalVBlank_ = false;
+        state_.SignalVBlank = false;
 
         // the flag should be reset at the start of the pre-render row, we need to sync in that case
         if (sprites_.Sprite0Hit())
         {
             // the pre-render line will reset this but we haven't synced yet
-            if (currentScanline_ != 261)
+            if (state_.CurrentScanline != 261)
                 status |= 0x40;
         }
         else if (sprites_.Sprite0Visible())
         {
-            Sync(targetCycle_);
+            Sync(state_.TargetCycle);
 
             if (sprites_.Sprite0Hit())
             {
@@ -74,21 +73,21 @@ uint8_t Ppu::Read(uint16_t address)
     }
     else if (address == 0x07)
     {
-        Sync(targetCycle_);
-        auto data = ppuData_;
+        Sync(state_.TargetCycle);
+        auto data = state_.PpuData;
 
         // the address is aliased with the PPU background render address, so we use that.
-        auto ppuAddress = (uint16_t)(background_.CurrentAddress & 0x3fff);
-        ppuData_ = bus_.PpuRead(ppuAddress);
+        auto ppuAddress = (uint16_t)(background_.CurrentAddress() & 0x3fff);
+        state_.PpuData = bus_.PpuRead(ppuAddress);
 
         if (ppuAddress >= 0x3f00)
         {
-            data = palette_[ppuAddress & 0x1f] & grayscaleMask_;
+            data = state_.Palette[ppuAddress & 0x1f] & state_.GrayscaleMask;
         }
 
-        background_.CurrentAddress += addressIncrement_;
-        background_.CurrentAddress &= 0x7fff;
-        bus_.SetChrA12(background_.CurrentAddress & 0x1000);
+        background_.CurrentAddress() += state_.AddressIncrement;
+        background_.CurrentAddress() &= 0x7fff;
+        bus_.SetChrA12(background_.CurrentAddress() & 0x1000);
         return data;
     }
 
@@ -102,24 +101,24 @@ void Ppu::Write(uint16_t address, uint8_t value)
     {
     case 0:
     {
-        Sync(targetCycle_);
+        Sync(state_.TargetCycle);
 
-        auto wasVblankInterruptEnabled = enableVBlankInterrupt_;
+        auto wasVblankInterruptEnabled = state_.EnableVBlankInterrupt;
 
         // PPUCTRL flags
-        enableVBlankInterrupt_ = (value & 0x80) != 0;
+        state_.EnableVBlankInterrupt = (value & 0x80) != 0;
         sprites_.SetLargeSprites((value & 0x20) != 0);
         background_.SetBasePatternAddress((uint16_t)((value & 0x10) << 8));
         sprites_.SetBasePatternAddress((uint16_t)((value & 0x08) << 9));
-        addressIncrement_ = (value & 0x04) != 0 ? 32 : 1;
+        state_.AddressIncrement = (value & 0x04) != 0 ? 32 : 1;
 
         // set base nametable address
-        initialAddress_ &= 0xf3ff;
-        initialAddress_ |= (uint16_t)((value & 3) << 10);
+        state_.InitialAddress &= 0xf3ff;
+        state_.InitialAddress |= (uint16_t)((value & 3) << 10);
 
-        if (enableVBlankInterrupt_ && !wasVblankInterruptEnabled && inVBlank_)
+        if (state_.EnableVBlankInterrupt && !wasVblankInterruptEnabled && state_.InVBlank)
         {
-            signalVBlank_ = true;
+            state_.SignalVBlank = true;
             bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
@@ -127,8 +126,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
     }
 
     case 1:
-        mask_ = value;
-        updateMask_ = true;
+        state_.Mask = value;
+        state_.UpdateMask = true;
         bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         return;
 
@@ -137,62 +136,62 @@ void Ppu::Write(uint16_t address, uint8_t value)
         return;
 
     case 5:
-        if (!addressLatch_)
+        if (!state_.AddressLatch)
         {
             // The fine X takes effect immediately, so we need to sync
-            Sync(targetCycle_);
+            Sync(state_.TargetCycle);
 
-            initialAddress_ &= 0xffe0;
-            initialAddress_ |= (uint8_t)(value >> 3);
+            state_.InitialAddress &= 0xffe0;
+            state_.InitialAddress |= (uint8_t)(value >> 3);
             background_.SetFineX((uint8_t)(value & 7));
-            addressLatch_ = true;
+            state_.AddressLatch = true;
         }
         else
         {
-            if (targetCycle_ > 256)
+            if (state_.TargetCycle > 256)
             {
                 // we only need to sync if we are pending an HReset
-                Sync(targetCycle_);
+                Sync(state_.TargetCycle);
             }
 
-            initialAddress_ &= 0x8c1f;
-            initialAddress_ |= (uint16_t)((value & 0xf8) << 2);
-            initialAddress_ |= (uint16_t)((value & 0x07) << 12);
-            addressLatch_ = false;
+            state_.InitialAddress &= 0x8c1f;
+            state_.InitialAddress |= (uint16_t)((value & 0xf8) << 2);
+            state_.InitialAddress |= (uint16_t)((value & 0x07) << 12);
+            state_.AddressLatch = false;
         }
         return;
 
     case 6:
-        if (!addressLatch_)
+        if (!state_.AddressLatch)
         {
-            if (targetCycle_ > 256)
+            if (state_.TargetCycle > 256)
             {
                 // we only need to sync if we are pending an HReset
-                Sync(targetCycle_);
+                Sync(state_.TargetCycle);
             }
 
-            initialAddress_ = (uint16_t)(((value & 0x3f) << 8) | (initialAddress_ & 0xff));
-            addressLatch_ = true;
+            state_.InitialAddress = (uint16_t)(((value & 0x3f) << 8) | (state_.InitialAddress & 0xff));
+            state_.AddressLatch = true;
         }
         else
         {
-            initialAddress_ = (uint16_t)((initialAddress_ & 0xff00) | value);
+            state_.InitialAddress = (uint16_t)((state_.InitialAddress & 0xff00) | value);
             // update the address in 3 cycles time.
-            updateBaseAddress_ = true;
+            state_.UpdateBaseAddress = true;
             bus_.Schedule(1, SyncEvent::PpuStateUpdate);
 
-            addressLatch_ = false;
+            state_.AddressLatch = false;
         }
         return;
 
     case 7:
     {
-        Sync(targetCycle_);
+        Sync(state_.TargetCycle);
 
-        auto writeAddress = (uint16_t)(background_.CurrentAddress & 0x3fff);
+        auto writeAddress = (uint16_t)(background_.CurrentAddress() & 0x3fff);
         if (writeAddress >= 0x3f00)
         {
-            SyncComposite(targetCycle_);
+            SyncComposite(state_.TargetCycle);
 
             value &= 0x3f;
 
@@ -201,19 +200,19 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 writeAddress &= 0x000f;
 
                 // zero colors are mirrored
-                palette_[writeAddress] = value;
-                palette_[writeAddress | 0x0010] = value;
+                state_.Palette[writeAddress] = value;
+                state_.Palette[writeAddress | 0x0010] = value;
 
-                auto rgb = display_.GetPixel(value & grayscaleMask_, emphasis_);
-                rgbPalette_[writeAddress] = rgb;
-                rgbPalette_[writeAddress | 0x0010] = rgb;
+                auto rgb = display_.GetPixel(value & state_.GrayscaleMask, state_.Emphasis);
+                state_.RgbPalette[writeAddress] = rgb;
+                state_.RgbPalette[writeAddress | 0x0010] = rgb;
             }
             else
             {
                 writeAddress &= 0x0001f;
 
-                palette_[writeAddress] = value;
-                rgbPalette_[writeAddress] = display_.GetPixel(value & grayscaleMask_, emphasis_);
+                state_.Palette[writeAddress] = value;
+                state_.RgbPalette[writeAddress] = display_.GetPixel(value & state_.GrayscaleMask, state_.Emphasis);
             }
         }
         else
@@ -221,9 +220,9 @@ void Ppu::Write(uint16_t address, uint8_t value)
             bus_.PpuWrite(writeAddress, value);
         }
 
-        background_.CurrentAddress += addressIncrement_;
-        background_.CurrentAddress &= 0x7fff;
-        bus_.SetChrA12(background_.CurrentAddress & 0x1000);
+        background_.CurrentAddress() += state_.AddressIncrement;
+        background_.CurrentAddress() &= 0x7fff;
+        bus_.SetChrA12(background_.CurrentAddress() & 0x1000);
         // TODO: when rendering is enabled, this behaves weirdly.
         return;
     }
@@ -238,54 +237,68 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
+void Ppu::CaptureState(PpuState* state) const
+{
+    state->Core = state_;
+    background_.CaptureState(&state->Background);
+    sprites_.CaptureState(&state->Sprites);
+}
+
+void Ppu::RestoreState(const PpuState& state)
+{
+    state_ = state.Core;
+    background_.RestoreState(state.Background);
+    sprites_.RestoreState(state.Sprites);
+}
+
 void Ppu::SyncState()
 {
-    if (signalVBlank_)
+    if (state_.SignalVBlank)
     {
         SignalVBlank();
-        signalVBlank_ = false;
+        state_.SignalVBlank = false;
     }
 
-    if (updateBaseAddress_)
+    if (state_.UpdateBaseAddress)
     {
-        Sync(targetCycle_);
-        bus_.SetChrA12((initialAddress_ & 0x1000) != 0);
-        background_.CurrentAddress = initialAddress_;
-        updateBaseAddress_ = false;
+        Sync(state_.TargetCycle);
+        bus_.SetChrA12((state_.InitialAddress & 0x1000) != 0);
+        background_.CurrentAddress() = state_.InitialAddress;
+        state_.UpdateBaseAddress = false;
     }
-    else if (updateMask_)
+    else if (state_.UpdateMask)
     {
         // mask updates after 2 cycles
-        Sync(targetCycle_ - 1);
+        Sync(state_.TargetCycle - 1);
 
-        background_.EnableLeftColumn((mask_ & 0x02) != 0);
-        sprites_.EnableLeftColumn((mask_ & 0x04) != 0);
-        enableBackground_ = (mask_ & 0x08) != 0;
-        enableForeground_ = (mask_ & 0x10) != 0;
+        background_.EnableLeftColumn((state_.Mask & 0x02) != 0);
+        sprites_.EnableLeftColumn((state_.Mask & 0x04) != 0);
+        state_.EnableBackground = (state_.Mask & 0x08) != 0;
+        state_.EnableForeground = (state_.Mask & 0x10) != 0;
 
-        auto prevRenderingEnabled = enableRendering_;
-        enableRendering_ = (mask_ & 0x18) != 0;
+        auto prevRenderingEnabled = state_.EnableRendering;
+        state_.EnableRendering = (state_.Mask & 0x18) != 0;
 
-        if (enableRendering_ && !prevRenderingEnabled && (currentScanline_ < 240))
+        if (state_.EnableRendering && !prevRenderingEnabled && (state_.CurrentScanline < 240))
         {
-            background_.EnableRendering(targetCycle_ - 1);
+            background_.EnableRendering(state_.TargetCycle - 1);
         }
 
-        grayscaleMask_ = (mask_ & 0x01) ? 0x30 : 0xff;
-        auto newEmphasis = (mask_ & 0xe0) >> 5;
-        if (newEmphasis != emphasis_)
+        state_.GrayscaleMask = (state_.Mask & 0x01) ? 0x30 : 0xff;
+        auto newEmphasis = (state_.Mask & 0xe0) >> 5;
+        if (newEmphasis != state_.Emphasis)
         {
-            SyncComposite(targetCycle_ - 1);
-            emphasis_ = newEmphasis;
+            SyncComposite(state_.TargetCycle - 1);
+            state_.Emphasis = newEmphasis;
 
             // rebuild palette
             for (auto index = 0; index < 32; index++)
             {
-                rgbPalette_[index] = display_.GetPixel(palette_[index] & grayscaleMask_, emphasis_);
+                state_.RgbPalette[index] = display_.GetPixel(state_.Palette[index] & state_.GrayscaleMask, state_.Emphasis);
             }
         }
 
-        updateMask_ = false;
+        state_.UpdateMask = false;
     }
 }
 
@@ -303,13 +316,13 @@ void Ppu::SyncA12()
 
 void Ppu::SyncScanline()
 {
-    if (targetCycle_ < 340)
+    if (state_.TargetCycle < 340)
         return;
 
     // we're at the end of the scanline, so lets render the whole thing
-    if (currentScanline_ < 240)
+    if (state_.CurrentScanline < 240)
     {
-        if (scanlineCycle_ == 0)
+        if (state_.ScanlineCycle == 0)
         {
             RenderScanline();
         }
@@ -318,162 +331,162 @@ void Ppu::SyncScanline()
             RenderScanline(340);
         }
 
-        currentScanline_++;
+        state_.CurrentScanline++;
     }
-    else if (currentScanline_ == 240)
+    else if (state_.CurrentScanline == 240)
     {
         EnterVBlank();
 
         // if we've stepped over the start of VBlank, we should sync that too.
-        if (targetCycle_ > 0)
+        if (state_.TargetCycle > 0)
         {
             SignalVBlank();
         }
         else
         {
             // otherwise we process the VBlank on the next update
-            signalVBlank_ = true;
+            state_.SignalVBlank = true;
             bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
-        currentScanline_ = 241;
+        state_.CurrentScanline = 241;
     }
-    else if (currentScanline_ == 261)
+    else if (state_.CurrentScanline == 261)
     {
         PreRenderScanline(340);
-        currentScanline_ = 0;
+        state_.CurrentScanline = 0;
     }
     else
     {
-        currentScanline_++;
+        state_.CurrentScanline++;
     }
 
     // the target cycle starts at -1 which gives us our extra tick at the start of the line
-    scanlineCycle_ = 0;
-    targetCycle_ -= 341;
+    state_.ScanlineCycle = 0;
+    state_.TargetCycle -= 341;
 
     // For A12 we want to sync when we start the sprites.
-    if (enableRendering_ && bus_.SensitiveToChrA12() && currentScanline_ < 240)
-        bus_.Schedule((259 - targetCycle_) / 3, SyncEvent::PpuSyncA12);
+    if (state_.EnableRendering && bus_.SensitiveToChrA12() && state_.CurrentScanline < 240)
+        bus_.Schedule((259 - state_.TargetCycle) / 3, SyncEvent::PpuSyncA12);
 
-    bus_.Schedule((342 - targetCycle_) / 3, SyncEvent::PpuScanline);
+    bus_.Schedule((342 - state_.TargetCycle) / 3, SyncEvent::PpuScanline);
 }
 
 void Ppu::Sync(int32_t targetCycle)
 {
-    if (targetCycle <= scanlineCycle_)
+    if (targetCycle <= state_.ScanlineCycle)
         return;
 
 #if DIAGNOSTIC
     diagnosticOverlay_[targetCycle] = 0xffff0000;
 #endif
 
-    if (currentScanline_ < 240)
+    if (state_.CurrentScanline < 240)
     {
         RenderScanline(targetCycle);
     }
-    else if (currentScanline_ == 261)
+    else if (state_.CurrentScanline == 261)
     {
         PreRenderScanline(targetCycle);
         return;
     }
     else
     {
-        scanlineCycle_ = targetCycle;
+        state_.ScanlineCycle = targetCycle;
     }
 }
 
 void Ppu::SyncComposite(int32_t targetCycle)
 {
-    if (currentScanline_ >= 240)
+    if (state_.CurrentScanline >= 240)
         return;
     if (targetCycle < 0 || targetCycle > 256)
         return;
 
-    Composite(compositeCycle_, targetCycle);
-    compositeCycle_ = targetCycle;
+    Composite(state_.CompositeCycle, targetCycle);
+    state_.CompositeCycle = targetCycle;
 }
 
 void Ppu::PreRenderScanline(int32_t targetCycle)
 {
-    if (scanlineCycle_ == 0)
+    if (state_.ScanlineCycle == 0)
     {
         background_.BeginScanline();
         sprites_.VReset();
-        inVBlank_ = false;
+        state_.InVBlank = false;
     }
 
-    if (scanlineCycle_ < 256)
+    if (state_.ScanlineCycle < 256)
     {
         auto maxIndex = std::min(256, targetCycle);
 
-        if (enableRendering_)
+        if (state_.EnableRendering)
         {
-            background_.RunLoad(scanlineCycle_, maxIndex);
+            background_.RunLoad(state_.ScanlineCycle, maxIndex);
         }
 
-        scanlineCycle_ = maxIndex;
-        if (scanlineCycle_ == targetCycle)
+        state_.ScanlineCycle = maxIndex;
+        if (state_.ScanlineCycle == targetCycle)
             return;
     }
 
-    if (scanlineCycle_ == 256)
+    if (state_.ScanlineCycle == 256)
     {
-        if (enableRendering_)
-            background_.HReset(initialAddress_);
+        if (state_.EnableRendering)
+            background_.HReset(state_.InitialAddress);
         else
             background_.HResetRenderDisabled();
 
-        scanlineCycle_ = 257;
-        if (scanlineCycle_ == targetCycle)
+        state_.ScanlineCycle = 257;
+        if (state_.ScanlineCycle == targetCycle)
             return;
     }
 
-    if (scanlineCycle_ < 320)
+    if (state_.ScanlineCycle < 320)
     {
         auto maxCycle = std::min(targetCycle, 320);
 
         sprites_.DummyLoad();
 
-        if (enableRendering_)
+        if (state_.EnableRendering)
         {
-            if (targetCycle >= 280 && scanlineCycle_ < 304)
+            if (targetCycle >= 280 && state_.ScanlineCycle < 304)
             {
-                background_.VReset(initialAddress_);
+                background_.VReset(state_.InitialAddress);
             }
 
-            scanlineCycle_ = maxCycle;
+            state_.ScanlineCycle = maxCycle;
         }
         else
         {
-            scanlineCycle_ = maxCycle;
+            state_.ScanlineCycle = maxCycle;
         }
 
-        if (scanlineCycle_ >= targetCycle)
+        if (state_.ScanlineCycle >= targetCycle)
             return;
     }
 
-    if (enableRendering_)
+    if (state_.EnableRendering)
     {
         auto maxCycle = std::min(targetCycle, 336);
 
         // sprite tile loading
-        background_.RunLoad(scanlineCycle_, maxCycle);
+        background_.RunLoad(state_.ScanlineCycle, maxCycle);
     }
 
-    scanlineCycle_ = targetCycle;
+    state_.ScanlineCycle = targetCycle;
 }
 
 void Ppu::RenderScanline(int32_t targetCycle)
 {
-    if (scanlineCycle_ == 0)
+    if (state_.ScanlineCycle == 0)
     {
         goto RenderVisible;
     }
 
-    if (scanlineCycle_ <= 256)
+    if (state_.ScanlineCycle <= 256)
     {
-        if (scanlineCycle_ < 256)
+        if (state_.ScanlineCycle < 256)
             RenderScanlineVisible(targetCycle);
 
         if (targetCycle <= 256)
@@ -481,33 +494,33 @@ void Ppu::RenderScanline(int32_t targetCycle)
 
         FinishRender();
 
-        if (!enableRendering_)
+        if (!state_.EnableRendering)
             goto EndRender;
 
         goto LoadSprites;
     }
 
-    if (!enableRendering_)
+    if (!state_.EnableRendering)
         goto EndRender;
 
-    if (scanlineCycle_ < 320)
+    if (state_.ScanlineCycle < 320)
     {
         if (targetCycle >= 320)
         {
-            sprites_.RunLoad(currentScanline_, scanlineCycle_, 320);
+            sprites_.RunLoad(state_.CurrentScanline, state_.ScanlineCycle, 320);
             goto LoadBackground;
         }
         else
         {
-            sprites_.RunLoad(currentScanline_, scanlineCycle_, targetCycle);
+            sprites_.RunLoad(state_.CurrentScanline, state_.ScanlineCycle, targetCycle);
             goto EndRender;
         }
     }
 
-    if (scanlineCycle_ < 336)
+    if (state_.ScanlineCycle < 336)
     {
         auto maxIndex = std::min(336, targetCycle);
-        background_.RunLoad(scanlineCycle_, maxIndex);
+        background_.RunLoad(state_.ScanlineCycle, maxIndex);
     }
 
     goto EndRender;
@@ -530,17 +543,17 @@ RenderVisible:
         goto EndRender;
     }
 
-    if (!enableRendering_)
+    if (!state_.EnableRendering)
         goto EndRender;
 
 LoadSprites:
     if (targetCycle >= 320)
     {
-        sprites_.RunLoad(currentScanline_, 256, 320);
+        sprites_.RunLoad(state_.CurrentScanline, 256, 320);
     }
     else
     {
-        sprites_.RunLoad(currentScanline_, 256, targetCycle);
+        sprites_.RunLoad(state_.CurrentScanline, 256, targetCycle);
         goto EndRender;
     }
 
@@ -548,39 +561,39 @@ LoadBackground:
     background_.RunLoad(320, targetCycle);
 
 EndRender:
-    scanlineCycle_ = targetCycle;
+    state_.ScanlineCycle = targetCycle;
 }
 
 void Ppu::RenderScanlineVisible(int32_t targetCycle)
 {
     auto maxIndex = std::min(256, targetCycle);
 
-    if (enableRendering_)
+    if (state_.EnableRendering)
     {
-        background_.RunLoad(scanlineCycle_, maxIndex);
+        background_.RunLoad(state_.ScanlineCycle, maxIndex);
 
-        if (enableBackground_)
+        if (state_.EnableBackground)
         {
-            background_.RunRender(scanlineCycle_, maxIndex);
+            background_.RunRender(state_.ScanlineCycle, maxIndex);
         }
         else
         {
-            background_.RunRenderDisabled(scanlineCycle_, maxIndex);
+            background_.RunRenderDisabled(state_.ScanlineCycle, maxIndex);
         }
 
-        if (enableForeground_ && currentScanline_ != 0)
+        if (state_.EnableForeground && state_.CurrentScanline != 0)
         {
-            sprites_.RunRender(scanlineCycle_, maxIndex, background_.ScanlinePixels());
+            sprites_.RunRender(state_.ScanlineCycle, maxIndex, background_.ScanlinePixels());
         }
 
-        sprites_.RunEvaluation(currentScanline_, scanlineCycle_, maxIndex);
+        sprites_.RunEvaluation(state_.CurrentScanline, state_.ScanlineCycle, maxIndex);
     }
     else
     {
-        background_.RunRenderDisabled(scanlineCycle_, maxIndex);
+        background_.RunRenderDisabled(state_.ScanlineCycle, maxIndex);
     }
 
-    scanlineCycle_ = maxIndex;
+    state_.ScanlineCycle = maxIndex;
 }
 
 void Ppu::RenderScanline()
@@ -591,9 +604,9 @@ void Ppu::RenderScanline()
 
     FinishRender();
 
-    if (enableRendering_)
+    if (state_.EnableRendering)
     {
-        sprites_.RunLoad(currentScanline_);
+        sprites_.RunLoad(state_.CurrentScanline);
         background_.RunLoad(320, 336);
     }
 }
@@ -601,11 +614,11 @@ void Ppu::RenderScanline()
 void Ppu::RenderScanlineVisible()
 {
     // TODO: we can optimize the disabled case here
-    if (enableRendering_)
+    if (state_.EnableRendering)
     {
         background_.RunLoad();
 
-        if (enableBackground_)
+        if (state_.EnableBackground)
         {
             background_.RenderScanline();
         }
@@ -614,12 +627,12 @@ void Ppu::RenderScanlineVisible()
             background_.RunRenderDisabled(0, 256);
         }
 
-        if (enableForeground_ && currentScanline_ != 0)
+        if (state_.EnableForeground && state_.CurrentScanline != 0)
         {
             sprites_.RunRender(0, 256, background_.ScanlinePixels());
         }
 
-        sprites_.RunEvaluation(currentScanline_, 0, 256);
+        sprites_.RunEvaluation(state_.CurrentScanline, 0, 256);
     }
     else
     {
@@ -654,7 +667,7 @@ void Ppu::Composite(int32_t startCycle, int32_t endCycle)
                 }
             }
 
-            scanline[i] = rgbPalette_[pixel];
+            scanline[i] = state_.RgbPalette[pixel];
         }
     }
     else
@@ -662,15 +675,15 @@ void Ppu::Composite(int32_t startCycle, int32_t endCycle)
         for (auto i = startCycle; i < endCycle; i++)
         {
             auto pixel = backgroundPixels[i];
-            scanline[i] = rgbPalette_[pixel];
+            scanline[i] = state_.RgbPalette[pixel];
         }
     }
 }
 
 void Ppu::FinishRender()
 {
-    Composite(compositeCycle_, 256);
-    compositeCycle_ = 0;
+    Composite(state_.CompositeCycle, 256);
+    state_.CompositeCycle = 0;
 
 #if DIAGNOSTIC
     sprites_.MarkSprites(&diagnosticOverlay_[0]);
@@ -695,8 +708,8 @@ void Ppu::FinishRender()
     sprites_.HReset();
     display_.HBlank();
 
-    if (enableRendering_)
-        background_.HReset(initialAddress_);
+    if (state_.EnableRendering)
+        background_.HReset(state_.InitialAddress);
     else
         background_.HResetRenderDisabled();
 }
@@ -716,13 +729,13 @@ void Ppu::EnterVBlank()
 
     bus_.OnFrame();
 
-    frameCount_++;
+    state_.FrameCount++;
 }
 
 void Ppu::SignalVBlank()
 {
     // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
-    inVBlank_ = true;
-    if (enableVBlankInterrupt_)
+    state_.InVBlank = true;
+    if (state_.EnableVBlankInterrupt)
         bus_.SignalNmi();
 }

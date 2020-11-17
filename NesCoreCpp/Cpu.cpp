@@ -9,51 +9,51 @@ Cpu::Cpu(Bus& bus) :
 
 void Cpu::Reset()
 {
-    // TODO: strictly, this probablys shouldn't unhalt the CPU
-    interruptVector_ = 0xfffc;
+    // TODO: strictly, this probably shouldn't unhalt the CPU
+    state_.InterruptVector = 0xfffc;
 }
 
 void Cpu::SetIrq(bool irq)
 {
-    irq_ = irq;
-    if (irq_)
+    state_.Irq = irq;
+    if (irq)
     {
-        if (!I_ && interruptVector_ == 0)
-            interruptVector_ = 0xfffe;
+        if (!state_.I && state_.InterruptVector == 0)
+            state_.InterruptVector = 0xfffe;
     }
     else
     {
-        if (interruptVector_ == 0xfffe)
-            interruptVector_ = 0;
+        if (state_.InterruptVector == 0xfffe)
+            state_.InterruptVector = 0;
     }
 }
 
 void Cpu::SignalNmi()
 {
-    if (interruptVector_ != 1)
-        interruptVector_ = 0xfffa;
+    if (state_.InterruptVector != 1)
+        state_.InterruptVector = 0xfffa;
 }
 
 void Cpu::RunInstruction()
 {
-    if (interruptVector_ != 0)
+    if (state_.InterruptVector != 0)
     {
-        if (skipInterrupt_)
+        if (state_.SkipInterrupt)
         {
-            skipInterrupt_ = false;
+            state_.SkipInterrupt = false;
         }
         else
         {
-            if (interruptVector_ == 1)
+            if (state_.InterruptVector == 1)
             {
-                bus_.CpuDummyRead(PC_);
+                bus_.CpuDummyRead(state_.PC);
                 return;
             }
 
-            bus_.CpuDummyRead(PC_);
-            bus_.CpuDummyRead(PC_);
+            bus_.CpuDummyRead(state_.PC);
+            bus_.CpuDummyRead(state_.PC);
             Interrupt();
-            interruptVector_ = 0;
+            state_.InterruptVector = 0;
             return;
         }
     }
@@ -1594,49 +1594,59 @@ void Cpu::RunInstruction()
     }
 }
 
+void Cpu::CaptureState(CpuState* state) const
+{
+    *state = state_;
+}
+
+void Cpu::RestoreState(const CpuState& state)
+{
+    state_ = state;
+}
+
 void Cpu::Interrupt()
 {
-    if (interruptVector_ != 0xfffc)
+    if (state_.InterruptVector != 0xfffc)
     {
         // don't push on reset
-        Push((uint8_t)(PC_ >> 8));
-        Push((uint8_t)(PC_ & 0xff));
+        Push((uint8_t)(state_.PC >> 8));
+        Push((uint8_t)(state_.PC & 0xff));
 
-        auto p = (uint8_t)(P() | 0x20);
-        p |= (uint8_t)(B_ ? 0x10 : 0);
+        auto p = (uint8_t)(state_.P() | 0x20);
+        p |= (uint8_t)(state_.B ? 0x10 : 0);
         Push(p);
     }
     else
     {
-        bus_.CpuDummyRead(PC_);
-        bus_.CpuDummyRead(PC_);
-        bus_.CpuDummyRead(PC_);
+        bus_.CpuDummyRead(state_.PC);
+        bus_.CpuDummyRead(state_.PC);
+        bus_.CpuDummyRead(state_.PC);
     }
 
-    auto pcLow = ReadData(interruptVector_);
-    auto pcHigh = ReadData((uint16_t)(interruptVector_ + 1));
+    auto pcLow = ReadData(state_.InterruptVector);
+    auto pcHigh = ReadData((uint16_t)(state_.InterruptVector + 1));
 
-    PC_ = (uint16_t)((pcHigh << 8) | pcLow);
+    state_.PC = (uint16_t)((pcHigh << 8) | pcLow);
 
-    I_ = true;
+    state_.I = true;
 }
 
 void Cpu::Jsr()
 {
     auto lowByte = ReadProgramByte();
 
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
 
-    Push((uint8_t)(PC_ >> 8));
-    Push((uint8_t)(PC_ & 0xff));
+    Push((uint8_t)(state_.PC >> 8));
+    Push((uint8_t)(state_.PC & 0xff));
 
     auto highByte = ReadProgramByte();
-    PC_ = (uint16_t)(highByte << 8 | lowByte);
+    state_.PC = (uint16_t)(highByte << 8 | lowByte);
 }
 
 void Cpu::Implicit()
 {
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
 }
 
 void Cpu::Immediate()
@@ -1658,7 +1668,7 @@ void Cpu::AbsoluteXRead()
     auto highByte = ReadProgramByte();
 
     address_ = (uint16_t)(lowByte | highByte << 8);
-    address_ += X_;
+    address_ += state_.X;
 
     if (highByte != (address_ >> 8))
     {
@@ -1672,7 +1682,7 @@ void Cpu::AbsoluteXWrite()
     auto highByte = ReadProgramByte();
 
     address_ = (uint16_t)(lowByte | highByte << 8);
-    address_ += X_;
+    address_ += state_.X;
 
     bus_.CpuDummyRead((highByte << 8) | (address_ & 0xff));
 }
@@ -1683,11 +1693,11 @@ void Cpu::AbsoluteYRead()
     auto highByte = ReadProgramByte();
 
     address_ = (uint16_t)(lowByte | highByte << 8);
-    address_ += Y_;
+    address_ += state_.Y;
 
     if (highByte != (address_ >> 8))
     {
-        bus_.CpuDummyRead(PC_ - 0x0100);
+        bus_.CpuDummyRead(state_.PC - 0x0100);
     }
 }
 
@@ -1697,7 +1707,7 @@ void Cpu::AbsoluteYWrite()
     auto highByte = ReadProgramByte();
 
     address_ = (uint16_t)(lowByte | highByte << 8);
-    address_ += Y_;
+    address_ += state_.Y;
 }
 
 void Cpu::ZeroPage()
@@ -1711,7 +1721,7 @@ void Cpu::ZeroPageX()
 
     bus_.CpuDummyRead(zpAddress);
 
-    address_ = (zpAddress + X_) & 0x00ff;
+    address_ = (zpAddress + state_.X) & 0x00ff;
 }
 
 void Cpu::ZeroPageY()
@@ -1720,13 +1730,13 @@ void Cpu::ZeroPageY()
 
     bus_.CpuDummyRead(zpAddress);
 
-    address_ = (zpAddress + Y_) & 0x00ff;
+    address_ = (zpAddress + state_.Y) & 0x00ff;
 }
 
 void Cpu::Relative()
 {
     auto relative = (int8_t)ReadProgramByte();
-    address_ = (uint16_t)(PC_ + relative);
+    address_ = (uint16_t)(state_.PC + relative);
 }
 
 void Cpu::AbsoluteIndirect()
@@ -1751,7 +1761,7 @@ void Cpu::IndexIndirect()
 
     bus_.CpuDummyRead(indirectAddress);
 
-    indirectAddress += X_;
+    indirectAddress += state_.X;
 
     auto addressLow = ReadData(indirectAddress);
     auto addressHigh = ReadData((uint8_t)(indirectAddress + 1));
@@ -1767,7 +1777,7 @@ void Cpu::IndirectIndexRead()
     auto addressHigh = ReadData((uint8_t)(indirectAddress + 1));
 
     address_ = (uint16_t)(addressLow | addressHigh << 8);
-    address_ += Y_;
+    address_ += state_.Y;
 
     if ((address_ >> 8) != addressHigh)
     {
@@ -1787,7 +1797,7 @@ void Cpu::IndirectIndexWrite()
 
     bus_.CpuDummyRead(address_);
 
-    address_ += Y_;
+    address_ += state_.Y;
 }
 
 void Cpu::Load()
@@ -1814,177 +1824,177 @@ void Cpu::StoreZeroPage()
 
 void Cpu::LoadA()
 {
-    inValue_ = A_;
+    inValue_ = state_.A;
 }
 
 void Cpu::StoreA()
 {
-    A_ = outValue_;
+    state_.A = outValue_;
 }
 
 void Cpu::Adc()
 {
-    auto result = A_ + inValue_;
+    auto result = state_.A + inValue_;
 
-    if (C_)
+    if (state_.C)
     {
         result++;
     }
 
-    V_ = (~(A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
+    state_.V = (~(state_.A ^ inValue_) & (state_.A ^ result) & 0x80) != 0;
 
-    A_ = static_cast<uint8_t>(result);
+    state_.A = static_cast<uint8_t>(result);
 
-    N_ = (A_ & 0x80) != 0;
-    Z_ = A_ == 0;
-    C_ = (result & 0x100) != 0;
+    state_.N = (state_.A & 0x80) != 0;
+    state_.Z = state_.A == 0;
+    state_.C = (result & 0x100) != 0;
 }
 
 void Cpu::Ahx()
 {
-    outValue_ = A_ & X_ & ((address_ >> 1) + 1);
+    outValue_ = state_.A & state_.X & ((address_ >> 1) + 1);
 }
 
 void Cpu::Anc()
 {
     And();
-    C_ = N_;
+    state_.C = state_.N;
 }
 
 void Cpu::And()
 {
-    A_ &= inValue_;
-    SetFlags(A_);
+    state_.A &= inValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Asl()
 {
-    C_ = (inValue_ & 0x80) != 0;
+    state_.C = (inValue_ & 0x80) != 0;
 
     outValue_ = inValue_ << 1;
 
-    Z_ = outValue_ == 0;
-    N_ = (outValue_ & 0x80) != 0;
+    state_.Z = outValue_ == 0;
+    state_.N = (outValue_ & 0x80) != 0;
 }
 
 void Cpu::Axa()
 {
-    Write(address_, A_ & X_ & ((address_ >> 8) + 1));
+    Write(address_, state_.A & state_.X & ((address_ >> 8) + 1));
 }
 
 void Cpu::Axs()
 {
-    auto result = A_ & X_ - inValue_;
-    X_ = static_cast<uint8_t>(result);
+    auto result = state_.A & state_.X - inValue_;
+    state_.X = static_cast<uint8_t>(result);
     SetCompareFlags(result);
 }
 
 void Cpu::Bcc()
 {
-    if (!C_)
+    if (!state_.C)
         Jump();
 }
 
 void Cpu::Bcs()
 {
-    if (C_)
+    if (state_.C)
         Jump();
 }
 
 void Cpu::Beq()
 {
-    if (Z_)
+    if (state_.Z)
         Jump();
 }
 
 void Cpu::Bit()
 {
-    N_ = (inValue_ & 0x80) != 0;
-    V_ = (inValue_ & 0x40) != 0;
-    Z_ = (inValue_ & A_) == 0;
+    state_.N = (inValue_ & 0x80) != 0;
+    state_.V = (inValue_ & 0x40) != 0;
+    state_.Z = (inValue_ & state_.A) == 0;
 }
 
 void Cpu::Bmi()
 {
-    if (N_)
+    if (state_.N)
         Jump();
 }
 
 void Cpu::Bne()
 {
-    if (!Z_)
+    if (!state_.Z)
         Jump();
 }
 
 void Cpu::Bpl()
 {
-    if (!N_)
+    if (!state_.N)
         Jump();
 }
 
 void Cpu::Brk()
 {
-    B_ = true;
-    PC_++;
-    interruptVector_ = 0xfffe;
+    state_.B = true;
+    state_.PC++;
+    state_.InterruptVector = 0xfffe;
 }
 
 void Cpu::Bvc()
 {
-    if (!V_)
+    if (!state_.V)
         Jump();
 }
 
 void Cpu::Bvs()
 {
-    if (V_)
+    if (state_.V)
         Jump();
 }
 
 void Cpu::Clc()
 {
-    C_ = false;
+    state_.C = false;
 }
 
 void Cpu::Cld()
 {
-    D_ = false;
+    state_.D = false;
 }
 
 void Cpu::Cli()
 {
-    I_ = false;
-    if (irq_ && interruptVector_ == 0)
+    state_.I = false;
+    if (state_.Irq && state_.InterruptVector == 0)
     {
-        interruptVector_ = 0xfffe;
-        skipInterrupt_ = true;
+        state_.InterruptVector = 0xfffe;
+        state_.SkipInterrupt = true;
     }
 }
 
 void Cpu::Clv()
 {
-    V_ = false;
+    state_.V = false;
 }
 
 void Cpu::Cmp()
 {
-    SetCompareFlags(A_ - inValue_);
+    SetCompareFlags(state_.A - inValue_);
 }
 
 void Cpu::Cpx()
 {
-    SetCompareFlags(X_ - inValue_);
+    SetCompareFlags(state_.X - inValue_);
 }
 
 void Cpu::Cpy()
 {
-    SetCompareFlags(Y_ - inValue_);
+    SetCompareFlags(state_.Y - inValue_);
 }
 
 void Cpu::Dcp()
 {
     outValue_ = inValue_ - 1;
-    SetCompareFlags(A_ - outValue_);
+    SetCompareFlags(state_.A - outValue_);
 }
 
 void Cpu::Dec()
@@ -1995,20 +2005,20 @@ void Cpu::Dec()
 
 void Cpu::Dex()
 {
-    X_--;
-    SetFlags(X_);
+    state_.X--;
+    SetFlags(state_.X);
 }
 
 void Cpu::Dey()
 {
-    Y_--;
-    SetFlags(Y_);
+    state_.Y--;
+    SetFlags(state_.Y);
 }
 
 void Cpu::Eor()
 {
-    A_ ^= inValue_;
-    SetFlags(A_);
+    state_.A ^= inValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Inc()
@@ -2019,85 +2029,85 @@ void Cpu::Inc()
 
 void Cpu::Inx()
 {
-    X_++;
-    SetFlags(X_);
+    state_.X++;
+    SetFlags(state_.X);
 }
 
 void Cpu::Iny()
 {
-    Y_++;
-    SetFlags(Y_);
+    state_.Y++;
+    SetFlags(state_.Y);
 }
 
 void Cpu::Isc()
 {
     outValue_ = inValue_ + 1;
 
-    auto result = (uint16_t)A_ - outValue_;
-    if (!C_)
+    auto result = (uint16_t)state_.A - outValue_;
+    if (!state_.C)
     {
         result--;
     }
 
-    V_ = ((A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
+    state_.V = ((state_.A ^ inValue_) & (state_.A ^ result) & 0x80) != 0;
 
-    A_ = static_cast<uint8_t>(result);
+    state_.A = static_cast<uint8_t>(result);
     SetCompareFlags(result);
 }
 
 void Cpu::Jmp()
 {
-    PC_ = address_;
+    state_.PC = address_;
 }
 
 void Cpu::Las()
 {
-    auto value = S_ & inValue_;
-    A_ = value;
-    X_ = value;
-    S_ = value;
+    auto value = state_.S & inValue_;
+    state_.A = value;
+    state_.X = value;
+    state_.S = value;
     SetFlags(value);
 }
 
 void Cpu::Lax()
 {
-    A_ = inValue_;
-    X_ = inValue_;
+    state_.A = inValue_;
+    state_.X = inValue_;
     SetFlags(inValue_);
 }
 
 void Cpu::Lda()
 {
-    A_ = inValue_;
-    SetFlags(A_);
+    state_.A = inValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Ldx()
 {
-    X_ = inValue_;
-    SetFlags(X_);
+    state_.X = inValue_;
+    SetFlags(state_.X);
 }
 
 void Cpu::Ldy()
 {
-    Y_ = inValue_;
-    SetFlags(Y_);
+    state_.Y = inValue_;
+    SetFlags(state_.Y);
 }
 
 void Cpu::Lsr()
 {
-    C_ = (inValue_ & 0x01) != 0;
+    state_.C = (inValue_ & 0x01) != 0;
 
     outValue_ = inValue_ >> 1;
 
-    N_ = false; // top bit is left unset
-    Z_ = outValue_ == 0;
+    state_.N = false; // top bit is left unset
+    state_.Z = outValue_ == 0;
 }
 
 void Cpu::Ora()
 {
-    A_ |= inValue_;
-    SetFlags(A_);
+    state_.A |= inValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Nop()
@@ -2106,33 +2116,33 @@ void Cpu::Nop()
 
 void Cpu::Pha()
 {
-    Push(A_);
+    Push(state_.A);
 }
 
 void Cpu::Php()
 {
-    Push(P() | 0x30);
+    Push(state_.P() | 0x30);
 }
 
 void Cpu::Pla()
 {
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
 
-    A_ = Pop();
+    state_.A = Pop();
 
-    SetFlags(A_);
+    SetFlags(state_.A);
 }
 
 void Cpu::Plp()
 {
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
 
-    P(Pop());
+    state_.P(Pop());
 
-    if (!I_ && irq_ && interruptVector_ == 0)
+    if (!state_.I && state_.Irq && state_.InterruptVector == 0)
     {
-        interruptVector_ = 0xfffe;
-        skipInterrupt_ = true;
+        state_.InterruptVector = 0xfffe;
+        state_.SkipInterrupt = true;
     }
 }
 
@@ -2142,12 +2152,12 @@ void Cpu::Rla()
 
     outValue_ = inValue_ << 1;
 
-    if (C_)
+    if (state_.C)
         outValue_ |= 0x01;
 
-    C_ = carry;
-    A_ &= outValue_;
-    SetFlags(A_);
+    state_.C = carry;
+    state_.A &= outValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Rol()
@@ -2156,12 +2166,12 @@ void Cpu::Rol()
 
     outValue_ = inValue_ << 1;
 
-    if (C_)
+    if (state_.C)
         outValue_ |= 0x01;
 
-    Z_ = outValue_ == 0;
-    N_ = (outValue_ & 0x80) != 0;
-    C_ = carry;
+    state_.Z = outValue_ == 0;
+    state_.N = (outValue_ & 0x80) != 0;
+    state_.C = carry;
 }
 
 void Cpu::Ror()
@@ -2170,12 +2180,12 @@ void Cpu::Ror()
 
     outValue_ = inValue_ >> 1;
 
-    if (C_)
+    if (state_.C)
         outValue_ |= 0x80;
 
-    Z_ = outValue_ == 0;
-    N_ = (outValue_ & 0x80) != 0;
-    C_ = carry;
+    state_.Z = outValue_ == 0;
+    state_.N = (outValue_ & 0x80) != 0;
+    state_.C = carry;
 }
 
 void Cpu::Rra()
@@ -2184,33 +2194,33 @@ void Cpu::Rra()
 
     outValue_ = inValue_ >> 1;
 
-    if (C_)
+    if (state_.C)
         outValue_ |= 0x80;
 
-    auto result = A_ + outValue_ + carry;
+    auto result = state_.A + outValue_ + carry;
 
-    V_ = (~(A_ ^ outValue_) & (A_ ^ result) & 0x80) != 0;
+    state_.V = (~(state_.A ^ outValue_) & (state_.A ^ result) & 0x80) != 0;
 
-    A_ = static_cast<uint8_t>(result);
+    state_.A = static_cast<uint8_t>(result);
 
-    N_ = (A_ & 0x80) != 0;
-    Z_ = A_ == 0;
-    C_ = (result & 0x100) != 0;
+    state_.N = (state_.A & 0x80) != 0;
+    state_.Z = state_.A == 0;
+    state_.C = (result & 0x100) != 0;
 }
 
 void Cpu::Rti()
 {
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
 
-    P(Pop());
+    state_.P(Pop());
     auto pcLow = Pop();
     auto pcHigh = Pop();
 
-    PC_ = (uint16_t)(pcHigh << 8 | pcLow);
+    state_.PC = (uint16_t)(pcHigh << 8 | pcLow);
 
-    if (!I_ && irq_ && interruptVector_ == 0)
+    if (!state_.I && state_.Irq && state_.InterruptVector == 0)
     {
-        interruptVector_ = 0xfffe;
+        state_.InterruptVector = 0xfffe;
     }
 }
 
@@ -2219,196 +2229,196 @@ void Cpu::Rts()
     auto lowByte = Pop();
     auto highByte = Pop();
 
-    bus_.CpuDummyRead(PC_);
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
+    bus_.CpuDummyRead(state_.PC);
 
-    PC_ = (uint16_t)(((highByte << 8) | lowByte) + 1);
+    state_.PC = (uint16_t)(((highByte << 8) | lowByte) + 1);
 }
 
 void Cpu::Sax()
 {
-    Write(address_, A_ & X_);
+    Write(address_, state_.A & state_.X);
 }
 
 void Cpu::SaxZeroPage()
 {
-    WriteZeroPage(address_, A_ & X_);
+    WriteZeroPage(address_, state_.A & state_.X);
 }
 
 void Cpu::Sbc()
 {
-    auto result = (uint16_t)A_ - inValue_;
-    if (!C_)
+    auto result = (uint16_t)state_.A - inValue_;
+    if (!state_.C)
     {
         result--;
     }
 
-    V_ = ((A_ ^ inValue_) & (A_ ^ result) & 0x80) != 0;
+    state_.V = ((state_.A ^ inValue_) & (state_.A ^ result) & 0x80) != 0;
 
-    A_ = static_cast<uint8_t>(result);
+    state_.A = static_cast<uint8_t>(result);
     SetCompareFlags(result);
 }
 
 void Cpu::Sec()
 {
-    C_ = true;
+    state_.C = true;
 }
 
 void Cpu::Sed()
 {
-    D_ = true;
+    state_.D = true;
 }
 
 void Cpu::Sei()
 {
-    I_ = true;
+    state_.I = true;
 
     // if the IRQ is already set it will still trigger for the next instruction
 }
 
 void Cpu::Shx()
 {
-    outValue_ = X_ & ((address_ >> 8) + 1);
+    outValue_ = state_.X & ((address_ >> 8) + 1);
 }
 
 void Cpu::Shy()
 {
-    outValue_ = Y_ & ((address_ >> 8) + 1);
+    outValue_ = state_.Y & ((address_ >> 8) + 1);
 }
 
 void Cpu::Slo()
 {
-    C_ = (inValue_ & 0x80) != 0;
+    state_.C = (inValue_ & 0x80) != 0;
 
     outValue_ = inValue_ << 1;
-    A_ |= outValue_;
+    state_.A |= outValue_;
 
-    SetFlags(A_);
+    SetFlags(state_.A);
 }
 
 void Cpu::Sre()
 {
-    C_ = (inValue_ & 0x01) != 0;
+    state_.C = (inValue_ & 0x01) != 0;
 
     outValue_ = inValue_ >> 1;
 
-    A_ ^= outValue_;
-    SetFlags(A_);
+    state_.A ^= outValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Sta()
 {
-    Write(address_, A_);
+    Write(address_, state_.A);
 }
 
 void Cpu::StaZeroPage()
 {
-    WriteZeroPage(address_, A_);
+    WriteZeroPage(address_, state_.A);
 }
 
 void Cpu::Stp()
 {
     // as we need to check this every cycle, we will overload the interrupt vector to do this.
-    interruptVector_ = 1;
+    state_.InterruptVector = 1;
 }
 
 void Cpu::Stx()
 {
-    Write(address_, X_);
+    Write(address_, state_.X);
 }
 
 void Cpu::StxZeroPage()
 {
-    WriteZeroPage(address_, X_);
+    WriteZeroPage(address_, state_.X);
 }
 
 void Cpu::Sty()
 {
-    Write(address_, Y_);
+    Write(address_, state_.Y);
 }
 
 void Cpu::StyZeroPage()
 {
-    WriteZeroPage(address_, Y_);
+    WriteZeroPage(address_, state_.Y);
 }
 
 void Cpu::Tas()
 {
-    S_ = X_ & A_;
-    outValue_ = ((address_ >> 8) + 1) & S_;
+    state_.S = state_.X & state_.A;
+    outValue_ = ((address_ >> 8) + 1) & state_.S;
 }
 
 void Cpu::Tax()
 {
-    X_ = A_;
-    SetFlags(X_);
+    state_.X = state_.A;
+    SetFlags(state_.X);
 }
 
 void Cpu::Tay()
 {
-    Y_ = A_;
-    SetFlags(Y_);
+    state_.Y = state_.A;
+    SetFlags(state_.Y);
 }
 
 void Cpu::Tsx()
 {
-    X_ = S_;
-    SetFlags(X_);
+    state_.X = state_.S;
+    SetFlags(state_.X);
 }
 
 void Cpu::Txa()
 {
-    A_ = X_;
-    SetFlags(A_);
+    state_.A = state_.X;
+    SetFlags(state_.A);
 }
 
 void Cpu::Txs()
 {
-    S_ = X_;
+    state_.S = state_.X;
 }
 
 void Cpu::Tya()
 {
-    A_ = Y_;
-    SetFlags(A_);
+    state_.A = state_.Y;
+    SetFlags(state_.A);
 }
 
 void Cpu::Xaa()
 {
-    A_ = X_ & inValue_;
-    SetFlags(A_);
+    state_.A = state_.X & inValue_;
+    SetFlags(state_.A);
 }
 
 void Cpu::Jump()
 {
-    bus_.CpuDummyRead(PC_);
+    bus_.CpuDummyRead(state_.PC);
 
-    if ((PC_ & 0xff00) != (address_ & 0xff00))
+    if ((state_.PC & 0xff00) != (address_ & 0xff00))
     {
         // page crossed
-        bus_.CpuDummyRead((PC_ & 0xff00) | (address_ & 0x00ff));
+        bus_.CpuDummyRead((state_.PC & 0xff00) | (address_ & 0x00ff));
     }
 
-    PC_ = address_;
+    state_.PC = address_;
 }
 
 void Cpu::SetFlags(uint8_t value)
 {
-    Z_ = value == 0;
-    N_ = (value & 0x80) != 0;
+    state_.Z = value == 0;
+    state_.N = (value & 0x80) != 0;
 }
 
 void Cpu::SetCompareFlags(uint16_t result)
 {
     auto tmp = static_cast<uint8_t>(result);
-    N_ = (tmp & 0x80) != 0;
-    Z_ = tmp == 0;
-    C_ = (result & 0x100) == 0;
+    state_.N = (tmp & 0x80) != 0;
+    state_.Z = tmp == 0;
+    state_.C = (result & 0x100) == 0;
 }
 
 uint8_t Cpu::ReadProgramByte()
 {
-    return bus_.CpuReadProgramData(PC_++);
+    return bus_.CpuReadProgramData(state_.PC++);
 }
 
 uint8_t Cpu::ReadData(uint16_t address)
@@ -2424,7 +2434,7 @@ uint8_t Cpu::ReadDataZeroPage(uint16_t address)
 uint8_t Cpu::Pop()
 {
     // technically not zero page, but page 1 works the same
-    return bus_.CpuReadZeroPage((uint16_t)(0x100 + ++S_));
+    return bus_.CpuReadZeroPage((uint16_t)(0x100 + ++state_.S));
 }
 
 void Cpu::Write(uint16_t address, uint8_t value)
@@ -2440,26 +2450,6 @@ void Cpu::WriteZeroPage(uint16_t address, uint8_t value)
 void Cpu::Push(uint8_t value)
 {
     // technically not zero page, but page 1 works the same
-    bus_.CpuWriteZeroPage((uint16_t)(0x100 + S_--), value);
+    bus_.CpuWriteZeroPage((uint16_t)(0x100 + state_.S--), value);
 }
 
-uint8_t Cpu::P()
-{
-    return
-        (N_ ? 0x80 : 0) |
-        (V_ ? 0x40 : 0) |
-        (D_ ? 0x08 : 0) |
-        (I_ ? 0x04 : 0) |
-        (Z_ ? 0x02 : 0) |
-        (C_ ? 0x01 : 0);
-}
-
-void Cpu::P(uint8_t value)
-{
-    N_ = (value & 0x80) != 0;
-    V_ = (value & 0x40) != 0;
-    D_ = (value & 0x08) != 0;
-    I_ = (value & 0x04) != 0;
-    Z_ = (value & 0x02) != 0;
-    C_ = (value & 0x01) != 0;
-}

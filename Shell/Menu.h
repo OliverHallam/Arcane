@@ -2,7 +2,10 @@
 
 enum class MenuCommand : WORD
 {
-    Open = 101
+    Open = 101,
+
+    Snapshot = 201,
+    Restore = 202
 };
 
 class Menu
@@ -15,6 +18,7 @@ public:
 
 private:
     HMENU fileMenu_;
+    HMENU gameMenu_;
     HMENU menuBar_;
 
     HACCEL acceleratorTable_;

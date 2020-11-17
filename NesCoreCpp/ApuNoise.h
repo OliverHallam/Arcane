@@ -2,6 +2,8 @@
 
 #include "ApuEnvelope.h"
 #include "ApuLengthCounter.h"
+#include "ApuNoiseCoreState.h"
+#include "ApuNoiseState.h"
 
 #include <cstdint>
 
@@ -22,6 +24,9 @@ public:
 
     int8_t Sample() const;
 
+    void CaptureState(ApuNoiseState* state) const;
+    void RestoreState(const ApuNoiseState& state);
+
 private:
     void StepSequencer();
 
@@ -29,13 +34,8 @@ private:
 
     bool GetSequenceOutput() const;
 
-    uint_fast16_t modeShift_;
-    uint_fast16_t period_;
-    uint32_t period2_;
-
-    int32_t timer_;
-    uint_fast16_t shifter_;
-
     ApuEnvelope envelope_;
     ApuLengthCounter lengthCounter_;
+
+    ApuNoiseCoreState state_;
 };

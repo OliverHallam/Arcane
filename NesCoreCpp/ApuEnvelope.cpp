@@ -2,29 +2,29 @@
 
 void ApuEnvelope::Tick()
 {
-    if (start_)
+    if (state_.Start)
     {
-        start_ = false;
-        decayLevel_ = 15;
-        dividerCounter_ = envelope_;
+        state_.Start = false;
+        state_.DecayLevel = 15;
+        state_.DividerCounter = state_.Envelope;
     }
     else
     {
-        if (dividerCounter_)
+        if (state_.DividerCounter)
         {
-            dividerCounter_--;
+            state_.DividerCounter--;
         }
         else
         {
-            dividerCounter_ = envelope_;
-            if (decayLevel_)
+            state_.DividerCounter = state_.Envelope;
+            if (state_.DecayLevel)
             {
-                decayLevel_--;
+                state_.DecayLevel--;
             }
             else
             {
-                if (loop_)
-                    decayLevel_ = 15;
+                if (state_.Loop)
+                    state_.DecayLevel = 15;
             }
         }
     }
@@ -32,25 +32,35 @@ void ApuEnvelope::Tick()
 
 void ApuEnvelope::SetLoop(bool loop)
 {
-    loop_ = loop;
+    state_.Loop = loop;
 }
 
 void ApuEnvelope::SetConstantVolume(bool constantVolume)
 {
-    constantVolume_ = constantVolume;
+    state_.ConstantVolume = constantVolume;
 }
 
 void ApuEnvelope::SetValue(uint8_t envelope)
 {
-    envelope_ = envelope;
+    state_.Envelope = envelope;
 }
 
 void ApuEnvelope::Start()
 {
-    start_ = true;
+    state_.Start = true;
 }
 
 uint8_t ApuEnvelope::Sample() const
 {
-    return constantVolume_ ? envelope_ : decayLevel_;
+    return state_.ConstantVolume ? state_.Envelope : state_.DecayLevel;
+}
+
+void ApuEnvelope::CaptureState(ApuEnvelopeState* state) const
+{
+    *state = state_;
+}
+
+void ApuEnvelope::RestoreState(const ApuEnvelopeState& state)
+{
+    state_ = state;
 }

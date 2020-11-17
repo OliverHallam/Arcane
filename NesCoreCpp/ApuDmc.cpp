@@ -3,21 +3,7 @@
 #include "Bus.h"
 
 ApuDmc::ApuDmc(Apu& apu)
-    : irqEnabled_{},
-    loop_{},
-    rate_{ 428 },
-    level_{},
-    sampleAddress_{ 0xC000 },
-    sampleLength_{ 1 },
-    timer_{ 428 },
-    outBuffer_{},
-    outBufferHasData_{},
-    sampleShift_{ 0 },
-    sampleBuffer_{},
-    sampleBufferHasData_{},
-    currentAddress_{ 0xC000 },
-    sampleBytesRemaining_{},
-    apu_{ apu }
+    : apu_{ apu }
 {
 }
 
@@ -25,17 +11,17 @@ void ApuDmc::Enable(bool enabled)
 {
     if (enabled)
     {
-        if (sampleBytesRemaining_ == 0)
+        if (state_.sampleBytesRemaining_ == 0)
         {
-            currentAddress_ = sampleAddress_;
-            sampleBytesRemaining_ = sampleLength_;
-            if (!sampleBufferHasData_ && sampleBytesRemaining_)
+            state_.currentAddress_ = state_.sampleAddress_;
+            state_.sampleBytesRemaining_ = state_.sampleLength_;
+            if (!state_.sampleBufferHasData_ && state_.sampleBytesRemaining_)
                 RequestByte();
         }
     }
     else
     {
-        sampleBytesRemaining_ = 0;
+        state_.sampleBytesRemaining_ = 0;
     }
 
     apu_.SetDmcInterrupt(false);
@@ -43,7 +29,7 @@ void ApuDmc::Enable(bool enabled)
 
 bool ApuDmc::IsEnabled() const
 {
-    return sampleBytesRemaining_;
+    return state_.sampleBytesRemaining_;
 }
 
 void ApuDmc::Write(uint16_t address, uint8_t value)
@@ -52,35 +38,35 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
     {
     case 0:
     {
-        auto prevIrqEnabled = irqEnabled_;
-        irqEnabled_ = value & 0x80;
-        loop_ = value & 0x40;
-        rate_ = GetLinearRate(value & 0x0f);
+        auto prevIrqEnabled = state_.irqEnabled_;
+        state_.irqEnabled_ = value & 0x80;
+        state_.loop_ = value & 0x40;
+        state_.rate_ = GetLinearRate(value & 0x0f);
 
-        if (!irqEnabled_)
+        if (!state_.irqEnabled_)
             apu_.SetDmcInterrupt(false);
-        else if (!sampleBytesRemaining_ && !prevIrqEnabled)
-            apu_.ScheduleDmc(timer_ + (7 - sampleShift_) * rate_);
+        else if (!state_.sampleBytesRemaining_ && !prevIrqEnabled)
+            apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
 
         break;
     }
 
     case 1:
         // TODO: this can be missed if a clock is happening at the same time
-        level_ = value & 0x7f;
+        state_.level_ = value & 0x7f;
         break;
 
     case 2:
-        currentAddress_ = sampleAddress_ = 0xc000 | (value << 6);
+        state_.currentAddress_ = state_.sampleAddress_ = 0xc000 | (value << 6);
         break;
 
     case 3:
     {
-        auto prevSampleBytesRemaining = sampleBytesRemaining_;
-        sampleBytesRemaining_ = sampleLength_ = (value << 4) + 1;
+        auto prevSampleBytesRemaining = state_.sampleBytesRemaining_;
+        state_.sampleBytesRemaining_ = state_.sampleLength_ = (value << 4) + 1;
 
-        if (!prevSampleBytesRemaining && !irqEnabled_)
-            apu_.ScheduleDmc(timer_ + (7 - sampleShift_) * rate_);
+        if (!prevSampleBytesRemaining && !state_.irqEnabled_)
+            apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
 
         break;
     }
@@ -89,81 +75,91 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
 
 void ApuDmc::Run(uint32_t cycles)
 {
-    timer_ -= cycles;
+    state_.timer_ -= cycles;
 
-    while (timer_ <= 0)
+    while (state_.timer_ <= 0)
     {
         Clock();
-        timer_ += rate_;
+        state_.timer_ += state_.rate_;
     }
 }
 
 void ApuDmc::SetBuffer(uint8_t value)
 {
-    sampleBuffer_ = value;
-    sampleBufferHasData_ = true;
+    state_.sampleBuffer_ = value;
+    state_.sampleBufferHasData_ = true;
 }
 
 uint8_t ApuDmc::Sample() const
 {
-    return level_;
+    return state_.level_;
+}
+
+void ApuDmc::CaptureState(ApuDmcState* state) const
+{
+    *state = state_;
+}
+
+void ApuDmc::RestoreState(const ApuDmcState& state)
+{
+    state_ = state;
 }
 
 void ApuDmc::Clock()
 {
-    if (outBufferHasData_)
+    if (state_.outBufferHasData_)
     {
-        auto nextBit = (outBuffer_ >> sampleShift_) & 1;
+        auto nextBit = (state_.outBuffer_ >> state_.sampleShift_) & 1;
 
         if (nextBit)
         {
-            if (level_ <= 125)
-                level_ += 2;
+            if (state_.level_ <= 125)
+                state_.level_ += 2;
         }
         else
         {
-            if (level_ >= 2)
-                level_ -= 2;
+            if (state_.level_ >= 2)
+                state_.level_ -= 2;
         }
     }
 
-    if (sampleShift_ == 7)
+    if (state_.sampleShift_ == 7)
     {
-        sampleShift_ = 0;
-        outBuffer_ = sampleBuffer_;
-        outBufferHasData_ = sampleBufferHasData_;
-        sampleBufferHasData_ = false;
+        state_.sampleShift_ = 0;
+        state_.outBuffer_ = state_.sampleBuffer_;
+        state_.outBufferHasData_ = state_.sampleBufferHasData_;
+        state_.sampleBufferHasData_ = false;
 
-        if (sampleBytesRemaining_ != 0)
+        if (state_.sampleBytesRemaining_ != 0)
             RequestByte();
 
-        if (sampleBytesRemaining_ > 1 || irqEnabled_)
-            apu_.ScheduleDmc(timer_ + 7 * rate_);
+        if (state_.sampleBytesRemaining_ > 1 || state_.irqEnabled_)
+            apu_.ScheduleDmc(state_.timer_ + 7 * state_.rate_);
     }
     else
-        sampleShift_++;
+        state_.sampleShift_++;
 }
 
 void ApuDmc::RequestByte()
 {
-    apu_.RequestDmcByte(currentAddress_);
-    currentAddress_++;
-    currentAddress_ |= 0x8000;
-    sampleBytesRemaining_--;
+    apu_.RequestDmcByte(state_.currentAddress_);
+    state_.currentAddress_++;
+    state_.currentAddress_ |= 0x8000;
+    state_.sampleBytesRemaining_--;
 
-    if (sampleBytesRemaining_ == 0)
+    if (state_.sampleBytesRemaining_ == 0)
     {
-        if (!loop_)
+        if (!state_.loop_)
         {
-            outBuffer_ = 0;
-            outBufferHasData_ = false;
-            if (irqEnabled_)
+            state_.outBuffer_ = 0;
+            state_.outBufferHasData_ = false;
+            if (state_.irqEnabled_)
                 apu_.SetDmcInterrupt(true);
             return;
         }
 
-        sampleBytesRemaining_ = sampleLength_;
-        currentAddress_ = sampleAddress_;
+        state_.sampleBytesRemaining_ = state_.sampleLength_;
+        state_.currentAddress_ = state_.sampleAddress_;
     }
 }
 

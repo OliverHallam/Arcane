@@ -2,70 +2,80 @@
 
 void ApuSweep::SetPeriodLow(uint8_t value)
 {
-    period_ &= 0x0700;
-    period_ |= value;
-    period2_ = period_ * 2 + 2;
+    state_.Period &= 0x0700;
+    state_.Period |= value;
+    state_.Period2 = state_.Period * 2 + 2;
     UpdateTargetPeriod();
 }
 
 void ApuSweep::SetSweep(uint8_t value)
 {
-    enabled_ = (value & 0x80) != 0;
-    divide_ = (value & 0x70) >> 4;
-    negate_ = (value & 0x08) != 0;
-    shift_ = value & 0x07;
-    reload_ = true;
+    state_.Enabled = (value & 0x80) != 0;
+    state_.Divide = (value & 0x70) >> 4;
+    state_.Negate = (value & 0x08) != 0;
+    state_.Shift = value & 0x07;
+    state_.Reload = true;
     UpdateTargetPeriod();
 }
 
 void ApuSweep::Tick()
 {
-    if (!divideCounter_)
+    if (!state_.DivideCounter)
     {
-        if (enabled_ && IsOutputEnabled() && shift_)
+        if (state_.Enabled && IsOutputEnabled() && state_.Shift)
         {
-            period_ = targetPeriod_;
-            period2_ = period_ * 2 + 2;
+            state_.Period = state_.TargetPeriod;
+            state_.Period2 = state_.Period * 2 + 2;
             UpdateTargetPeriod();
         }
 
-        divideCounter_ = divide_;
-        reload_ = false;
+        state_.DivideCounter = state_.Divide;
+        state_.Reload = false;
     }
-    else if (reload_)
+    else if (state_.Reload)
     {
-        divideCounter_ = divide_;
-        reload_ = false;
+        state_.DivideCounter = state_.Divide;
+        state_.Reload = false;
     }
     else
     {
-        divideCounter_--;
+        state_.DivideCounter--;
     }
 }
 
 uint16_t ApuSweep::Period() const
 {
-    return period2_;
+    return state_.Period2;
 }
 
 bool ApuSweep::IsOutputEnabled() const
 {
     // negate can cause an underflow
-    return period_ >= 8 && targetPeriod_ < 0x800;
+    return state_.Period >= 8 && state_.TargetPeriod < 0x800;
+}
+
+void ApuSweep::CaptureState(ApuSweepState* state) const
+{
+    *state = state_;
+}
+
+void ApuSweep::RestoreState(const ApuSweepState& state)
+{
+    state_ = state;
 }
 
 void ApuSweep::UpdateTargetPeriod()
 {
-    auto delta = period_ >> shift_;
+    auto delta = state_.Period >> state_.Shift;
 
-    if (negate_)
+    if (state_.Negate)
     {
         delta = -delta;
         if (delta > 0)
             delta -= negatedDeltaOffset_;
     }
 
-    targetPeriod_ = period_ + delta;
+    state_.TargetPeriod = state_.Period + delta;
 }
 
 ApuSweep::ApuSweep(bool pulse1)
@@ -75,8 +85,8 @@ ApuSweep::ApuSweep(bool pulse1)
 
 void ApuSweep::SetPeriodHigh(uint8_t value)
 {
-    period_ &= 0x00ff;
-    period_ |= value << 8;
-    period2_ = period_ * 2 + 2;
+    state_.Period &= 0x00ff;
+    state_.Period |= value << 8;
+    state_.Period2 = state_.Period * 2 + 2;
     UpdateTargetPeriod();
 }

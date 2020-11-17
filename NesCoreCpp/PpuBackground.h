@@ -3,6 +3,8 @@
 #include <array>
 #include <cstdint>
 
+#include "PpuBackgroundState.h"
+
 class Bus;
 
 class PpuBackground
@@ -35,9 +37,12 @@ public:
     void VReset(uint16_t initialAddress);
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
-    uint16_t CurrentAddress{};
-
+    uint16_t& CurrentAddress();
+    
     const std::array<uint8_t, 256>& ScanlinePixels() const;
+
+    void CaptureState(PpuBackgroundState* state) const;
+    void RestoreState(const PpuBackgroundState& state);
 
 private:
     struct alignas(uint32_t) Tile
@@ -60,6 +65,10 @@ private:
         uint8_t Padding{};
     };
 
+    Bus& bus_;
+
+    PpuBackgroundState state_;
+
     uint8_t nextTileId_{};
 
     uint32_t loadingIndex_{2};
@@ -69,16 +78,10 @@ private:
     uint32_t currentTileIndex_{};
     Tile currentTile_;
 
-    uint8_t fineX_{};
     int32_t patternBitShift_{7};
 
     // cache for code performance
-    uint16_t backgroundPatternBase_{};
     uint16_t patternAddress_{};
 
-    uint32_t leftCrop_{};
-
     std::array<uint8_t, 256> backgroundPixels_{};
-
-    Bus& bus_;
 };

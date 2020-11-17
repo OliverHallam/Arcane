@@ -1,4 +1,5 @@
 #include "PpuBackground.h"
+#include "PpuBackgroundState.h"
 #include "Bus.h"
 
 PpuBackground::PpuBackground(Bus& bus) :
@@ -8,20 +9,20 @@ PpuBackground::PpuBackground(Bus& bus) :
 
 void PpuBackground::SetBasePatternAddress(uint16_t address)
 {
-    backgroundPatternBase_ = address;
+    state_.BackgroundPatternBase = address;
 }
 
 void PpuBackground::SetFineX(uint8_t value)
 {
-    patternBitShift_ += fineX_ - value;
+    patternBitShift_ += state_.FineX - value;
     patternBitShift_ &= 7;
 
-    fineX_ = value;
+    state_.FineX = value;
 }
 
 void PpuBackground::EnableLeftColumn(bool enabled)
 {
-    leftCrop_ = enabled ? 0 : 8;
+    state_.LeftCrop = enabled ? 0 : 8;
 }
 
 void PpuBackground::EnableRendering(int32_t cycle)
@@ -61,9 +62,9 @@ uint8_t PpuBackground::Render()
 
 void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
 {
-    if (startCycle < leftCrop_)
+    if (startCycle < state_.LeftCrop)
     {
-        auto cropSize = std::min(leftCrop_, endCycle);
+        auto cropSize = std::min(state_.LeftCrop, endCycle);
         for (auto pixelIndex = startCycle; pixelIndex < cropSize; pixelIndex++)
         {
             backgroundPixels_[pixelIndex] = 0;
@@ -85,9 +86,9 @@ void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
     auto paletteIndex = 0;
 
     // if the PPU is pointing at a pallette entry, that replaces the background colour.
-    if ((CurrentAddress & 0x3f00) == 0x3f00)
+    if ((state_.CurrentAddress & 0x3f00) == 0x3f00)
     {
-        paletteIndex = CurrentAddress & 0x1f;
+        paletteIndex = state_.CurrentAddress & 0x1f;
     }
 
     // TODO: this can be optimized
@@ -103,7 +104,7 @@ void PpuBackground::RenderScanline()
     auto pixelIndex = 0;
     auto tileIndex = 0;
 
-    if (leftCrop_)
+    if (state_.LeftCrop)
     {
         *reinterpret_cast<uint64_t *>(&backgroundPixels_[0]) = 0;
         pixelIndex = 8;
@@ -245,7 +246,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
     }
 
     // TODO this should happen on cycle 324
-    bus_.SetChrA12(backgroundPatternBase_);
+    bus_.SetChrA12(state_.BackgroundPatternBase);
 
     auto cycle = startCycle;
     switch (cycle & 0x07)
@@ -259,7 +260,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
     case 1:
             {
-                auto tileAddress = (uint16_t)(0x2000 | CurrentAddress & 0x0fff);
+                auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
                 nextTileId_ = bus_.PpuRead(tileAddress);
             }
 
@@ -267,9 +268,9 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
             // address is 000PTTTTTTTT0YYY
             patternAddress_ = (uint16_t)
-                (backgroundPatternBase_ | // pattern selector
+                (state_.BackgroundPatternBase | // pattern selector
                 (nextTileId_ << 4) |
-                    (CurrentAddress >> 12)); // fineY
+                    (state_.CurrentAddress >> 12)); // fineY
 
             cycle++;
 
@@ -281,15 +282,15 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
     case 3:
             {
                 auto attributeAddress = (uint16_t)(
-                    0x2000 | (CurrentAddress & 0x0C00) | // select table
+                    0x2000 | (state_.CurrentAddress & 0x0C00) | // select table
                     0x03C0 | // attribute block at end of table
-                    (CurrentAddress >> 4) & 0x0038 | // 3 bits of tile y
-                    (CurrentAddress >> 2) & 0x0007); // 3 bits of tile x
+                    (state_.CurrentAddress >> 4) & 0x0038 | // 3 bits of tile y
+                    (state_.CurrentAddress >> 2) & 0x0007); // 3 bits of tile x
 
                 auto attributes = bus_.PpuRead(attributeAddress);
 
                 // use one more bit of the tile x and y to get the quadrant
-                attributes >>= ((CurrentAddress & 0x0040) >> 4) | (CurrentAddress & 0x0002);
+                attributes >>= ((state_.CurrentAddress & 0x0040) >> 4) | (state_.CurrentAddress & 0x0002);
                 attributes &= 0x03;
 
                 scanlineTiles_[loadingIndex_].AttributeBits = attributes << 2;
@@ -316,16 +317,16 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
 
             // increment the x part of the address
-            if ((CurrentAddress & 0x001f) == 0x001f)
+            if ((state_.CurrentAddress & 0x001f) == 0x001f)
             {
                 // reset the X co-ordinate
-                CurrentAddress &= 0xffe0;
+                state_.CurrentAddress &= 0xffe0;
                 // swap the nametable X
-                CurrentAddress ^= 0x0400;
+                state_.CurrentAddress ^= 0x0400;
             }
             else
             {
-                CurrentAddress++;
+                state_.CurrentAddress++;
             }
 
             loadingIndex_++;
@@ -339,32 +340,32 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
 void PpuBackground::RunLoad()
 {
-    bus_.SetChrA12(backgroundPatternBase_ != 0);
+    bus_.SetChrA12(state_.BackgroundPatternBase != 0);
 
     while (true)
     {
-        auto tileAddress = (uint16_t)(0x2000 | CurrentAddress & 0x0fff);
+        auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
         nextTileId_ = bus_.PpuRead(tileAddress);
 
         auto attributeAddress = (uint16_t)(
-            0x2000 | (CurrentAddress & 0x0C00) | // select table
+            0x2000 | (state_.CurrentAddress & 0x0C00) | // select table
             0x03C0 | // attribute block at end of table
-            (CurrentAddress >> 4) & 0x0038 | // 3 bits of tile y
-            (CurrentAddress >> 2) & 0x0007); // 3 bits of tile x
+            (state_.CurrentAddress >> 4) & 0x0038 | // 3 bits of tile y
+            (state_.CurrentAddress >> 2) & 0x0007); // 3 bits of tile x
 
         auto attributes = bus_.PpuRead(attributeAddress);
 
         // use one more bit of the tile x and y to get the quadrant
-        attributes >>= ((CurrentAddress & 0x0040) >> 4) | (CurrentAddress & 0x0002);
+        attributes >>= ((state_.CurrentAddress & 0x0040) >> 4) | (state_.CurrentAddress & 0x0002);
         attributes &= 0x03;
 
         scanlineTiles_[loadingIndex_].AttributeBits = attributes << 2;
 
         // address is 000PTTTTTTTT0YYY
         patternAddress_ = (uint16_t)
-            (backgroundPatternBase_ | // pattern selector
+            (state_.BackgroundPatternBase | // pattern selector
             (nextTileId_ << 4) |
-                (CurrentAddress >> 12)); // fineY
+                (state_.CurrentAddress >> 12)); // fineY
 
         auto pattern = bus_.PpuReadChr16(patternAddress_);
 
@@ -378,16 +379,16 @@ void PpuBackground::RunLoad()
         }
 
         // increment the x part of the address
-        if ((CurrentAddress & 0x001f) == 0x001f)
+        if ((state_.CurrentAddress & 0x001f) == 0x001f)
         {
             // reset the X co-ordinate
-            CurrentAddress &= 0xffe0;
+            state_.CurrentAddress &= 0xffe0;
             // swap the nametable X
-            CurrentAddress ^= 0x0400;
+            state_.CurrentAddress ^= 0x0400;
         }
         else
         {
-            CurrentAddress++;
+            state_.CurrentAddress++;
         }
 
         loadingIndex_++;
@@ -413,32 +414,32 @@ void PpuBackground::Tick(int32_t cycle)
 void PpuBackground::HReset(uint16_t initialAddress)
 {
     // adjust y scroll
-    CurrentAddress += 0x1000;
-    CurrentAddress &= 0x7fff;
+    state_.CurrentAddress += 0x1000;
+    state_.CurrentAddress &= 0x7fff;
 
-    if ((CurrentAddress & 0x7000) == 0)
+    if ((state_.CurrentAddress & 0x7000) == 0)
     {
         // move to the next row
-        auto yBits = (CurrentAddress & 0x03e0);
+        auto yBits = (state_.CurrentAddress & 0x03e0);
         if (yBits == 0x03a0)
         {
             // reset the Y co-ordinate
-            CurrentAddress &= 0x7c1f;
+            state_.CurrentAddress &= 0x7c1f;
             // swap the nametable Y
-            CurrentAddress ^= 0x0800;
+            state_.CurrentAddress ^= 0x0800;
         }
         else if (yBits == 0x03e0)
         {
-            CurrentAddress &= 0x7c1f;
+            state_.CurrentAddress &= 0x7c1f;
         }
         else
         {
-            CurrentAddress += 0x0020;
+            state_.CurrentAddress += 0x0020;
         }
     }
 
-    CurrentAddress &= 0xfbe0;
-    CurrentAddress |= (uint16_t)(initialAddress & 0x041f);
+    state_.CurrentAddress &= 0xfbe0;
+    state_.CurrentAddress |= (uint16_t)(initialAddress & 0x041f);
 
     loadingIndex_ = 0;
 }
@@ -450,11 +451,26 @@ void PpuBackground::HResetRenderDisabled()
 
 void PpuBackground::VReset(uint16_t initialAddress)
 {
-    CurrentAddress &= 0x041f;
-    CurrentAddress |= (uint16_t)(initialAddress & 0xfbe0);
+    state_.CurrentAddress &= 0x041f;
+    state_.CurrentAddress |= (uint16_t)(initialAddress & 0xfbe0);
+}
+
+uint16_t& PpuBackground::CurrentAddress()
+{
+    return state_.CurrentAddress;
 }
 
 const std::array<uint8_t, 256>& PpuBackground::ScanlinePixels() const
 {
     return backgroundPixels_;
+}
+
+void PpuBackground::CaptureState(PpuBackgroundState* state) const
+{
+    *state = state_;
+}
+
+void PpuBackground::RestoreState(const PpuBackgroundState& state)
+{
+    state_ = state;
 }

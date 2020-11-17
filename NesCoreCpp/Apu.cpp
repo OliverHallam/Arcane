@@ -8,18 +8,16 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     frameCounter_{ *this },
     backBuffer_{ new int16_t[samplesPerFrame] },
     sampleBuffer_{ new int16_t[samplesPerFrame] },
-    currentSample_(0),
     samplesPerFrame_(samplesPerFrame),
-    lastSyncCycle_{ 0 },
     pulse1_{ true },
     pulse2_{ false },
     dmc_{*this}
 {
     // account for the fact we start off after VBlank
-    currentSample_ = (21 * samplesPerFrame) / 261;
-    sampleCycle_ = GetSampleCycle(currentSample_ + 1);
+    state_.CurrentSample = (21 * samplesPerFrame) / 261;
+    state_.SampleCycle = GetSampleCycle(state_.CurrentSample + 1);
     auto currentCycle = (21 * 341 / 3);
-    bus_.Schedule(sampleCycle_ - currentCycle, SyncEvent::ApuSample);
+    bus_.Schedule(state_.SampleCycle - currentCycle, SyncEvent::ApuSample);
     bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
 }
 
@@ -45,12 +43,12 @@ void Apu::HalfFrame()
 
 void Apu::SyncFrame()
 {
-    assert(currentSample_ == samplesPerFrame_);
+    assert(state_.CurrentSample == samplesPerFrame_);
 
     std::swap(sampleBuffer_, backBuffer_);
 
-    currentSample_ = 0;
-    sampleCycle_ = 0;
+    state_.CurrentSample = 0;
+    state_.SampleCycle = 0;
     Sample();
 }
 
@@ -138,14 +136,14 @@ uint8_t Apu::Read(uint16_t address)
         if (dmc_.IsEnabled())
             status |= 0x10;
 
-        if (frameCounterInterrupt_)
+        if (state_.FrameCounterInterrupt)
             status |= 0x40;
 
-        if (dmcInterrupt_)
+        if (state_.DmcInterrupt)
             status |= 0x80;
 
-        frameCounterInterrupt_ = false;
-        bus_.SetAudioIrq(dmcInterrupt_);
+        state_.FrameCounterInterrupt = false;
+        bus_.SetAudioIrq(state_.DmcInterrupt);
 
         return status;
     }
@@ -180,20 +178,20 @@ void Apu::SetDmcBuffer(uint8_t value)
 
 void Apu::SetFrameCounterInterrupt(bool interrupt)
 {
-    frameCounterInterrupt_ = interrupt;
-    bus_.SetAudioIrq(frameCounterInterrupt_ || dmcInterrupt_);
+    state_.FrameCounterInterrupt = interrupt;
+    bus_.SetAudioIrq(state_.FrameCounterInterrupt || state_.DmcInterrupt);
 }
 
 void Apu::SetDmcInterrupt(bool interrupt)
 {
-    dmcInterrupt_ = interrupt;
-    bus_.SetCartIrq(frameCounterInterrupt_ || dmcInterrupt_);
+    state_.DmcInterrupt = interrupt;
+    bus_.SetCartIrq(state_.FrameCounterInterrupt || state_.DmcInterrupt);
 }
 
 void Apu::Sync()
 {
     auto cycle = bus_.CycleCount();
-    auto pendingCycles = cycle - lastSyncCycle_;
+    auto pendingCycles = cycle - state_.LastSyncCycle;
 
     pulse1_.Run(pendingCycles);
     pulse2_.Run(pendingCycles);
@@ -201,7 +199,7 @@ void Apu::Sync()
     noise_.Run(pendingCycles);
     dmc_.Run(pendingCycles);
 
-    lastSyncCycle_ = cycle;
+    state_.LastSyncCycle = cycle;
 }
 
 void Apu::ActivateFrameCounter()
@@ -210,27 +208,58 @@ void Apu::ActivateFrameCounter()
     bus_.Schedule(cycles, SyncEvent::ApuFrameCounter);
 }
 
+void Apu::CaptureState(ApuState* state) const
+{
+    frameCounter_.CaptureState(&state->FrameCounter);
+    pulse1_.CaptureState(&state->Pulse1);
+    pulse2_.CaptureState(&state->Pulse2);
+    triangle_.CaptureState(&state->Triangle);
+    noise_.CaptureState(&state->Noise);
+    dmc_.CaptureState(&state->Dmc);
+
+    state->Core = state_;
+
+    if (!state->BackBuffer)
+        state->BackBuffer.reset(new int16_t[samplesPerFrame_]);
+
+    std::copy(&backBuffer_[0], &backBuffer_[0] + samplesPerFrame_, &state->BackBuffer[0]);
+}
+
+void Apu::RestoreState(const ApuState& state)
+{
+    frameCounter_.RestoreState(state.FrameCounter);
+    pulse1_.RestoreState(state.Pulse1);
+    pulse2_.RestoreState(state.Pulse2);
+    triangle_.RestoreState(state.Triangle);
+    noise_.RestoreState(state.Noise);
+    dmc_.RestoreState(state.Dmc);
+
+    state_ = state.Core;
+
+    std::copy(&state.BackBuffer[0], &state.BackBuffer[0] + samplesPerFrame_, &backBuffer_[0]);
+}
+
 void Apu::Sample()
 {
     Sync();
 
-    assert(currentSample_ < samplesPerFrame_);
+    assert(state_.CurrentSample < samplesPerFrame_);
 
-    backBuffer_[currentSample_] =
+    backBuffer_[state_.CurrentSample] =
         (pulse1_.Sample() << 5) +
         (pulse2_.Sample() << 5) +
         (triangle_.Sample() << 5) +
         (noise_.Sample() << 5) +
         (dmc_.Sample() << 5);
 
-    currentSample_++;
-    if (currentSample_ < samplesPerFrame_)
+    state_.CurrentSample++;
+    if (state_.CurrentSample < samplesPerFrame_)
     {
         // sometimes the PPU skips a cycle - because we are locking our 60Hz output to the PPU we'll need to slightly
         // abbreviate the last sample in that case.  For that reason, we let the PPU trigger the last cycle.
-        auto nextSampleCycle = GetSampleCycle(currentSample_);
-        bus_.Schedule(nextSampleCycle - sampleCycle_, SyncEvent::ApuSample);
-        sampleCycle_ = nextSampleCycle;
+        auto nextSampleCycle = GetSampleCycle(state_.CurrentSample);
+        bus_.Schedule(nextSampleCycle - state_.SampleCycle, SyncEvent::ApuSample);
+        state_.SampleCycle = nextSampleCycle;
     }
 }
 

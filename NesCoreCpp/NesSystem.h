@@ -6,8 +6,11 @@
 #include "Cpu.h"
 #include "Ppu.h"
 #include "Apu.h"
+#include "Cart.h"
 #include "Display.h"
 #include "Controller.h"
+
+struct SystemState;
 
 class NesSystem
 {
@@ -26,6 +29,9 @@ public:
 
     void RunFrame();
 
+    void CaptureState(SystemState* state) const;
+    void RestoreState(const SystemState& state);
+
 private:
     Bus bus_;
     Cpu cpu_;
@@ -33,4 +39,5 @@ private:
     ::Apu apu_;
     ::Display display_;
     ::Controller controller_;
+    std::unique_ptr<Cart> cart_;
 };

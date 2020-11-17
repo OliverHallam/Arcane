@@ -3,20 +3,21 @@
 #include <algorithm>
 
 EventQueue::EventQueue()
-    : end_(begin(heap_))
+    : count_(0)
 {
 }
 
 void EventQueue::Schedule(uint32_t cycles, SyncEvent value)
 {
-    *end_++ = Event(cycles, value);
-    std::push_heap(begin(heap_), end_);
+    heap_[count_++] = Event(cycles, value);
+    std::push_heap(begin(heap_), begin(heap_) + count_);
 }
 
 void EventQueue::Unschedule(SyncEvent value)
 {
     auto current = begin(heap_);
-    for (auto current = begin(heap_); current != end_; ++current)
+    auto end = current + count_;
+    for (auto current = begin(heap_); current != end; ++current)
     {
         if (current->Value == value)
         {
@@ -28,7 +29,7 @@ void EventQueue::Unschedule(SyncEvent value)
 
 bool EventQueue::Empty() const
 {
-    return begin(heap_) == end_;
+    return count_ == 0;
 }
 
 uint32_t EventQueue::GetNextEventTime() const
@@ -39,7 +40,8 @@ uint32_t EventQueue::GetNextEventTime() const
 SyncEvent EventQueue::PopEvent()
 {
     auto value = begin(heap_)->Value;
-    std::pop_heap(begin(heap_), end_--);
+    std::pop_heap(begin(heap_), begin(heap_) + count_);
+    count_--;
     return value;
 }
 

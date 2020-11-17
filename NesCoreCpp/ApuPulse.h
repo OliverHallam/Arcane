@@ -3,6 +3,8 @@
 #include "ApuEnvelope.h"
 #include "ApuLengthCounter.h"
 #include "ApuSweep.h"
+#include "ApuPulseCoreState.h"
+#include "ApuPulseState.h"
 
 #include <cstdint>
 
@@ -23,15 +25,16 @@ public:
 
     int8_t Sample() const;
 
+    void CaptureState(ApuPulseState* state) const;
+    void RestoreState(const ApuPulseState& state);
+
 private:
     static uint8_t GetDutyLookup(uint8_t duty);
     bool GetSequenceOutput() const;
 
-    int32_t timer_{};
-    uint32_t sequence_{};
-    uint32_t dutyLookup_{};
-
     ApuEnvelope envelope_{};
     ApuLengthCounter lengthCounter_{};
     ApuSweep sweep_;
+
+    ApuPulseCoreState state_;
 };

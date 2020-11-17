@@ -187,23 +187,45 @@
   <ItemGroup>
     <ClInclude Include="Apu.h" />
     <ClInclude Include="ApuDmc.h" />
+    <ClInclude Include="ApuDmcState.h" />
     <ClInclude Include="ApuEnvelope.h" />
+    <ClInclude Include="ApuEnvelopeState.h" />
     <ClInclude Include="ApuFrameCounter.h" />
+    <ClInclude Include="ApuFrameCounterState.h" />
     <ClInclude Include="ApuLengthCounter.h" />
+    <ClInclude Include="ApuLengthCounterState.h" />
     <ClInclude Include="ApuNoise.h" />
+    <ClInclude Include="ApuNoiseCoreState.h" />
+    <ClInclude Include="ApuNoiseState.h" />
     <ClInclude Include="ApuPulse.h" />
+    <ClInclude Include="ApuCoreState.h" />
+    <ClInclude Include="ApuPulseCoreState.h" />
+    <ClInclude Include="ApuPulseState.h" />
+    <ClInclude Include="ApuState.h" />
     <ClInclude Include="ApuSweep.h" />
+    <ClInclude Include="ApuSweepState.h" />
     <ClInclude Include="ApuTriangle.h" />
+    <ClInclude Include="ApuTriangleCoreState.h" />
+    <ClInclude Include="ApuTriangleState.h" />
     <ClInclude Include="Bus.h" />
+    <ClInclude Include="BusState.h" />
     <ClInclude Include="Cart.h" />
+    <ClInclude Include="CartCoreState.h" />
     <ClInclude Include="CartData.h" />
     <ClInclude Include="CartDescriptor.h" />
+    <ClInclude Include="CartState.h" />
     <ClInclude Include="Controller.h" />
+    <ClInclude Include="ControllerState.h" />
     <ClInclude Include="Cpu.h" />
+    <ClInclude Include="CpuState.h" />
     <ClInclude Include="Crc32.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="GameDatabase.h" />
+    <ClInclude Include="PpuBackgroundState.h" />
+    <ClInclude Include="PpuCoreState.h" />
+    <ClInclude Include="PpuSpritesState.h" />
+    <ClInclude Include="PpuState.h" />
     <ClInclude Include="RomFile.h" />
     <ClInclude Include="MirrorMode.h" />
     <ClInclude Include="NesSystem.h" />
@@ -211,6 +233,7 @@
     <ClInclude Include="PpuBackground.h" />
     <ClInclude Include="PpuSprites.h" />
     <ClInclude Include="SyncEvent.h" />
+    <ClInclude Include="SystemState.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Apu.cpp" />
@@ -223,9 +246,11 @@
     <ClCompile Include="ApuSweep.cpp" />
     <ClCompile Include="ApuTriangle.cpp" />
     <ClCompile Include="Bus.cpp" />
+    <ClCompile Include="BusState.cpp" />
     <ClCompile Include="Cart.cpp" />
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Cpu.cpp" />
+    <ClCompile Include="CpuState.cpp" />
     <ClCompile Include="Crc32.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="EventQueue.cpp" />

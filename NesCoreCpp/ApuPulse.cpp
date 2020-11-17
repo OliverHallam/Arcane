@@ -7,11 +7,11 @@ ApuPulse::ApuPulse(bool pulse1)
 
 void ApuPulse::Run(uint32_t cycles)
 {
-    timer_ -= cycles;
-    while (timer_ <= 0)
+    state_.timer_ -= cycles;
+    while (state_.timer_ <= 0)
     {
-        timer_ += sweep_.Period();
-        sequence_--;
+        state_.timer_ += sweep_.Period();
+        state_.sequence_--;
     }
 }
 
@@ -41,7 +41,7 @@ void ApuPulse::Write(uint16_t address, uint8_t value)
     switch (address & 0x0003)
     {
     case 0:
-        dutyLookup_ = GetDutyLookup(value >> 6);
+        state_.dutyLookup_ = GetDutyLookup(value >> 6);
         lengthCounter_.SetHalt(value & 0x20);
         envelope_.SetLoop(value & 0x20);
         envelope_.SetConstantVolume(value & 0x10);
@@ -59,7 +59,7 @@ void ApuPulse::Write(uint16_t address, uint8_t value)
     case 3:
         lengthCounter_.SetLength((value & 0xf8) >> 3);
         sweep_.SetPeriodHigh(value & 0x07);
-        sequence_ = 0;
+        state_.sequence_ = 0;
         envelope_.Start();
         break;
     }
@@ -71,6 +71,24 @@ int8_t ApuPulse::Sample() const
         return GetSequenceOutput() ? envelope_.Sample() : -envelope_.Sample();
 
     return 0;
+}
+
+void ApuPulse::CaptureState(ApuPulseState* state) const
+{
+    envelope_.CaptureState(&state->Envelope);
+    lengthCounter_.CaptureState(&state->LengthCounter);
+    sweep_.CaptureState(&state->Sweep);
+
+    state->Core = state_;
+}
+
+void ApuPulse::RestoreState(const ApuPulseState& state)
+{
+    envelope_.RestoreState(state.Envelope);
+    lengthCounter_.RestoreState(state.LengthCounter);
+    sweep_.RestoreState(state.Sweep);
+
+    state_ = state_;
 }
 
 uint8_t ApuPulse::GetDutyLookup(uint8_t duty)
@@ -88,5 +106,5 @@ uint8_t ApuPulse::GetDutyLookup(uint8_t duty)
 
 bool ApuPulse::GetSequenceOutput() const
 {
-    return (dutyLookup_ << (sequence_ & 0x07)) & 0x80;
+    return (state_.dutyLookup_ << (state_.sequence_ & 0x07)) & 0x80;
 }

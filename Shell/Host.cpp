@@ -20,6 +20,8 @@ void Host::Load(std::unique_ptr<Cart> cartridge)
 
     system_->InsertCart(std::move(cartridge));
     system_->Reset();
+
+    system_->CaptureState(&state_);
 }
 
 void Host::Unload()
@@ -78,6 +80,16 @@ const int16_t* Host::AudioSamples() const
 const uint32_t Host::SamplesPerFrame() const
 {
     return system_->Apu().SamplesPerFrame();
+}
+
+void Host::Snapshot()
+{
+    system_->CaptureState(&state_);
+}
+
+void Host::Restore()
+{
+    system_->RestoreState(state_);
 }
 
 void Host::Up(bool pressed)

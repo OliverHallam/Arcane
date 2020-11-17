@@ -15,67 +15,67 @@ void ApuTriangle::Write(uint16_t address, uint8_t value)
     switch (address & 0x0003)
     {
     case 0:
-        control_ = value & 0x80;
-        lengthCounter_.SetHalt(control_);
-        linearCounterReloadValue_ = value & 0x7f;
+        state_.Control = value & 0x80;
+        lengthCounter_.SetHalt(state_.Control);
+        state_.LinearCounterReloadValue = value & 0x7f;
         break;
 
     case 2:
-        period_ &= 0x0700;
-        period_ |= value;
-        period2_ = period_ + 1;
+        state_.Period &= 0x0700;
+        state_.Period |= value;
+        state_.Period2 = state_.Period + 1;
         break;
 
     case 3:
         lengthCounter_.SetLength(value >> 3);
-        period_ &= 0x00ff;
-        period_ |= (value & 0x07) << 8;
-        period2_ = period_ + 1;
-        linearCounterReload_ = true;
+        state_.Period &= 0x00ff;
+        state_.Period |= (value & 0x07) << 8;
+        state_.Period2 = state_.Period + 1;
+        state_.LinearCounterReload = true;
         break;
     }
 }
 
 void ApuTriangle::Run(uint32_t cycles)
 {
-    timer_ -= cycles;
+    state_.Timer -= cycles;
 
-    if (linearCounter_ && lengthCounter_.IsEnabled())
+    if (state_.LinearCounter && lengthCounter_.IsEnabled())
     {
-        while (timer_ <= 0)
+        while (state_.Timer <= 0)
         {
-            waveformCycle_++;
-            timer_ += period2_;
+            state_.WaveformCycle++;
+            state_.Timer += state_.Period2;
         }
 
-        waveformCycle_ &= 0x1f;
+        state_.WaveformCycle &= 0x1f;
     }
     else
     {
-        while (timer_ <= 0)
+        while (state_.Timer <= 0)
         {
-            timer_ += period2_;
+            state_.Timer += state_.Period2;
         }
     }
 }
 
 void ApuTriangle::TickQuarterFrame()
 {
-    if (linearCounterReload_)
+    if (state_.LinearCounterReload)
     {
-        linearCounter_ = linearCounterReloadValue_;
+        state_.LinearCounter = state_.LinearCounterReloadValue;
     }
     else
     {
-        if (linearCounter_)
+        if (state_.LinearCounter)
         {
-            linearCounter_--;
+            state_.LinearCounter--;
         }
     }
 
-    if (!control_)
+    if (!state_.Control)
     {
-        linearCounterReload_ = false;
+        state_.LinearCounterReload = false;
     }
 }
 
@@ -89,11 +89,25 @@ int8_t ApuTriangle::Sample() const
     // the original hardware outputs from 0 - 15, I've scaled this to -15 - 15
 
     // period check simulates the low-pass filter
-    if (period2_ <= 2)
+    if (state_.Period2 <= 2)
         return 0;
 
-    if (waveformCycle_ < 16)
-        return 15 - waveformCycle_ * 2;
+    if (state_.WaveformCycle < 16)
+        return 15 - state_.WaveformCycle * 2;
     else
-        return waveformCycle_ * 2 - 47;
+        return state_.WaveformCycle * 2 - 47;
+}
+
+void ApuTriangle::CaptureState(ApuTriangleState* state) const
+{
+    lengthCounter_.CaptureState(&state->LengthCounter);
+
+    state->Core = state_;
+}
+
+void ApuTriangle::RestoreState(const ApuTriangleState& state)
+{
+    lengthCounter_.RestoreState(state.LengthCounter);
+
+    state_ = state.Core;
 }

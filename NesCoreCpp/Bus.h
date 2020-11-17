@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "BusState.h"
 #include "Cart.h"
 #include "Controller.h"
 #include "Cpu.h"
@@ -20,9 +21,9 @@ public:
     void Attach(Ppu* ppu);
     void Attach(Apu* apu);
     void Attach(Controller* controller);
-    void Attach(std::unique_ptr<Cart> cart);
+    void Attach(Cart* cart);
 
-    std::unique_ptr<Cart> DetachCart();
+    void DetachCart();
 
     bool HasCart() const;
 
@@ -61,6 +62,9 @@ public:
     void Schedule(uint32_t cycles, SyncEvent evt);
     void RescheduleFrameCounter(uint32_t cycles);
 
+    void CaptureState(BusState* state) const;
+    void RestoreState(const BusState& state);
+
 private:
     void Tick();
 
@@ -81,22 +85,7 @@ private:
     Ppu* ppu_;
     Apu* apu_;
     Controller* controller_;
-    std::unique_ptr<Cart> cart_;
+    Cart* cart_;
 
-    std::array<uint8_t, 2048> cpuRam_;
-    std::array<uint8_t, 2048> ppuRam_;
-
-    uint32_t cycleCount_;
-
-    bool dma_;
-    bool oamDma_;
-    bool dmcDma_;
-
-    uint16_t oamDmaAddress_;
-    uint16_t dmcDmaAddress_;
-
-    bool audioIrq_;
-    bool cartIrq_;
-
-    EventQueue syncQueue_;
+    BusState state_;
 };

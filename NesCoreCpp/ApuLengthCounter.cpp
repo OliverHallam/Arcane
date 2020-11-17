@@ -2,31 +2,41 @@
 
 void ApuLengthCounter::Tick()
 {
-    if (length_ && !halt_)
-        --length_;
+    if (state_.Length && !state_.Halt)
+        --state_.Length;
 }
 
 void ApuLengthCounter::SetHalt(bool halt)
 {
-    halt_ = halt;
+    state_.Halt = halt;
 }
 
 void ApuLengthCounter::SetLength(uint8_t length)
 {
-    if (enabled_)
-        length_ = GetLinearLength(length);
+    if (state_.Enabled)
+        state_.Length = GetLinearLength(length);
 }
 
 void ApuLengthCounter::SetEnabled(bool enabled)
 {
-    enabled_ = enabled;
+    state_.Enabled = enabled;
     if (!enabled)
-        length_ = 0;
+        state_.Length = 0;
 }
 
 bool ApuLengthCounter::IsEnabled() const
 {
-    return length_ > 0;
+    return state_.Length > 0;
+}
+
+void ApuLengthCounter::CaptureState(ApuLengthCounterState* state) const
+{
+    *state = state_;
+}
+
+void ApuLengthCounter::RestoreState(const ApuLengthCounterState& state)
+{
+    state_ = state;
 }
 
 uint8_t ApuLengthCounter::GetLinearLength(uint8_t length)

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "..\NesCoreCpp\NesSystem.h"
+#include "..\NesCoreCpp\SystemState.h"
 
 class Host
 {
@@ -27,6 +28,9 @@ public:
     const int16_t* AudioSamples() const;
     const uint32_t SamplesPerFrame() const;
 
+    void Snapshot();
+    void Restore();
+
     void Up(bool pressed);
     void Down(bool pressed);
     void Left(bool pressed);
@@ -42,4 +46,6 @@ private:
 
     bool running_;
     bool step_;
+
+    SystemState state_;
 };

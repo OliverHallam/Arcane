@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "PpuSpritesState.h"
+
 class Bus;
 
 class PpuSprites
@@ -45,6 +47,9 @@ public:
     void MarkSprites(uint32_t* diagnosticPixels);
 #endif
 
+    void CaptureState(PpuSpritesState* state) const;
+    void RestoreState(const PpuSpritesState& state);
+
 private:
     struct Sprite
     {
@@ -56,13 +61,10 @@ private:
 
     Bus& bus_;
 
-    bool largeSprites_{};
-    uint16_t spritePatternBase_{};
+    PpuSpritesState state_;
+
     uint16_t patternAddress_{};
 
-    uint8_t oamAddress_{};
-    uint8_t oamData_{};
-    std::array<uint8_t, 256> oam_{};
     std::array<uint8_t, 32> oamCopy_{};
     uint8_t oamCopyIndex_{};
 
@@ -72,12 +74,7 @@ private:
     bool sprite0Visible_{};
     int32_t scanlineSpriteCount_{};
 
-    bool sprite0Hit_{};
-    bool spriteOverflow_{};
-
     bool spritesRendered_{};
-
-    uint32_t leftCrop_;
 
     std::array<uint8_t, 256> scanlineAttributes_{};
     std::array<uint8_t, 256> scanlineData_{};

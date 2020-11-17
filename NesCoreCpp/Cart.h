@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CartDescriptor.h"
+#include "CartCoreState.h"
+#include "CartState.h"
 
 #include <cstdint>
 #include <memory>
@@ -35,6 +37,9 @@ public:
     bool SensitiveToChrA12();
     void SetChrA12(bool set);
 
+    void CaptureState(CartState* state) const;
+    void RestoreState(const CartState& state);
+
 private:
     void WriteMMC1(uint16_t address, uint8_t value);
     void WriteMMC1Register(uint16_t address, uint8_t value);
@@ -57,50 +62,24 @@ private:
 
     void SetChrA12Impl(bool set);
 
-    // The CPU address space in 8k banks
-    std::array<uint8_t*, 8> cpuBanks_;
+    Bus* bus_;
 
-    // The PPU address space in 1K banks
-    std::array<uint8_t*, 16> ppuBanks_;
-    bool chrWriteable_;
-
-    std::vector<uint8_t> localPrgRam_;
-    std::vector<uint8_t*> prgRamBanks_;
+    uint32_t mapper_;
 
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
-    MirrorMode mirrorMode_;
-
-    uint32_t mapper_;
-
-    uint32_t mapperShiftCount_;
-    uint32_t mapperShift_;
-
-    uint32_t prgMode_;
-    uint32_t prgBank_;
     uint32_t prgMask32k_;
     uint32_t prgMask16k_;
 
-    uint32_t chrMode_;
-    uint32_t chrBank0_;
-    uint32_t chrBank1_;
     uint32_t chrMask_;
 
-    bool chrA12_;
-    uint32_t prgPlane0_;
-    uint32_t prgPlane1_;
-    uint32_t prgRamBank0_;
-    uint32_t prgRamBank1_;
+    CartCoreState state_;
 
-    bool chrA12Sensitive_;
+    std::vector<uint8_t> localPrgRam_;
+    std::vector<uint8_t*> prgRamBanks_;
 
-    bool irqEnabled_;
-    bool reloadCounter_;
-    uint32_t scanlineCounter_;
-    uint8_t reloadValue_;
-
-    Bus* bus_;
+    bool chrWriteable_;
 };
 
 std::unique_ptr<Cart> TryCreateCart(

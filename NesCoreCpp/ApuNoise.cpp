@@ -1,11 +1,6 @@
 #include "ApuNoise.h"
 
 ApuNoise::ApuNoise()
-    : modeShift_{1},
-    period_{},
-    period2_{2},
-    timer_{},
-    shifter_{1}
 {
 }
 
@@ -30,9 +25,9 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
         break;
 
     case 2:
-        modeShift_ = value >> 7 ? 6 : 1;
-        period_ = LookupPeriod(value & 0x0f);
-        period2_ = period_ * 2 + 2;
+        state_.ModeShift = value >> 7 ? 6 : 1;
+        state_.Period = LookupPeriod(value & 0x0f);
+        state_.Period2 = state_.Period * 2 + 2;
         break;
 
     case 3:
@@ -44,11 +39,11 @@ void ApuNoise::Write(uint16_t address, uint8_t value)
 
 void ApuNoise::Run(uint32_t cycles)
 {
-    timer_ -= cycles;
-    while (timer_ <= 0)
+    state_.Timer -= cycles;
+    while (state_.Timer <= 0)
     {
         StepSequencer();
-        timer_ += period2_;
+        state_.Timer += state_.Period2;
     }
 }
 
@@ -70,10 +65,26 @@ int8_t ApuNoise::Sample() const
     return 0;
 }
 
+void ApuNoise::CaptureState(ApuNoiseState* state) const
+{
+    envelope_.CaptureState(&state->Envelope);
+    lengthCounter_.CaptureState(&state->LengthCounter);
+
+    state->Core = state_;
+}
+
+void ApuNoise::RestoreState(const ApuNoiseState& state)
+{
+    envelope_.RestoreState(state.Envelope);
+    lengthCounter_.RestoreState(state.LengthCounter);
+
+    state_ = state.Core;
+}
+
 void ApuNoise::StepSequencer()
 {
-    auto feedback = (shifter_ ^ (shifter_ >> modeShift_)) & 0x0001;
-    shifter_ = (shifter_ >> 1) | (feedback << 14);
+    auto feedback = (state_.Shifter ^ (state_.Shifter >> state_.ModeShift)) & 0x0001;
+    state_.Shifter = (state_.Shifter >> 1) | (feedback << 14);
 }
 
 uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)
@@ -103,5 +114,5 @@ uint_fast16_t ApuNoise::LookupPeriod(uint8_t period)
 
 bool ApuNoise::GetSequenceOutput() const
 {
-    return !(shifter_ & 0x0001);
+    return !(state_.Shifter & 0x0001);
 }

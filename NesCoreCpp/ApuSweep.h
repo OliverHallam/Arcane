@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ApuSweepState.h"
 #include <cstdint>
 
 class ApuSweep
@@ -17,19 +18,13 @@ public:
 
     bool IsOutputEnabled() const;
 
+    void CaptureState(ApuSweepState* state) const;
+    void RestoreState(const ApuSweepState& state);
+
 private:
     void UpdateTargetPeriod();
 
-    uint16_t period_{};
-    uint16_t period2_{2} ;
-
-    bool enabled_{};
-    uint_fast8_t divide_{};
-    bool negate_{};
-    uint_fast8_t shift_{};
-    bool reload_{};
-    uint_fast8_t divideCounter_{};
-    uint16_t targetPeriod_{};
-
     uint16_t negatedDeltaOffset_{};
+
+    ApuSweepState state_;
 };

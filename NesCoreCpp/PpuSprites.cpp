@@ -10,37 +10,37 @@ PpuSprites::PpuSprites(Bus& bus) :
 
 void PpuSprites::SetLargeSprites(bool enabled)
 {
-    largeSprites_ = enabled;
+    state_.largeSprites_ = enabled;
 }
 
 bool PpuSprites::LargeSprites() const
 {
-    return largeSprites_;
+    return state_.largeSprites_;
 }
 
 void PpuSprites::SetBasePatternAddress(uint16_t address)
 {
-    spritePatternBase_ = address;
+    state_.spritePatternBase_ = address;
 }
 
 uint16_t PpuSprites::BasePatternAddress() const
 {
-    return spritePatternBase_;
+    return state_.spritePatternBase_;
 }
 
 void PpuSprites::EnableLeftColumn(bool enabled)
 {
-    leftCrop_ = enabled ? 0 : 8;
+    state_.leftCrop_ = enabled ? 0 : 8;
 }
 
 void PpuSprites::SetOamAddress(uint8_t value)
 {
-    oamAddress_ = value;
+    state_.oamAddress_ = value;
 }
 
 void PpuSprites::WriteOam(uint8_t value)
 {
-    oam_[oamAddress_++] = value;
+    state_.oam_[state_.oamAddress_++] = value;
 }
 
 void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle)
@@ -57,33 +57,33 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
         scanlineCycle++;
     }
 
-    auto spriteSize = largeSprites_ ? 16u : 8u;
+    auto spriteSize = state_.largeSprites_ ? 16u : 8u;
 
     while (scanlineCycle < targetCycle)
     {
-        if (oamAddress_ >= 256)
+        if (state_.oamAddress_ >= 256)
         {
             return;
         }
 
-        oamData_ = oam_[oamAddress_];
+        auto oamData = state_.oam_[state_.oamAddress_];
         if (oamCopyIndex_ < 32)
         {
-            oamCopy_[oamCopyIndex_] = oamData_;
+            oamCopy_[oamCopyIndex_] = oamData;
 
-            if ((oamAddress_ & 0x03) != 0)
+            if ((state_.oamAddress_ & 0x03) != 0)
             {
-                oamAddress_++;
+                state_.oamAddress_++;
                 oamCopyIndex_++;
                 scanlineCycle += 2;
                 continue;
             }
         }
 
-        auto spriteRow = (uint32_t)(scanline - oamData_);
+        auto spriteRow = (uint32_t)(scanline - oamData);
         bool visible = spriteRow < spriteSize;
 
-        if (oamAddress_ == 0)
+        if (state_.oamAddress_ == 0)
         {
             sprite0Selected_ = visible;
         }
@@ -92,18 +92,18 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
         {
             if (oamCopyIndex_ >= 32)
             {
-                spriteOverflow_ = true;
-                oamAddress_ += 4;
+                state_.spriteOverflow_ = true;
+                state_.oamAddress_ += 4;
             }
             else
             {
-                oamAddress_++;
+                state_.oamAddress_++;
                 oamCopyIndex_++;
             }
         }
         else
         {
-            oamAddress_ += 4;
+            state_.oamAddress_ += 4;
 
             // TODO: overflow bug
         }
@@ -152,7 +152,7 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
                 if (spriteIndex == 0 && sprite0Visible_ && backgroundPixels[cycle])
                 {
                     // TODO: one pixel early?
-                    sprite0Hit_ = true;
+                    state_.sprite0Hit_ = true;
                 }
 
                 pixel |= (uint8_t)((0x04 | (sprite.attributes & 0x03)) << 2); // palette
@@ -165,9 +165,9 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
 
     // TODO: we may be able to do this earlier but would have to mess with the shifters.
     // it's easier to mask it off at the end!
-    if (scanlineCycle < leftCrop_)
+    if (scanlineCycle < state_.leftCrop_)
     {
-        auto cropMax = std::min(leftCrop_, targetCycle);
+        auto cropMax = std::min(state_.leftCrop_, targetCycle);
         for (auto cycle = 0u; cycle < cropMax; cycle++)
         {
             scanlineData_[cycle] = 0;
@@ -198,7 +198,7 @@ void PpuSprites::HReset()
 
 void PpuSprites::VReset()
 {
-    sprite0Hit_ = false;
+    state_.sprite0Hit_ = false;
     spritesRendered_ = false;
 }
 
@@ -222,6 +222,16 @@ void PpuSprites::MarkSprites(uint32_t* diagnosticPixels)
 }
 #endif
 
+void PpuSprites::CaptureState(PpuSpritesState* state) const
+{
+    *state = state_;
+}
+
+void PpuSprites::RestoreState(const PpuSpritesState& state)
+{
+    state_ = state;
+}
+
 bool PpuSprites::Sprite0Visible()
 {
     return sprite0Visible_;
@@ -229,17 +239,17 @@ bool PpuSprites::Sprite0Visible()
 
 bool PpuSprites::Sprite0Hit()
 {
-    return sprite0Hit_;
+    return state_.sprite0Hit_;
 }
 
 bool PpuSprites::SpriteOverflow()
 {
-    return spriteOverflow_;
+    return state_.spriteOverflow_;
 }
 
 void PpuSprites::DummyLoad()
 {
-    bus_.SetChrA12(largeSprites_ || spritePatternBase_ != 0);
+    bus_.SetChrA12(state_.largeSprites_ || state_.spritePatternBase_ != 0);
 }
 
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
@@ -252,16 +262,16 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
     }
 
     // the OAM address is forced to 0 during the whole load phase.
-    oamAddress_ = 0;
+    state_.oamAddress_ = 0;
 
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
-        bus_.SetChrA12(largeSprites_ || spritePatternBase_ != 0);
+        bus_.SetChrA12(state_.largeSprites_ || state_.spritePatternBase_ != 0);
         return;
     }
 
-    if (!largeSprites_)
-        bus_.SetChrA12(spritePatternBase_ != 0);
+    if (!state_.largeSprites_)
+        bus_.SetChrA12(state_.spritePatternBase_ != 0);
     else
     {
         if (targetCycle < 262)
@@ -306,7 +316,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
             {
                 if (spriteIndex_ >= scanlineSpriteCount_)
                 {
-                    if (largeSprites_ && scanlineSpriteCount_ < 8)
+                    if (state_.largeSprites_ && scanlineSpriteCount_ < 8)
                     {
                         bus_.SetChrA12(true);
                     }
@@ -325,13 +335,13 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
                 if ((attributes & 0x80) != 0)
                 {
-                    if (largeSprites_)
+                    if (state_.largeSprites_)
                         tileFineY = 15 - tileFineY;
                     else
                         tileFineY = 7 - tileFineY;
                 }
 
-                if (largeSprites_)
+                if (state_.largeSprites_)
                 {
                     // address is 000PTTTTTTTY0YYY
                     auto bankAddress = (tileId & 1) << 12;
@@ -357,7 +367,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 {
                     // address is 000PTTTTTTTT0YYY
                     patternAddress_ = (uint16_t)
-                        (spritePatternBase_ | // pattern selector
+                        (state_.spritePatternBase_ | // pattern selector
                             (tileId << 4) | tileFineY);
                 }
 
@@ -381,7 +391,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
             if (spriteIndex_ >= scanlineSpriteCount_)
             {
-                if (!largeSprites_ || scanlineSpriteCount_ == 8)
+                if (!state_.largeSprites_ || scanlineSpriteCount_ == 8)
                 {
                     return;
                 }
@@ -398,10 +408,10 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 void PpuSprites::RunLoad(uint32_t currentScanline)
 {
     // the OAM address is forced to 0 during the whole load phase.
-    oamAddress_ = 0;
+    state_.oamAddress_ = 0;
 
-    if (!largeSprites_)
-        bus_.SetChrA12(spritePatternBase_ != 0);
+    if (!state_.largeSprites_)
+        bus_.SetChrA12(state_.spritePatternBase_ != 0);
 
     while (spriteIndex_ < scanlineSpriteCount_)
     {
@@ -417,13 +427,13 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 
         if ((attributes & 0x80) != 0)
         {
-            if (largeSprites_)
+            if (state_.largeSprites_)
                 tileFineY = 15 - tileFineY;
             else
                 tileFineY = 7 - tileFineY;
         }
 
-        if (largeSprites_)
+        if (state_.largeSprites_)
         {
             // address is 000PTTTTTTTY0YYY
             auto bankAddress = (tileId & 1) << 12;
@@ -439,7 +449,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
         {
             // address is 000PTTTTTTTT0YYY
             patternAddress_ = (uint16_t)
-                (spritePatternBase_ | // pattern selector
+                (state_.spritePatternBase_ | // pattern selector
                     (tileId << 4) | tileFineY);
         }
 
@@ -450,6 +460,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
         spriteIndex_++;
     }
 
-    if (scanlineSpriteCount_ < 8 && largeSprites_)
+    if (scanlineSpriteCount_ < 8 && state_.largeSprites_)
         bus_.SetChrA12(true);
 }

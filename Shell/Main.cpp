@@ -474,4 +474,18 @@ bool ProcessCommand(HWND window, WORD command)
         Open(window);
         return true;
     }
+
+    if (command == static_cast<WORD>(MenuCommand::Snapshot))
+    {
+        NesHost.Snapshot();
+        return true;
+    }
+
+    if (command == static_cast<WORD>(MenuCommand::Restore))
+    {
+        NesHost.Restore();
+        return true;
+    }
+
+    return false;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "CpuState.h"
 
 class Bus;
 
@@ -16,6 +17,9 @@ public:
     void SignalNmi();
 
     void RunInstruction();
+
+    void CaptureState(CpuState* state) const;
+    void RestoreState(const CpuState& state);
 
 private:
     void Interrupt();
@@ -140,24 +144,10 @@ private:
 
     Bus& bus_;
 
-    // Registers
-    uint8_t A_{};
-    uint8_t X_{};
-    uint8_t Y_{};
-    uint16_t PC_{};
-    uint8_t S_{};
-
-    // the flags register as seperate bytes
-    bool C_{}, Z_{}, I_{}, D_{}, B_{}, V_{}, N_{};
-    uint8_t P();
-    void P(uint8_t value);
-
     uint16_t address_{};
 
     uint8_t inValue_{};
     uint8_t outValue_{};
 
-    uint16_t interruptVector_{};
-    bool irq_{};
-    bool skipInterrupt_{};
+    CpuState state_;
 };
