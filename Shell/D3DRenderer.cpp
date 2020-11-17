@@ -48,14 +48,13 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->PSSetShaderResources(0, 1, shaderResourceViews);
     ID3D11SamplerState* const samplers[1] = { samplerState_.get() };
     deviceContext_->PSSetSamplers(0, 1, samplers);
-
-    // output merger
-    ID3D11RenderTargetView* const renderTargetViews[1] = { renderTargetView_.get() };
-    deviceContext_->OMSetRenderTargets(1, renderTargetViews, nullptr);
 }
 
 void D3DRenderer::RenderFrame(const uint32_t* buffer)
 {
+    auto renderTargetView = renderTargetView_.get();
+    deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
+
     D3D11_MAPPED_SUBRESOURCE resource;
     auto hr = deviceContext_->Map(frameBuffer_.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
     winrt::check_hresult(hr);
@@ -138,16 +137,16 @@ void D3DRenderer::CreateSwapChain(HWND window)
     DXGI_SWAP_CHAIN_DESC swapChainDesc;
     ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
     swapChainDesc.Windowed = TRUE;
-    swapChainDesc.BufferCount = 1;
-    swapChainDesc.BufferDesc.Width = width_;
-    swapChainDesc.BufferDesc.Height = height_;
+    swapChainDesc.BufferCount = 2;
+    swapChainDesc.BufferDesc.Width = 0;
+    swapChainDesc.BufferDesc.Height = 0;
     swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.OutputWindow = window;
 
     hr = factory->CreateSwapChain(
