@@ -714,16 +714,11 @@ void Ppu::FinishRender()
         background_.HResetRenderDisabled();
 }
 
-#include "windows.h"
-#include <string>
-
 void Ppu::EnterVBlank()
 {
     display_.VBlank();
 
     static int lastCycleCount = 0;
-
-    OutputDebugString((std::to_string(bus_.CycleCount() - lastCycleCount) + "\n").c_str());
 
     lastCycleCount = bus_.CycleCount();
 
