@@ -10,6 +10,7 @@
     <ClCompile Include="SaveFile.cpp" />
     <ClCompile Include="Host.cpp" />
     <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="App.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -28,6 +29,7 @@
     <ClInclude Include="SaveFile.h" />
     <ClInclude Include="Host.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="App.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

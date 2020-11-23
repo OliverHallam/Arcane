@@ -5,14 +5,17 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 
-D3DRenderer::D3DRenderer(uint32_t width, uint32_t height)
-    : width_{ width },
-    height_{ height }
+D3DRenderer::~D3DRenderer()
 {
+    if (swapChain_)
+        swapChain_->SetFullscreenState(FALSE, nullptr);
 }
 
-void D3DRenderer::Initialize(HWND window)
+void D3DRenderer::Initialize(HWND window, uint32_t width, uint32_t height)
 {
+    width_ = width;
+    height_ = height;
+
     CreateDevice();
     CreateSwapChain(window);
     CreateRenderTarget();
@@ -89,6 +92,18 @@ void D3DRenderer::RenderClear()
     winrt::check_hresult(hr);
 }
 
+void D3DRenderer::OnSize()
+{
+    if (swapChain_)
+    {
+        renderTargetView_.detach()->Release();
+
+        swapChain_->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+
+        CreateRenderTarget();
+    }
+}
+
 void D3DRenderer::CreateDevice()
 {
     D3D_FEATURE_LEVEL featureLevels[] = {
@@ -105,7 +120,7 @@ void D3DRenderer::CreateDevice()
 
     D3D_FEATURE_LEVEL featureLevel;
 
-#if DEBUG
+#ifdef _DEBUG
     auto deviceFlags = D3D11_CREATE_DEVICE_DEBUG;
 #else
     auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
@@ -148,6 +163,7 @@ void D3DRenderer::CreateSwapChain(HWND window)
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.OutputWindow = window;
+    swapChainDesc.Flags = 0;
 
     hr = factory->CreateSwapChain(
         device_.get(),

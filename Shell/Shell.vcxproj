@@ -222,6 +222,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="App.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="D3DRenderer.cpp" />
     <ClCompile Include="Host.cpp" />
@@ -245,6 +246,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="App.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="D3DRenderer.h" />
     <ClInclude Include="Error.h" />

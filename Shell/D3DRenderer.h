@@ -8,14 +8,16 @@
 class D3DRenderer
 {
 public:
-    D3DRenderer(uint32_t width, uint32_t height);
+    ~D3DRenderer();
 
-    void Initialize(HWND window);
+    void Initialize(HWND window, uint32_t width, uint32_t height);
 
     void PrepareRenderState();
 
     void RenderFrame(const uint32_t* buffer);
     void RenderClear();
+
+    void OnSize();
 
 private:
     void CreateDevice();
