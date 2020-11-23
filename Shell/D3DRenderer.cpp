@@ -184,12 +184,21 @@ void D3DRenderer::CreateRenderTarget()
     D3D11_TEXTURE2D_DESC backBufferDesc;
     backBuffer->GetDesc(&backBufferDesc);
 
+    // round down to nearest pixel multiple
+    auto height =(backBufferDesc.Height / height_) * height_;
+    auto width = height * width_ / height_;
+
+    auto x = (backBufferDesc.Width - width) / 2;
+    auto y = (backBufferDesc.Height - height) / 2;
+
     D3D11_VIEWPORT viewport;
     ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-    viewport.Width = static_cast<FLOAT>(backBufferDesc.Width);
-    viewport.Height = static_cast<FLOAT>(backBufferDesc.Height);
+    viewport.Width = static_cast<FLOAT>(width);
+    viewport.Height = static_cast<FLOAT>(height);
     viewport.MinDepth = 0;
     viewport.MaxDepth = 1;
+    viewport.TopLeftX = x;
+    viewport.TopLeftY = y;
 
     deviceContext_->RSSetViewports(1, &viewport);
 }
