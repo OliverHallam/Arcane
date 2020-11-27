@@ -121,8 +121,8 @@ int App::Run(int nCmdShow)
                     {
                         host_.RunFrame();
 
-                        d3d.RenderFrame(host_.PixelData());
                         wasapi.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
+                        d3d.RenderFrame(host_.PixelData());
 
                         sync.OnFrame(host_.SamplesPerFrame(), wasapi.GetPosition());
                         host_.SetSamplesPerFrame(sync.SampleRate());

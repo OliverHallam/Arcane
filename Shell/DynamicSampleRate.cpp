@@ -6,7 +6,7 @@ DynamicSampleRate::DynamicSampleRate(uint32_t sampleRate) :
     index_{ 0 },
     sampleRate_{ sampleRate },
     baseSampleRate_{ sampleRate }, // 1 frame
-    samplesWritten_{ sampleRate/10 } // buy ourselves a little wriggle room
+    samplesWritten_{ } // buy ourselves a little wriggle room
 {
 }
 
