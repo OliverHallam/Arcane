@@ -82,6 +82,11 @@ const uint32_t Host::SamplesPerFrame() const
     return system_->Apu().SamplesPerFrame();
 }
 
+void Host::SetSamplesPerFrame(uint32_t samples)
+{
+    system_->Apu().SetSamplesPerFrame(samples);
+}
+
 void Host::Snapshot()
 {
     system_->CaptureState(&state_);

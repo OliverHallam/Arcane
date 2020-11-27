@@ -19,7 +19,7 @@ public:
 
     Controller& Controller();
     const Display& Display() const;
-    const Apu& Apu() const;
+    Apu& Apu();
 
     void InsertCart(std::unique_ptr<Cart> cart);
     void RemoveCart();

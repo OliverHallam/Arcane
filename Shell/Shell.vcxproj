@@ -223,6 +223,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="DynamicSampleRate.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="D3DRenderer.cpp" />
     <ClCompile Include="Host.cpp" />
@@ -247,6 +248,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="DynamicSampleRate.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="D3DRenderer.h" />
     <ClInclude Include="Error.h" />

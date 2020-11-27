@@ -25,7 +25,7 @@ const Display& NesSystem::Display() const
     return display_;
 }
 
-const Apu& NesSystem::Apu() const
+Apu& NesSystem::Apu()
 {
     return apu_;
 }

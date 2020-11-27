@@ -7,6 +7,7 @@
 
 #include "CommandLine.h"
 #include "D3DRenderer.h"
+#include "DynamicSampleRate.h"
 #include "Menu.h"
 #include "SaveFile.h"
 #include "WasapiRenderer.h"
@@ -95,6 +96,8 @@ int App::Run(int nCmdShow)
             Open(window_);
         }
 
+        DynamicSampleRate sync { host_.SamplesPerFrame() };
+
         bool running = host_.Running();
         while (true)
         {
@@ -120,6 +123,9 @@ int App::Run(int nCmdShow)
 
                         d3d.RenderFrame(host_.PixelData());
                         wasapi.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
+
+                        sync.OnFrame(host_.SamplesPerFrame(), wasapi.GetPosition());
+                        host_.SetSamplesPerFrame(sync.SampleRate());
                     }
                     else
                     {
@@ -195,7 +201,7 @@ HWND App::InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow)
     RECT rc;
     SetRect(&rc, 0, 0, defaultWidth, defaultHeight);
 
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
+    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, true);
 
     auto wnd = CreateWindow(
         className,

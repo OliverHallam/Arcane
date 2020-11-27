@@ -6,8 +6,8 @@
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
     frameCounter_{ *this },
-    backBuffer_{ new int16_t[samplesPerFrame] },
-    sampleBuffer_{ new int16_t[samplesPerFrame] },
+    backBuffer_{ new int16_t[samplesPerFrame * 3 / 2] },
+    sampleBuffer_{ new int16_t[samplesPerFrame * 3 / 2] },
     samplesPerFrame_(samplesPerFrame),
     pulse1_{ true },
     pulse2_{ false },
@@ -19,6 +19,11 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     auto currentCycle = (21 * 341 / 3);
     bus_.Schedule(state_.SampleCycle - currentCycle, SyncEvent::ApuSample);
     bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
+}
+
+void Apu::SetSamplesPerFrame(uint32_t samplesPerFrame)
+{
+    samplesPerFrame_ = samplesPerFrame;
 }
 
 void Apu::QuarterFrame()

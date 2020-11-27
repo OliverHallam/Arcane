@@ -18,6 +18,8 @@ class Apu
 public:
     Apu(Bus& bus, uint32_t samplesPerFrame);
 
+    void SetSamplesPerFrame(uint32_t samplesPerFrame);
+
     void QuarterFrame();
     void HalfFrame();
 
