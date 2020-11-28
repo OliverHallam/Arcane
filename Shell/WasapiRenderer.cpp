@@ -64,7 +64,7 @@ void WasapiRenderer::Initialize()
 
     // we write one frame while the previous one is playing - so we'll store a buffer big enough for two
     auto samplesPerFrame = sampleRate_ / 60;
-    auto bufferDuration = (uint64_t)samplesPerFrame * 10000 * 3;
+    auto bufferDuration = (uint64_t) 10000000 / 60 * 8;
 
     hr = client_->Initialize(
         AUDCLNT_SHAREMODE_SHARED,
@@ -83,15 +83,15 @@ void WasapiRenderer::Initialize()
 
     // clear the buffer
     BYTE* data;
-    hr = audioRenderClient_->GetBuffer(samplesPerFrame * 2, &data);
+    hr = audioRenderClient_->GetBuffer(samplesPerFrame, &data);
     winrt::check_hresult(hr);
 
-    audioRenderClient_->ReleaseBuffer(samplesPerFrame * 2, AUDCLNT_BUFFERFLAGS_SILENT);
-
-    hr = client_->GetService(__uuidof(IAudioClock), audioClock_.put_void());
-    winrt::check_hresult(hr);
+    audioRenderClient_->ReleaseBuffer(samplesPerFrame, AUDCLNT_BUFFERFLAGS_SILENT);
 
     hr = client_->Start();
+    winrt::check_hresult(hr);
+
+    hr = client_->GetService(__uuidof(IAudioClock), audioClock_.put_void());
     winrt::check_hresult(hr);
 
     hr = audioClock_->GetFrequency(&frequency_);

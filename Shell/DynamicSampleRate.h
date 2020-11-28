@@ -9,6 +9,8 @@ public:
 
     void OnFrame(uint64_t samplesWritten, uint64_t samplesPlayed);
 
+    void Reset();
+
     uint32_t SampleRate() const;
 
 private:

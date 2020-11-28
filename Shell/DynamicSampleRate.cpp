@@ -6,7 +6,7 @@ DynamicSampleRate::DynamicSampleRate(uint32_t sampleRate) :
     index_{ 0 },
     sampleRate_{ sampleRate },
     baseSampleRate_{ sampleRate }, // 1 frame
-    samplesWritten_{ } // buy ourselves a little wriggle room
+    samplesWritten_{ } 
 {
 }
 
@@ -18,6 +18,12 @@ void DynamicSampleRate::OnFrame(uint64_t samplesWritten, uint64_t samplesPlayed)
 
     // tend towards the difference being 0
     sampleRate_ = baseSampleRate_ - difference / 100;
+}
+
+void DynamicSampleRate::Reset()
+{
+    samplesWritten_ = 0;
+    sampleRate_ = baseSampleRate_;
 }
 
 uint32_t DynamicSampleRate::SampleRate() const

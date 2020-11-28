@@ -19,6 +19,8 @@ public:
 
     void OnSize();
 
+    void Start();
+
 private:
     void CreateDevice();
     void CreateSwapChain(HWND window);

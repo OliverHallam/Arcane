@@ -7,7 +7,6 @@
 
 #include "CommandLine.h"
 #include "D3DRenderer.h"
-#include "DynamicSampleRate.h"
 #include "Menu.h"
 #include "SaveFile.h"
 #include "WasapiRenderer.h"
@@ -25,6 +24,9 @@ App::App(HINSTANCE hInstance)
 
 int App::Run(int nCmdShow)
 {
+    auto hThread = GetCurrentThread();
+    SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
+
     try
     {
         std::wstring romPath;
@@ -54,9 +56,9 @@ int App::Run(int nCmdShow)
 
         try
         {
-            d3d.Initialize(window_, Display::WIDTH, Display::HEIGHT);
-            d3d.PrepareRenderState();
-            d3d.RenderClear();
+            d3d_.Initialize(window_, Display::WIDTH, Display::HEIGHT);
+            d3d_.PrepareRenderState();
+            d3d_.RenderClear();
         }
         catch (const winrt::hresult_error& e)
         {
@@ -64,10 +66,9 @@ int App::Run(int nCmdShow)
             return -1;
         }
 
-        WasapiRenderer wasapi{};
         try
         {
-            wasapi.Initialize();
+            wasapi_.Initialize();
         }
         catch (const Error& e)
         {
@@ -80,7 +81,7 @@ int App::Run(int nCmdShow)
             return -1;
         }
 
-        host_.SetSampleRate(wasapi.SampleRate());
+        host_.SetSampleRate(wasapi_.SampleRate());
 
         if (romPath.size())
         {
@@ -96,7 +97,9 @@ int App::Run(int nCmdShow)
             Open(window_);
         }
 
-        DynamicSampleRate sync { host_.SamplesPerFrame() };
+        sampler_ = DynamicSampleRate { host_.SamplesPerFrame() };
+
+        d3d_.Start();
 
         bool running = host_.Running();
         while (true)
@@ -121,15 +124,13 @@ int App::Run(int nCmdShow)
                     {
                         host_.RunFrame();
 
-                        wasapi.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
-                        d3d.RenderFrame(host_.PixelData());
+                        wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
 
-                        sync.OnFrame(host_.SamplesPerFrame(), wasapi.GetPosition());
-                        host_.SetSamplesPerFrame(sync.SampleRate());
-                    }
-                    else
-                    {
-                        d3d.RenderClear();
+                        d3d_.RenderFrame(host_.PixelData());
+
+                        sampler_.OnFrame(host_.SamplesPerFrame(), wasapi_.GetPosition());
+
+                        host_.SetSamplesPerFrame(sampler_.SampleRate());
                     }
 
                     running = host_.Running();
@@ -147,6 +148,12 @@ int App::Run(int nCmdShow)
                 }
 
                 running = host_.Running();
+
+                if (running)
+                {
+                    // force a vsync
+                    d3d_.Start();
+                }
             }
         }
     }
@@ -181,6 +188,7 @@ HWND App::InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow)
     auto className = L"NES";
 
     WNDCLASS wndClass;
+    ZeroMemory(&wndClass, sizeof(WNDCLASS));
     wndClass.style = 0;
     wndClass.lpfnWndProc = WindowProcStub;
     wndClass.cbClsExtra = 0;
@@ -383,7 +391,6 @@ void App::Open(HWND window)
 
 LRESULT CALLBACK App::WindowProcStub(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-
     auto app = reinterpret_cast<App*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     if (app)
@@ -424,7 +431,8 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_SIZE:
-        d3d.OnSize();
+        d3d_.OnSize();
+        break;
     }
 
     return DefWindowProc(window_, uMsg, wParam, lParam);

@@ -5,6 +5,8 @@
 #include "SaveFile.h"
 
 #include "D3DRenderer.h"
+#include "DynamicSampleRate.h"
+#include "WasapiRenderer.h"
 
 #include "../NesCoreCpp/RomFile.h"
 
@@ -46,5 +48,8 @@ private:
     Host host_;
     SaveFile save_;
 
-    D3DRenderer d3d;
+    D3DRenderer d3d_;
+    WasapiRenderer wasapi_;
+
+    DynamicSampleRate sampler_{ 800 };
 };

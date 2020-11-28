@@ -104,6 +104,22 @@ void D3DRenderer::OnSize()
     }
 }
 
+void D3DRenderer::Start()
+{
+    // fill the render pipeline so we can start synchronizing on vsyncs.
+
+    DXGI_FRAME_STATISTICS stats;
+    swapChain_->GetFrameStatistics(&stats);
+    auto currentSyncs = stats.PresentRefreshCount;
+
+    do
+    {
+        // push a blank frame
+        RenderClear();
+        swapChain_->GetFrameStatistics(&stats);
+    } while (stats.PresentRefreshCount == currentSyncs);
+}
+
 void D3DRenderer::CreateDevice()
 {
     D3D_FEATURE_LEVEL featureLevels[] = {
