@@ -83,12 +83,38 @@ void D3DRenderer::RenderFrame(const uint32_t* buffer)
     winrt::check_hresult(hr);
 }
 
+void D3DRenderer::RepeatLastFrame()
+{
+    auto renderTargetView = renderTargetView_.get();
+    deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
+
+    deviceContext_->DrawIndexed(6, 0, 0);
+
+    auto hr = swapChain_->Present(1, 0);
+    winrt::check_hresult(hr);
+}
+
 void D3DRenderer::RenderClear()
 {
     FLOAT grey[4]{ 0.125, 0.125, 0.125, 1.0 };
     deviceContext_->ClearRenderTargetView(renderTargetView_.get(), grey);
 
     auto hr = swapChain_->Present(1, 0);
+    winrt::check_hresult(hr);
+}
+
+bool D3DRenderer::IsFullscreen() const
+{
+    BOOL fullscreen;
+    auto hr = swapChain_->GetFullscreenState(&fullscreen, nullptr);
+    winrt::check_hresult(hr);
+
+    return fullscreen;
+}
+
+void D3DRenderer::SetFullscreen(bool fullscreen)
+{
+    auto hr = swapChain_->SetFullscreenState(fullscreen ? TRUE : FALSE, nullptr);
     winrt::check_hresult(hr);
 }
 
@@ -107,7 +133,6 @@ void D3DRenderer::OnSize()
 void D3DRenderer::Start()
 {
     // fill the render pipeline so we can start synchronizing on vsyncs.
-
     DXGI_FRAME_STATISTICS stats;
     swapChain_->GetFrameStatistics(&stats);
     auto currentSyncs = stats.PresentRefreshCount;
@@ -116,6 +141,20 @@ void D3DRenderer::Start()
     {
         // push a blank frame
         RenderClear();
+        swapChain_->GetFrameStatistics(&stats);
+    } while (stats.PresentRefreshCount == currentSyncs);
+}
+
+void D3DRenderer::StartWithLastFrame()
+{
+    // fill the render pipeline so we can start synchronizing on vsyncs.
+    DXGI_FRAME_STATISTICS stats;
+    swapChain_->GetFrameStatistics(&stats);
+    auto currentSyncs = stats.PresentRefreshCount;
+
+    do
+    {
+        RepeatLastFrame();
         swapChain_->GetFrameStatistics(&stats);
     } while (stats.PresentRefreshCount == currentSyncs);
 }

@@ -18,6 +18,9 @@ public:
     int Run(int nCmdShow);
 
 private:
+    void StartRunning();
+    void StopRunning();
+
     void ReportError(const wchar_t* title, const Error& error);
     void ReportError(const wchar_t* title, const winrt::hresult_error& error);
 

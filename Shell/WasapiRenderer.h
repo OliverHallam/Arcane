@@ -10,6 +10,10 @@ public:
 
     uint32_t SampleRate();
 
+    void Stop();
+    void Start();
+
+    void WritePadding(int sampleCount);
     void WriteSamples(const int16_t* samples, int sampleCount);
 
     uint64_t GetPosition();

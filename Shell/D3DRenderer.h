@@ -15,11 +15,15 @@ public:
     void PrepareRenderState();
 
     void RenderFrame(const uint32_t* buffer);
+    void RepeatLastFrame();
     void RenderClear();
 
+    bool IsFullscreen() const;
+    void SetFullscreen(bool fullscreen);
     void OnSize();
 
     void Start();
+    void StartWithLastFrame();
 
 private:
     void CreateDevice();

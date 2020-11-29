@@ -99,9 +99,7 @@ int App::Run(int nCmdShow)
 
         sampler_ = DynamicSampleRate { host_.SamplesPerFrame() };
 
-        d3d_.Start();
-
-        bool running = host_.Running();
+        bool running = false;
         while (true)
         {
             MSG msg;
@@ -134,6 +132,10 @@ int App::Run(int nCmdShow)
                     }
 
                     running = host_.Running();
+                    if (!running)
+                    {
+                        StopRunning();
+                    }
                 }
             }
             else
@@ -151,8 +153,7 @@ int App::Run(int nCmdShow)
 
                 if (running)
                 {
-                    // force a vsync
-                    d3d_.Start();
+                    StartRunning();
                 }
             }
         }
@@ -167,6 +168,24 @@ int App::Run(int nCmdShow)
         ReportError(L"Unexpected error", e);
         return -1;
     }
+}
+
+void App::StartRunning()
+{
+    // force a vsync
+    if (host_.Running())
+        d3d_.StartWithLastFrame();
+    else
+        d3d_.Start();
+
+    wasapi_.Start();
+    wasapi_.WritePadding(sampler_.TargetLatency());
+}
+
+void App::StopRunning()
+{
+    wasapi_.Stop();
+    sampler_.Reset();
 }
 
 void App::ReportError(const wchar_t* title, const Error& error)
@@ -343,6 +362,13 @@ std::unique_ptr<RomFile> App::LoadCart(const std::wstring& romPath)
 
 void App::Open(HWND window)
 {
+    auto isFullscreen = d3d_.IsFullscreen();
+    if (isFullscreen)
+    {
+        d3d_.SetFullscreen(false);
+        d3d_.RepeatLastFrame();
+    }
+
     WCHAR fileName[MAX_PATH];
     ZeroMemory(fileName, sizeof(fileName));
 
@@ -372,21 +398,23 @@ void App::Open(HWND window)
     ofn.dwReserved = NULL;
     ofn.FlagsEx = 0;
 
-    if (!GetOpenFileName(&ofn))
-        return;
-
-    host_.Stop();
-    host_.Unload();
-    save_.Close();
-
-    std::wstring romPath(ofn.lpstrFile);
-    auto cart = LoadGame(window, romPath);
-
-    if (cart)
+    if (GetOpenFileName(&ofn))
     {
-        host_.Load(std::move(cart));
-        host_.Start();
+        host_.Stop();
+        host_.Unload();
+        save_.Close();
+
+        std::wstring romPath(ofn.lpstrFile);
+        auto cart = LoadGame(window, romPath);
+
+        if (cart)
+        {
+            host_.Load(std::move(cart));
+            host_.Start();
+        }
     }
+
+    d3d_.SetFullscreen(isFullscreen);
 }
 
 LRESULT CALLBACK App::WindowProcStub(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -433,6 +461,16 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SIZE:
         d3d_.OnSize();
         break;
+
+    case WM_ENTERMENULOOP:
+    case WM_ENTERSIZEMOVE:
+        StopRunning();
+        return 0;
+
+    case WM_EXITMENULOOP:
+    case WM_EXITSIZEMOVE:
+        StartRunning();
+        return 0;
     }
 
     return DefWindowProc(window_, uMsg, wParam, lParam);

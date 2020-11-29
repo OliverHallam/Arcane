@@ -81,26 +81,47 @@ void WasapiRenderer::Initialize()
     hr = client_->GetService(__uuidof(IAudioRenderClient), audioRenderClient_.put_void());
     winrt::check_hresult(hr);
 
-    // clear the buffer
-    BYTE* data;
-    hr = audioRenderClient_->GetBuffer(samplesPerFrame, &data);
-    winrt::check_hresult(hr);
-
-    audioRenderClient_->ReleaseBuffer(samplesPerFrame, AUDCLNT_BUFFERFLAGS_SILENT);
-
-    hr = client_->Start();
-    winrt::check_hresult(hr);
-
     hr = client_->GetService(__uuidof(IAudioClock), audioClock_.put_void());
     winrt::check_hresult(hr);
 
     hr = audioClock_->GetFrequency(&frequency_);
+    winrt::check_hresult(hr);
+
+    // start/stop forces the driver to fully initialize.
+    hr = client_->Start();
+    winrt::check_hresult(hr);
+
+    hr = client_->Stop();
     winrt::check_hresult(hr);
 }
 
 uint32_t WasapiRenderer::SampleRate()
 {
     return sampleRate_;
+}
+
+void WasapiRenderer::Stop()
+{
+    auto hr = client_->Stop();
+    winrt::check_hresult(hr);
+
+    hr = client_->Reset();
+    winrt::check_hresult(hr);
+}
+
+void WasapiRenderer::Start()
+{
+    auto hr = client_->Start();
+    winrt::check_hresult(hr);
+}
+
+void WasapiRenderer::WritePadding(int sampleCount)
+{
+    BYTE* data;
+    auto hr = audioRenderClient_->GetBuffer(sampleCount, &data);
+    winrt::check_hresult(hr);
+
+    audioRenderClient_->ReleaseBuffer(sampleCount, AUDCLNT_BUFFERFLAGS_SILENT);
 }
 
 void WasapiRenderer::WriteSamples(const int16_t* samples, int sampleCount)
