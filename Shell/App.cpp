@@ -18,7 +18,8 @@
 
 App::App(HINSTANCE hInstance)
     : instance_{ hInstance },
-    window_{ }
+    window_{ },
+    initialized_{ false }
 {
 }
 
@@ -100,6 +101,7 @@ int App::Run(int nCmdShow)
 
         sampler_ = DynamicSampleRate { host_.SamplesPerFrame() };
 
+        initialized_ = true;
         bool running = false;
         while (true)
         {
@@ -471,7 +473,12 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_SIZE:
-        d3d_.OnSize();
+        if (initialized_)
+        {
+            StopRunning();
+            d3d_.OnSize();
+            StartRunning();
+        }
         break;
 
     case WM_ENTERMENULOOP:

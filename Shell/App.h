@@ -2,6 +2,7 @@
 
 #include "Error.h"
 #include "Host.h"
+#include "Menu.h"
 #include "SaveFile.h"
 
 #include "D3DRenderer.h"
@@ -46,10 +47,13 @@ private:
     bool ProcessKey(WPARAM key, bool down);
     bool ProcessCommand(WORD command);
 
+    bool initialized_;
+
     HINSTANCE instance_;
 
     HWND window_;
     Host host_;
+
     SaveFile save_;
 
     D3DRenderer d3d_;

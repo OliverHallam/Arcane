@@ -136,6 +136,9 @@ uint32_t D3DRenderer::RefreshRate() const
 
 bool D3DRenderer::IsFullscreen() const
 {
+    if (!swapChain_)
+        return false;
+
     BOOL fullscreen;
     auto hr = swapChain_->GetFullscreenState(&fullscreen, nullptr);
     winrt::check_hresult(hr);
