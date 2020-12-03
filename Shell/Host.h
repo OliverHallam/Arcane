@@ -24,10 +24,10 @@ public:
     void RunFrame();
 
     const uint32_t* PixelData() const;
+    uint32_t RefreshRate() const;
 
     const int16_t* AudioSamples() const;
     const uint32_t SamplesPerFrame() const;
-
     void SetSamplesPerFrame(uint32_t samples);
 
     void Snapshot();

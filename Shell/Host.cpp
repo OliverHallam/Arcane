@@ -72,6 +72,11 @@ const uint32_t* Host::PixelData() const
     return system_->Display().Buffer();
 }
 
+uint32_t Host::RefreshRate() const
+{
+    return 60;
+}
+
 const int16_t* Host::AudioSamples() const
 {
     return system_->Apu().Samples();

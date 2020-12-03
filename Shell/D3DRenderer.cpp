@@ -5,6 +5,8 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 
+#include <dwmapi.h>
+
 D3DRenderer::~D3DRenderer()
 {
     if (swapChain_)
@@ -13,11 +15,12 @@ D3DRenderer::~D3DRenderer()
 
 void D3DRenderer::Initialize(HWND window, uint32_t width, uint32_t height)
 {
+    window_ = window;
     width_ = width;
     height_ = height;
 
     CreateDevice();
-    CreateSwapChain(window);
+    CreateSwapChain();
     CreateRenderTarget();
     CreateVertexBuffer();
     CreateIndexBuffer();
@@ -53,7 +56,7 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->PSSetSamplers(0, 1, samplers);
 }
 
-void D3DRenderer::RenderFrame(const uint32_t* buffer)
+void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
 {
     auto renderTargetView = renderTargetView_.get();
     deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
@@ -79,7 +82,7 @@ void D3DRenderer::RenderFrame(const uint32_t* buffer)
 
     deviceContext_->DrawIndexed(6, 0, 0);
 
-    hr = swapChain_->Present(1, 0);
+    hr = swapChain_->Present(displayFrames, 0);
     winrt::check_hresult(hr);
 }
 
@@ -101,6 +104,34 @@ void D3DRenderer::RenderClear()
 
     auto hr = swapChain_->Present(1, 0);
     winrt::check_hresult(hr);
+}
+
+uint32_t D3DRenderer::RefreshRate() const
+{
+    if (IsFullscreen())
+    {
+        // TODO: we should be using GetDesc1
+        DXGI_SWAP_CHAIN_DESC desc;
+        auto hr = swapChain_->GetDesc(&desc);
+        winrt::check_hresult(hr);
+
+        auto refreshRational = desc.BufferDesc.RefreshRate;
+
+        // round to an integer, since we don't care whether the driver reports 60Hz or 59.97Hz
+        return (refreshRational.Numerator + refreshRational.Denominator / 2) / refreshRational.Denominator;
+    }
+    else
+    {
+        DWM_TIMING_INFO timingInfo;
+        ZeroMemory(&timingInfo, sizeof(timingInfo));
+        timingInfo.cbSize = sizeof(DWM_TIMING_INFO);
+
+        auto hr = DwmGetCompositionTimingInfo(NULL, &timingInfo);
+        winrt::check_hresult(hr);
+
+        auto refreshRational = timingInfo.rateRefresh;
+        return (refreshRational.uiNumerator + refreshRational.uiDenominator / 2) / refreshRational.uiDenominator;
+    }
 }
 
 bool D3DRenderer::IsFullscreen() const
@@ -195,7 +226,7 @@ void D3DRenderer::CreateDevice()
     winrt::check_hresult(hr);
 }
 
-void D3DRenderer::CreateSwapChain(HWND window)
+void D3DRenderer::CreateSwapChain()
 {
     winrt::com_ptr<IDXGIAdapter> adapter;
     auto hr = device_.as<IDXGIDevice>()->GetAdapter(adapter.put());
@@ -217,7 +248,7 @@ void D3DRenderer::CreateSwapChain(HWND window)
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = window;
+    swapChainDesc.OutputWindow = window_;
     swapChainDesc.Flags = 0;
 
     hr = factory->CreateSwapChain(

@@ -12,6 +12,7 @@
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="DynamicSampleRate.cpp" />
+    <ClCompile Include="RefreshRateSynchronization.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -32,6 +33,7 @@
     <ClInclude Include="Menu.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="DynamicSampleRate.h" />
+    <ClInclude Include="RefreshRateSynchronization.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

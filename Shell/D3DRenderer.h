@@ -14,9 +14,11 @@ public:
 
     void PrepareRenderState();
 
-    void RenderFrame(const uint32_t* buffer);
+    void RenderFrame(const uint32_t* buffer, uint32_t refreshCycles);
     void RepeatLastFrame();
     void RenderClear();
+
+    uint32_t RefreshRate() const;
 
     bool IsFullscreen() const;
     void SetFullscreen(bool fullscreen);
@@ -27,7 +29,7 @@ public:
 
 private:
     void CreateDevice();
-    void CreateSwapChain(HWND window);
+    void CreateSwapChain();
     void CreateRenderTarget();
     void CreateVertexBuffer();
     void CreateIndexBuffer();
@@ -57,6 +59,8 @@ private:
     winrt::com_ptr<ID3D11Buffer> vertexBuffer_;
     winrt::com_ptr<ID3D11Buffer> indexBuffer_;
     winrt::com_ptr<ID3D11Texture2D> frameBuffer_;
+
+    HWND window_;
 
     struct Vertex
     {

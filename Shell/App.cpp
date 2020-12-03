@@ -97,6 +97,7 @@ int App::Run(int nCmdShow)
             Open(window_);
         }
 
+
         sampler_ = DynamicSampleRate { host_.SamplesPerFrame() };
 
         bool running = false;
@@ -120,15 +121,23 @@ int App::Run(int nCmdShow)
                 {
                     if (host_.Loaded())
                     {
-                        host_.RunFrame();
+                        auto audioSamples = 0;
+                        for (auto i = 0; i < refreshRateSync_.SimulatedFrames(); i++)
+                        {
+                            host_.RunFrame();
 
-                        wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
+                            audioSamples += host_.SamplesPerFrame();
+                            wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
+                        }
 
-                        d3d_.RenderFrame(host_.PixelData());
+                        d3d_.RenderFrame(host_.PixelData(), refreshRateSync_.DisplayFrames());
 
-                        sampler_.OnFrame(host_.SamplesPerFrame(), wasapi_.GetPosition());
+                        sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
 
-                        host_.SetSamplesPerFrame(sampler_.SampleRate());
+                        if (refreshRateSync_.IsSynchronized())
+                            host_.SetSamplesPerFrame(sampler_.SampleRate());
+
+                        refreshRateSync_.NextFrame();
                     }
 
                     running = host_.Running();
@@ -172,6 +181,9 @@ int App::Run(int nCmdShow)
 
 void App::StartRunning()
 {
+    refreshRateSync_.Reset(host_.RefreshRate(), d3d_.RefreshRate());
+    refreshRateSync_.NextFrame();
+
     // force a vsync
     if (host_.Running())
         d3d_.StartWithLastFrame();
