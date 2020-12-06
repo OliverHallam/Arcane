@@ -110,14 +110,11 @@ uint32_t D3DRenderer::RefreshRate() const
 {
     if (IsFullscreen())
     {
-        // TODO: we should be using GetDesc1
-        DXGI_SWAP_CHAIN_DESC desc;
-        auto hr = swapChain_->GetDesc(&desc);
+        DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc;
+        auto hr = swapChain_->GetFullscreenDesc(&desc);
         winrt::check_hresult(hr);
 
-        auto refreshRational = desc.BufferDesc.RefreshRate;
-
-        // round to an integer, since we don't care whether the driver reports 60Hz or 59.97Hz
+        auto refreshRational = desc.RefreshRate;
         return (refreshRational.Numerator + refreshRational.Denominator / 2) / refreshRational.Denominator;
     }
     else
@@ -235,28 +232,30 @@ void D3DRenderer::CreateSwapChain()
     auto hr = device_.as<IDXGIDevice>()->GetAdapter(adapter.put());
     winrt::check_hresult(hr);
 
-    winrt::com_ptr<IDXGIFactory> factory;
+    winrt::com_ptr<IDXGIFactory2> factory;
     adapter->GetParent(IID_PPV_ARGS(factory.put()));
 
-    DXGI_SWAP_CHAIN_DESC swapChainDesc;
-    ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
-    swapChainDesc.Windowed = TRUE;
-    swapChainDesc.BufferCount = 2;
-    swapChainDesc.BufferDesc.Width = 0;
-    swapChainDesc.BufferDesc.Height = 0;
-    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-    swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc;
+    ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC1));
+    swapChainDesc.Width = 0;
+    swapChainDesc.Height = 0;
+    swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    swapChainDesc.Stereo = FALSE;
     swapChainDesc.SampleDesc.Count = 1;
     swapChainDesc.SampleDesc.Quality = 0;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = 2;
+    swapChainDesc.Scaling = DXGI_SCALING_NONE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = window_;
+    swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
     swapChainDesc.Flags = 0;
 
-    hr = factory->CreateSwapChain(
+    hr = factory->CreateSwapChainForHwnd(
         device_.get(),
+        window_,
         &swapChainDesc,
+        NULL,
+        NULL,
         swapChain_.put());
     winrt::check_hresult(hr);
 }
