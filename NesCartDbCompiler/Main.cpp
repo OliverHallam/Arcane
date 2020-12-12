@@ -167,9 +167,14 @@ bool WriteBinaryData(const std::vector<CartRecord> & carts)
         // we'll assume the Rom sizes were right, otherwise the iNes file was invalid
 
         // we can probably cut this back to a few bits based on the mappers we support
-        if (cart.Mapper > 256)
+        auto mapper = cart.Mapper;
+        if (mapper == 555)
+            mapper = 255; // placeholder for unused mappers.  Will have to allocate later
+
+        if (mapper > 256)
             return false;
-        auto mapperByte = static_cast<uint8_t>(cart.Mapper);
+
+        auto mapperByte = static_cast<uint8_t>(mapper);
         binaryData.write(reinterpret_cast<const char*>(&mapperByte), sizeof(uint8_t));
 
         // next byte:
@@ -182,7 +187,7 @@ bool WriteBinaryData(const std::vector<CartRecord> & carts)
         if (cart.SubMapper > 15)
             return false;
 
-        if (cart.PrgRam != 0 && cart.PrgRam != 8 * 1024)
+        if (cart.PrgRam != 0 && cart.PrgRam != 8 * 1024 && cart.Mapper != 555)
             return false;
 
         auto subBits = cart.SubMapper;
@@ -217,10 +222,20 @@ bool WriteBinaryData(const std::vector<CartRecord> & carts)
             if (cart.ChrRam != 16 * 1024)
                 return false;
         }
+        else if (cart.Mapper == 168)
+        {
+            if (cart.ChrRam != 32 * 1024)
+                return false;
+        }
         else if (cart.ChrRam != 0 && cart.ChrRam != 8 * 1024)
             return false;
 
-        if (cart.ChrRamB != 0)
+        if (cart.Mapper == 168)
+        {
+            if (cart.ChrRamB != 32 * 1024)
+                return false;
+        }
+        else if (cart.ChrRamB != 0)
             return false;
 
         uint8_t mirrorMode;

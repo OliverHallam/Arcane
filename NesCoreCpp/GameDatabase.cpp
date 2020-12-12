@@ -100,6 +100,11 @@ std::unique_ptr<CartDescriptor> GameDatabase::DecodeDescriptor(uint8_t mapperByt
 
     if (mapperByte == 13)
         descriptor->ChrRamSize = 16 * 1024;
+    else if (mapperByte == 168)
+    {
+        descriptor->ChrRamSize = 32 * 1024;
+        //descriptor->ChrBatteryRamSize = 32 * 1024;
+    }
 
     return std::move(descriptor);
 }
