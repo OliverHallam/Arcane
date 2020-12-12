@@ -521,9 +521,17 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SIZE:
         if (initialized_)
         {
-            StopRunning();
-            d3d_.OnSize();
-            StartRunning();
+            if (inSizeMove_)
+            {
+                resized_ = true;
+            }
+            else
+            {
+                StopRunning();
+                d3d_.OnSize();
+                StartRunning();
+                return 0;
+            }
         }
         break;
 
@@ -536,12 +544,23 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ENTERMENULOOP:
-    case WM_ENTERSIZEMOVE:
         StopRunning();
         return 0;
 
     case WM_EXITMENULOOP:
+        StartRunning();
+        return 0;
+
+    case WM_ENTERSIZEMOVE:
+        inSizeMove_ = true;
+        resized_ = false;
+        StopRunning();
+        return 0;
+
     case WM_EXITSIZEMOVE:
+        inSizeMove_ = false;
+        if (resized_)
+            d3d_.OnSize();
         StartRunning();
         return 0;
     }

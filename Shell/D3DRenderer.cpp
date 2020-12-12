@@ -293,8 +293,14 @@ void D3DRenderer::CreateRenderTarget()
     backBuffer->GetDesc(&backBufferDesc);
 
     // round down to nearest pixel multiple
-    auto height =(backBufferDesc.Height / height_) * height_;
+    auto height = (backBufferDesc.Height / height_) * height_;
     auto width = height * width_ / height_;
+
+    if (width > backBufferDesc.Width)
+    {
+        width = (backBufferDesc.Width / width_) * width_;
+        height = width * height_ / width_;
+    }
 
     auto x = (backBufferDesc.Width - width) / 2;
     auto y = (backBufferDesc.Height - height) / 2;

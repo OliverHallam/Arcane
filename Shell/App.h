@@ -67,4 +67,7 @@ private:
 
     uint64_t emulatedTime_;
     DynamicSampleRate sampler_{ 800 };
+
+    bool inSizeMove_{};
+    bool resized_{};
 };
