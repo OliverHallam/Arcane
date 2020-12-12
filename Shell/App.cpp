@@ -135,8 +135,8 @@ int App::Run(int nCmdShow)
 
                     auto targetTime = currentTime;
 
-                    // if we are more than 4 frames behind, let's resync
-                    bool outOfSync = !frameReady || emulatedTime_ + 4 * frameTime < targetTime;
+                    // if we are more than 4 frames behind, let's resync rather than trying to catch up
+                    bool outOfSync = !frameReady || (emulatedTime_ + 4 * frameTime) < targetTime;
                     if (!outOfSync)
                     {
                         while (emulatedTime_ < targetTime)
@@ -147,11 +147,10 @@ int App::Run(int nCmdShow)
                             audioSamples += host_.SamplesPerFrame();
                             if (!wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame()))
                             {
+                                // our audio has somehow got too far behind
                                 outOfSync = true;
                                 break;
                             }
-
-                            d3d_.RenderFrame(host_.PixelData(), 0);
                         }
                     }
 
@@ -167,6 +166,8 @@ int App::Run(int nCmdShow)
                     }
                     else
                     {
+                        d3d_.RenderFrame(host_.PixelData(), 0);
+
                         sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
 
                         host_.SetSamplesPerFrame(sampler_.SampleRate());
