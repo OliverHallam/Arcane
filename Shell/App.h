@@ -47,11 +47,18 @@ private:
     bool ProcessKey(WPARAM key, bool down);
     bool ProcessCommand(WORD command);
 
+    void SetFullscreen(bool fullscreen);
+
     bool initialized_;
 
     HINSTANCE instance_;
 
+    Menu menu_;
+
     HWND window_;
+    bool fullscreen_;
+    RECT windowRect_;
+
     Host host_;
 
     SaveFile save_;

@@ -19,6 +19,8 @@
 App::App(HINSTANCE hInstance)
     : instance_{ hInstance },
     window_{ },
+    windowRect_{ },
+    fullscreen_{ false },
     initialized_{ false }
 {
 }
@@ -43,11 +45,9 @@ int App::Run(int nCmdShow)
             return -1;
         }
 
-        Menu menu;
-
         try
         {
-            window_ = InitializeWindow(instance_, menu.Get(), nCmdShow);
+            window_ = InitializeWindow(instance_, menu_.Get(), nCmdShow);
         }
         catch (Error& e)
         {
@@ -99,7 +99,7 @@ int App::Run(int nCmdShow)
         }
 
 
-        sampler_ = DynamicSampleRate { host_.SamplesPerFrame() };
+        sampler_ = DynamicSampleRate { wasapi_.SampleRate() / 60 };
 
         initialized_ = true;
         bool running = false;
@@ -108,45 +108,45 @@ int App::Run(int nCmdShow)
             MSG msg;
             if (running)
             {
-                if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
+                d3d_.WaitForFrame(fullscreen_);
+
+                while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
                 {
                     if (msg.message == WM_QUIT)
                         return 0;
 
-                    if (!TranslateAccelerator(window_, menu.AcceleratorTable(), &msg))
+                    if (!TranslateAccelerator(window_, menu_.AcceleratorTable(), &msg))
                     {
                         TranslateMessage(&msg);
                         DispatchMessage(&msg);
                     }
                 }
-                else
+
+                if (host_.Loaded())
                 {
-                    if (host_.Loaded())
+                    auto audioSamples = 0;
+                    for (auto i = 0u; i < refreshRateSync_.SimulatedFrames(); i++)
                     {
-                        auto audioSamples = 0;
-                        for (auto i = 0; i < refreshRateSync_.SimulatedFrames(); i++)
-                        {
-                            host_.RunFrame();
+                        host_.RunFrame();
 
-                            audioSamples += host_.SamplesPerFrame();
-                            wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
-                        }
-
-                        d3d_.RenderFrame(host_.PixelData(), refreshRateSync_.DisplayFrames());
-
-                        sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
-
-                        if (refreshRateSync_.IsSynchronized())
-                            host_.SetSamplesPerFrame(sampler_.SampleRate());
-
-                        refreshRateSync_.NextFrame();
+                        audioSamples += host_.SamplesPerFrame();
+                        wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
                     }
 
-                    running = host_.Running();
-                    if (!running)
-                    {
-                        StopRunning();
-                    }
+                    d3d_.RenderFrame(host_.PixelData(), fullscreen_ ? refreshRateSync_.DisplayFrames() : 0);
+
+                    sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
+
+                    if (refreshRateSync_.IsSynchronized())
+                        host_.SetSamplesPerFrame(sampler_.SampleRate());
+
+                    refreshRateSync_.NextFrame();
+                }
+
+                running = host_.Running();
+                if (!running)
+                {
+                    StopRunning();
                 }
             }
             else
@@ -154,7 +154,7 @@ int App::Run(int nCmdShow)
                 if (!GetMessage(&msg, NULL, 0U, 0U))
                     return 0;
 
-                if (!TranslateAccelerator(window_, menu.AcceleratorTable(), &msg))
+                if (!TranslateAccelerator(window_, menu_.AcceleratorTable(), &msg))
                 {
                     TranslateMessage(&msg);
                     DispatchMessage(&msg);
@@ -183,14 +183,10 @@ int App::Run(int nCmdShow)
 
 void App::StartRunning()
 {
-    refreshRateSync_.Reset(host_.RefreshRate(), d3d_.RefreshRate());
+    refreshRateSync_.Reset(host_.RefreshRate(), d3d_.RefreshRate(fullscreen_));
     refreshRateSync_.NextFrame();
 
-    // force a vsync
-    if (host_.Running())
-        d3d_.StartWithLastFrame();
-    else
-        d3d_.Start();
+    //d3d_.WaitForFrame();
 
     wasapi_.Start();
     wasapi_.WritePadding(sampler_.TargetLatency());
@@ -376,13 +372,6 @@ std::unique_ptr<RomFile> App::LoadCart(const std::wstring& romPath)
 
 void App::Open(HWND window)
 {
-    auto isFullscreen = d3d_.IsFullscreen();
-    if (isFullscreen)
-    {
-        d3d_.SetFullscreen(false);
-        d3d_.RepeatLastFrame();
-    }
-
     WCHAR fileName[MAX_PATH];
     ZeroMemory(fileName, sizeof(fileName));
 
@@ -427,8 +416,6 @@ void App::Open(HWND window)
             host_.Start();
         }
     }
-
-    d3d_.SetFullscreen(isFullscreen);
 }
 
 LRESULT CALLBACK App::WindowProcStub(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -478,6 +465,14 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             StopRunning();
             d3d_.OnSize();
             StartRunning();
+        }
+        break;
+
+    case WM_SYSKEYDOWN:
+        // ALT+ENTER
+        if (wParam == VK_RETURN && (lParam & (1 << 29)) != 0)
+        {
+            SetFullscreen(!fullscreen_);
         }
         break;
 
@@ -531,8 +526,13 @@ bool App::ProcessKey(WPARAM key, bool down)
         host_.Select(down);
         return true;
 
-#if DIAGNOSTIC
     case VK_ESCAPE:
+        if (fullscreen_)
+            SetFullscreen(false);
+        return true;
+
+#if DIAGNOSTIC
+    case VK_PAUSE:
         if (down)
         {
             if (NesHost.Running())
@@ -573,4 +573,44 @@ bool App::ProcessCommand(WORD command)
     }
 
     return false;
+}
+
+void App::SetFullscreen(bool fullscreen)
+{
+    if (fullscreen == fullscreen_)
+        return;
+
+    fullscreen_ = fullscreen;
+
+    if (fullscreen)
+    {
+        GetWindowRect(window_, &windowRect_);
+        auto fullscreenRect = d3d_.GetFullscreenRect();
+
+        SetWindowLong(window_, GWL_STYLE, WS_OVERLAPPED);
+        SetWindowPos(
+            window_,
+            HWND_NOTOPMOST,
+            fullscreenRect.left,
+            fullscreenRect.top,
+            fullscreenRect.right - fullscreenRect.left,
+            fullscreenRect.bottom - fullscreenRect.top,
+            SWP_FRAMECHANGED | SWP_NOACTIVATE);
+        SetMenu(window_, NULL);
+        ShowWindow(window_, SW_MAXIMIZE);
+    }
+    else
+    {
+        SetWindowLong(window_, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+        SetWindowPos(
+            window_,
+            HWND_NOTOPMOST,
+            windowRect_.left,
+            windowRect_.top,
+            windowRect_.right - windowRect_.left,
+            windowRect_.bottom - windowRect_.top,
+            SWP_FRAMECHANGED | SWP_NOACTIVATE);
+        SetMenu(window_, menu_.Get());
+        ShowWindow(window_, SW_NORMAL);
+    }
 }

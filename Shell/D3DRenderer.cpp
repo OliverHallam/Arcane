@@ -1,11 +1,19 @@
 #include "pch.h"
 
 #include "D3DRenderer.h"
+#include "Error.h"
 
 #include "VertexShader.h"
 #include "PixelShader.h"
 
 #include <dwmapi.h>
+
+D3DRenderer::D3DRenderer() :
+    width_{},
+    height_{},
+    window_{ NULL }
+{
+}
 
 D3DRenderer::~D3DRenderer()
 {
@@ -54,6 +62,21 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->PSSetShaderResources(0, 1, shaderResourceViews);
     ID3D11SamplerState* const samplers[1] = { samplerState_.get() };
     deviceContext_->PSSetSamplers(0, 1, samplers);
+}
+
+void D3DRenderer::WaitForFrame(bool fullscreen) const
+{
+    if (fullscreen)
+    {
+        auto result = WaitForSingleObjectEx(frameLatencyWaitableObject_.get(), 1000, TRUE);
+
+        if (result != WAIT_OBJECT_0)
+            throw Error(L"Error in WaitForFrame");
+    }
+    else
+    {
+        DwmFlush();
+    }
 }
 
 void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
@@ -106,16 +129,31 @@ void D3DRenderer::RenderClear()
     winrt::check_hresult(hr);
 }
 
-uint32_t D3DRenderer::RefreshRate() const
+uint32_t D3DRenderer::RefreshRate(bool fullscreen) const
 {
-    if (IsFullscreen())
+    if (fullscreen)
     {
-        DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc;
-        auto hr = swapChain_->GetFullscreenDesc(&desc);
+        winrt::com_ptr<IDXGIOutput> output;
+        auto hr = swapChain_->GetContainingOutput(output.put());
         winrt::check_hresult(hr);
 
-        auto refreshRational = desc.RefreshRate;
-        return (refreshRational.Numerator + refreshRational.Denominator / 2) / refreshRational.Denominator;
+        DXGI_OUTPUT_DESC desc;
+        output->GetDesc(&desc);
+        winrt::check_hresult(hr);
+
+        MONITORINFOEX monitorInfo;
+        ZeroMemory(&monitorInfo, sizeof(MONITORINFOEX));
+        monitorInfo.cbSize = sizeof(MONITORINFOEX);
+        if (!GetMonitorInfo(desc.Monitor, &monitorInfo))
+            throw Error(L"Error in RefreshRate()");
+
+        DEVMODE devMode;
+        ZeroMemory(&devMode, sizeof(DEVMODE));
+        devMode.dmSize = sizeof(DEVMODE);
+        if (!EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode))
+            throw Error(L"Error in RefreshRate()");
+
+        return devMode.dmDisplayFrequency;
     }
     else
     {
@@ -131,22 +169,15 @@ uint32_t D3DRenderer::RefreshRate() const
     }
 }
 
-bool D3DRenderer::IsFullscreen() const
+RECT D3DRenderer::GetFullscreenRect() const
 {
-    if (!swapChain_)
-        return false;
-
-    BOOL fullscreen;
-    auto hr = swapChain_->GetFullscreenState(&fullscreen, nullptr);
+    winrt::com_ptr<IDXGIOutput> output;
+    auto hr = swapChain_->GetContainingOutput(output.put());
     winrt::check_hresult(hr);
 
-    return fullscreen;
-}
-
-void D3DRenderer::SetFullscreen(bool fullscreen)
-{
-    auto hr = swapChain_->SetFullscreenState(fullscreen ? TRUE : FALSE, nullptr);
-    winrt::check_hresult(hr);
+    DXGI_OUTPUT_DESC desc;
+    output->GetDesc(&desc);
+    return desc.DesktopCoordinates;
 }
 
 void D3DRenderer::OnSize()
@@ -155,39 +186,10 @@ void D3DRenderer::OnSize()
     {
         renderTargetView_.detach()->Release();
 
-        swapChain_->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+        swapChain_->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
 
         CreateRenderTarget();
     }
-}
-
-void D3DRenderer::Start()
-{
-    // fill the render pipeline so we can start synchronizing on vsyncs.
-    DXGI_FRAME_STATISTICS stats;
-    swapChain_->GetFrameStatistics(&stats);
-    auto currentSyncs = stats.PresentRefreshCount;
-
-    do
-    {
-        // push a blank frame
-        RenderClear();
-        swapChain_->GetFrameStatistics(&stats);
-    } while (stats.PresentRefreshCount == currentSyncs);
-}
-
-void D3DRenderer::StartWithLastFrame()
-{
-    // fill the render pipeline so we can start synchronizing on vsyncs.
-    DXGI_FRAME_STATISTICS stats;
-    swapChain_->GetFrameStatistics(&stats);
-    auto currentSyncs = stats.PresentRefreshCount;
-
-    do
-    {
-        RepeatLastFrame();
-        swapChain_->GetFrameStatistics(&stats);
-    } while (stats.PresentRefreshCount == currentSyncs);
 }
 
 void D3DRenderer::CreateDevice()
@@ -248,15 +250,24 @@ void D3DRenderer::CreateSwapChain()
     swapChainDesc.Scaling = DXGI_SCALING_NONE;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-    swapChainDesc.Flags = 0;
+    swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
+    winrt::com_ptr<IDXGISwapChain1> swapChain;
     hr = factory->CreateSwapChainForHwnd(
         device_.get(),
         window_,
         &swapChainDesc,
         NULL,
         NULL,
-        swapChain_.put());
+        swapChain.put());
+    winrt::check_hresult(hr);
+
+    factory->MakeWindowAssociation(window_, DXGI_MWA_NO_ALT_ENTER);
+
+    swapChain_ = swapChain.as<IDXGISwapChain2>();
+
+    frameLatencyWaitableObject_.attach(swapChain_->GetFrameLatencyWaitableObject());
+
     winrt::check_hresult(hr);
 }
 

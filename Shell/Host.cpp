@@ -4,7 +4,8 @@
 
 Host::Host()
     : sampleRate_{ 0 },
-    running_ { false }
+    running_ { false },
+    step_ { false }
 {
 }
 

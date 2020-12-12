@@ -8,24 +8,23 @@
 class D3DRenderer
 {
 public:
+    D3DRenderer();
     ~D3DRenderer();
 
     void Initialize(HWND window, uint32_t width, uint32_t height);
 
     void PrepareRenderState();
 
+    void WaitForFrame(bool fullscreen) const;
+
     void RenderFrame(const uint32_t* buffer, uint32_t refreshCycles);
     void RepeatLastFrame();
     void RenderClear();
 
-    uint32_t RefreshRate() const;
+    uint32_t RefreshRate(bool fullscreen) const;
+    RECT GetFullscreenRect() const;
 
-    bool IsFullscreen() const;
-    void SetFullscreen(bool fullscreen);
     void OnSize();
-
-    void Start();
-    void StartWithLastFrame();
 
 private:
     void CreateDevice();
@@ -44,7 +43,10 @@ private:
 
     winrt::com_ptr<ID3D11Device> device_;
     winrt::com_ptr<ID3D11DeviceContext> deviceContext_;
-    winrt::com_ptr<IDXGISwapChain1> swapChain_;
+
+    winrt::com_ptr<IDXGISwapChain2> swapChain_;
+    winrt::handle frameLatencyWaitableObject_;
+
     winrt::com_ptr<ID3D11RenderTargetView> renderTargetView_;
 
     winrt::com_ptr<ID3D11RasterizerState> rasterizerState_;
