@@ -13,7 +13,11 @@ Cart::Cart() :
 
 void Cart::SetMapper(int mapper)
 {
-    mapper_ = mapper;
+    if (mapper == 71)
+        mapper_ = 2; // clone
+    else
+        mapper_ = mapper;
+
     if (mapper_ == 1)
         state_.PrgMode = 3;
 }
@@ -725,10 +729,11 @@ std::unique_ptr<Cart> TryCreateCart(
 
     cart->SetMirrorMode(desc.MirrorMode);
 
-    if (desc.Mapper > 4)
+    if (desc.Mapper <= 4 ||
+        desc.Mapper == 71 && desc.SubMapper == 0)
+        cart->SetMapper(desc.Mapper);
+    else
         return nullptr;
-
-    cart->SetMapper(desc.Mapper);
 
     if (desc.PrgRamSize != 0 && desc.PrgRamSize != 0x2000)
         return nullptr;
