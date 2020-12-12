@@ -108,7 +108,7 @@ int App::Run(int nCmdShow)
 
         uint64_t qpcFreqeuncy = QpcTimer::Frequency();
 
-        auto frameTime = qpcFreqeuncy / 61;
+        auto frameTime = (qpcFreqeuncy + 30) / 60;
 
         // allow a 5% drift in the frame rate if it means we can match the vsync.
         auto frameDrift = frameTime / 20;
@@ -118,13 +118,21 @@ int App::Run(int nCmdShow)
 
         initialized_ = true;
         bool running = false;
+        bool hitSync = false;
+        auto audioSamples = 0;
         while (true)
         {
             MSG msg;
             if (running)
             {
-                auto frameReady = 
-                    fullscreen_ ? d3d_.WaitForFrame() : true;
+                auto frameReady = !fullscreen_ || d3d_.WaitForFrame();
+
+                if (frameReady)
+                {
+                    sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
+                    if (hitSync)
+                        host_.SetSamplesPerFrame(sampler_.SampleRate());
+                }
 
                 while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
                 {
@@ -140,7 +148,7 @@ int App::Run(int nCmdShow)
 
                 if (host_.Loaded())
                 {
-                    auto audioSamples = 0;
+                    audioSamples = 0;
 
                     auto currentTime = QpcTimer::Current();
 
@@ -168,7 +176,10 @@ int App::Run(int nCmdShow)
 
                     if (outOfSync)
                     {
-                        emulatedTime_ = currentTime;
+                        hitSync = false;
+                        emulatedTime_ = currentTime + frameTime;
+
+                        audioSamples = 0;
 
                         wasapi_.Stop();
                         sampler_.Reset();
@@ -178,20 +189,15 @@ int App::Run(int nCmdShow)
                     }
                     else
                     {
-                        d3d_.RenderFrame(host_.PixelData(), 1);
-
-                        sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
-
-                        // allow ourselves to run slightly behind if it means we nicely hit a frame boundary.
-                        if (emulatedTime_ > currentTime + frameTime - frameDrift)
-                        {
-                            emulatedTime_ = currentTime + frameTime;
-                            host_.SetSamplesPerFrame(sampler_.SampleRate());
-                        }
+                        d3d_.RenderFrame(host_.PixelData(), fullscreen_ ? 0 : 1);
                     }
 
-                    //auto hr = DwmFlush();
-                    //winrt::check_hresult(hr);
+                    // allow ourselves to run slightly behind if it means we nicely hit a frame boundary.
+                    bool hitSync = emulatedTime_ > currentTime + frameTime - frameDrift;
+                    if (hitSync)
+                    {
+                        emulatedTime_ = currentTime + frameTime;
+                    }
                 }
 
                 running = host_.Running();

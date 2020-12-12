@@ -26,7 +26,8 @@ void DynamicSampleRate::Reset()
 
 uint32_t DynamicSampleRate::SampleRate() const
 {
-    return baseSampleRate_ - (latency_ - targetLatency_) / 100;
+    auto drift = std::clamp(latency_ - targetLatency_, -targetLatency_, targetLatency_) / 50;
+    return baseSampleRate_ - drift;
 }
 
 uint32_t DynamicSampleRate::TargetLatency() const
