@@ -21,6 +21,7 @@ public:
 
     void SetOamAddress(uint8_t value);
     void WriteOam(uint8_t value);
+    uint8_t ReadOam() const;
 
     void RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
 
@@ -37,6 +38,7 @@ public:
     void DummyLoad();
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
     void RunLoad(uint32_t scanline);
+    uint8_t GetLoadingOamData(uint32_t cycle);
 
     void VReset();
 

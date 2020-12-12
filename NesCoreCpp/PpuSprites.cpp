@@ -43,6 +43,11 @@ void PpuSprites::WriteOam(uint8_t value)
     state_.oam_[state_.oamAddress_++] = value;
 }
 
+uint8_t PpuSprites::ReadOam() const
+{
+    return state_.oam_[state_.oamAddress_];
+}
+
 void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
     if (scanlineCycle < 64)
@@ -462,4 +467,17 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 
     if (scanlineSpriteCount_ < 8 && state_.largeSprites_)
         bus_.SetChrA12(true);
+}
+
+uint8_t PpuSprites::GetLoadingOamData(uint32_t cycle)
+{
+    // we spend 8 cycles loading each sprite
+    auto spriteIndex = (cycle - 256) >> 3;
+    auto tileCycle = cycle & 7;
+
+    if (spriteIndex > scanlineSpriteCount_)
+        return 0xff;
+
+    auto byteIndex = tileCycle > 3 ? 3 : tileCycle;
+    return oamCopy_[(spriteIndex << 2) | byteIndex];
 }

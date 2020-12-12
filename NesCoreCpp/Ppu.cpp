@@ -90,6 +90,28 @@ uint8_t Ppu::Read(uint16_t address)
         bus_.SetChrA12(background_.CurrentAddress() & 0x1000);
         return data;
     }
+    else if (address == 0x04)
+    {
+        // If we call this during sprite loading then we intercept the values being read there instead of at the OAM
+        // address.
+        if (state_.EnableRendering && state_.CurrentScanline < 256)
+        {
+            // while OAM is being cleared, the bus is forced to 0xff
+            if (static_cast<uint32_t>(state_.TargetCycle) < 64)
+                return 0xff;
+
+            if (state_.TargetCycle >= 256 && state_.TargetCycle < 320)
+            {
+                // sync to end of sprite evaluation to ensure the OAM is populated
+                Sync(256);
+
+                // work out the value that the hardware would be reading at our current cycle.
+                return sprites_.GetLoadingOamData(state_.TargetCycle);
+            }
+        }
+
+        return sprites_.ReadOam();
+    }
 
     return 0;
 }
