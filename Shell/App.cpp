@@ -108,9 +108,13 @@ int App::Run(int nCmdShow)
 
         uint64_t qpcFreqeuncy = QpcTimer::Frequency();
 
-        auto frameTime = qpcFreqeuncy / 60;
+        auto frameTime = qpcFreqeuncy / 61;
+
+        // allow a 5% drift in the frame rate if it means we can match the vsync.
+        auto frameDrift = frameTime / 20;
 
         sampler_ = DynamicSampleRate { wasapi_.SampleRate() / 60 };
+
 
         initialized_ = true;
         bool running = false;
@@ -140,8 +144,8 @@ int App::Run(int nCmdShow)
 
                     auto currentTime = QpcTimer::Current();
 
-                    // aim to emulate slightly behind so we don't race the vsync
-                    auto targetTime = currentTime + (frameTime / 4);
+                    // allow ourselves to run slightly ahead if it means we nicely hit a frame boundary.
+                    auto targetTime = currentTime + frameDrift;
 
                     // if we are more than 4 frames behind, let's resync rather than trying to catch up
                     bool outOfSync = !frameReady || (emulatedTime_ + 4 * frameTime) < targetTime;
@@ -164,7 +168,7 @@ int App::Run(int nCmdShow)
 
                     if (outOfSync)
                     {
-                        emulatedTime_ = targetTime;
+                        emulatedTime_ = currentTime;
 
                         wasapi_.Stop();
                         sampler_.Reset();
@@ -178,7 +182,12 @@ int App::Run(int nCmdShow)
 
                         sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
 
-                        host_.SetSamplesPerFrame(sampler_.SampleRate());
+                        // allow ourselves to run slightly behind if it means we nicely hit a frame boundary.
+                        if (emulatedTime_ > currentTime + frameTime - frameDrift)
+                        {
+                            emulatedTime_ = currentTime + frameTime;
+                            host_.SetSamplesPerFrame(sampler_.SampleRate());
+                        }
                     }
 
                     //auto hr = DwmFlush();

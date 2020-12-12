@@ -65,7 +65,7 @@ void WasapiRenderer::Initialize()
     // we write one frame while the previous one is playing - so we'll need a buffer big enough for two
     // I've doubled this to 4 for the cases we have low/unreliable vsyncs
     auto samplesPerFrame = sampleRate_ / 60;
-    auto bufferDuration = (uint64_t) 10000000 / 60 * 4;
+    auto bufferDuration = (uint64_t) 10000000 / 60 * 8;
 
     hr = client_->Initialize(
         AUDCLNT_SHAREMODE_SHARED,
