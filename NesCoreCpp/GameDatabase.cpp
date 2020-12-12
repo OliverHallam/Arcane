@@ -60,7 +60,21 @@ std::unique_ptr<CartDescriptor> GameDatabase::DecodeDescriptor(uint8_t mapperByt
     if (configByte & 0x04)
         descriptor->ChrRamSize = 8 * 1024;
 
-    descriptor->MirrorMode = static_cast<MirrorMode>((configByte & 0x18) >> 3);
+    auto mirrorModeByte = (configByte & 0x18) >> 3;
+    switch (mirrorModeByte)
+    {
+    case 0:
+        descriptor->MirrorMode = MirrorMode::Horizontal;
+        break;
+
+    case 1:
+        descriptor->MirrorMode = MirrorMode::Vertical;
+        break;
+
+    case 2:
+        descriptor->MirrorMode = MirrorMode::FourScreen;
+        break;
+    }
 
     // special cases
     auto subMapperBits = configByte >> 5;

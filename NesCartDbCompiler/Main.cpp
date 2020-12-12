@@ -92,17 +92,17 @@ bool ParseMirrorFlag(const std::string& mirrorFlag, uint8_t& mode)
         if (c == 'H' && !mirrorModeObserved)
         {
             mirrorModeObserved = true;
-            mode = 1;
+            mode = 0;
         }
         else if (c == 'V' && !mirrorModeObserved)
         {
             mirrorModeObserved = true;
-            mode = 2;
+            mode = 1;
         }
         else if (c == '4')
         {
             mirrorModeObserved = true;
-            mode = 3;
+            mode = 2;
         }
         else if (c == 'B' && !batteryObserved)
         {
