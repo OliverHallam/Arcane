@@ -15,7 +15,7 @@ public:
 
     void PrepareRenderState();
 
-    bool WaitForFrame(bool fullscreen) const;
+    bool WaitForFrame() const;
     uint64_t GetLastSyncTime(bool reset) const;
 
     void RenderFrame(const uint32_t* buffer, uint32_t refreshCycles);

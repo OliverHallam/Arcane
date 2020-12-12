@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-static class QpcTimer
+class QpcTimer
 {
 public:
     static uint64_t Frequency();

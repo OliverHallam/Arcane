@@ -15,6 +15,8 @@
 #include "../NesCoreCpp/GameDatabase.h"
 #include "../NesCoreCpp/RomFile.h"
 
+#include <dwmapi.h>
+
 #include <cstdlib>
 #include <sstream>
 
@@ -29,6 +31,10 @@ App::App(HINSTANCE hInstance)
 
 int App::Run(int nCmdShow)
 {
+    // boost our priority to get silky smooth framerates
+    auto hProcess = GetCurrentProcess();
+    SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
+
     auto hThread = GetCurrentThread();
     SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
 
@@ -113,7 +119,8 @@ int App::Run(int nCmdShow)
             MSG msg;
             if (running)
             {
-                auto frameReady = d3d_.WaitForFrame(fullscreen_);
+                auto frameReady = 
+                    fullscreen_ ? d3d_.WaitForFrame() : true;
 
                 while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
                 {
@@ -133,7 +140,8 @@ int App::Run(int nCmdShow)
 
                     auto currentTime = QpcTimer::Current();
 
-                    auto targetTime = currentTime;
+                    // aim to emulate slightly behind so we don't race the vsync
+                    auto targetTime = currentTime + (frameTime / 4);
 
                     // if we are more than 4 frames behind, let's resync rather than trying to catch up
                     bool outOfSync = !frameReady || (emulatedTime_ + 4 * frameTime) < targetTime;
@@ -166,12 +174,15 @@ int App::Run(int nCmdShow)
                     }
                     else
                     {
-                        d3d_.RenderFrame(host_.PixelData(), 0);
+                        d3d_.RenderFrame(host_.PixelData(), 1);
 
                         sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
 
                         host_.SetSamplesPerFrame(sampler_.SampleRate());
                     }
+
+                    //auto hr = DwmFlush();
+                    //winrt::check_hresult(hr);
                 }
 
                 running = host_.Running();
@@ -215,7 +226,7 @@ int App::Run(int nCmdShow)
 void App::StartRunning()
 {
     // wait for a vsync to get an accurate time
-    d3d_.WaitForFrame(fullscreen_);
+    d3d_.WaitForFrame();
 
     emulatedTime_ = QpcTimer::Current();
 

@@ -64,20 +64,10 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->PSSetSamplers(0, 1, samplers);
 }
 
-bool D3DRenderer::WaitForFrame(bool fullscreen) const
+bool D3DRenderer::WaitForFrame() const
 {
-    if (fullscreen)
-    {
-        auto result = WaitForSingleObjectEx(frameLatencyWaitableObject_.get(), 100, TRUE);
-
-        return result == WAIT_OBJECT_0;
-    }
-    else
-    {
-        auto hr = DwmFlush();
-        winrt::check_hresult(hr);
-        return true;
-    }
+    auto result = WaitForSingleObjectEx(frameLatencyWaitableObject_.get(), 100, TRUE);
+    return result == WAIT_OBJECT_0;
 }
 
 uint64_t D3DRenderer::GetLastSyncTime(bool reset) const
