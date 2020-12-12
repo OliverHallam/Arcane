@@ -10,10 +10,12 @@
 #include "Menu.h"
 #include "SaveFile.h"
 #include "WasapiRenderer.h"
+#include "QpcTimer.h"
 
 #include "../NesCoreCpp/GameDatabase.h"
 #include "../NesCoreCpp/RomFile.h"
 
+#include <cstdlib>
 #include <sstream>
 
 App::App(HINSTANCE hInstance)
@@ -98,6 +100,9 @@ int App::Run(int nCmdShow)
             Open(window_);
         }
 
+        uint64_t qpcFreqeuncy = QpcTimer::Frequency();
+
+        auto frameTime = qpcFreqeuncy / 60;
 
         sampler_ = DynamicSampleRate { wasapi_.SampleRate() / 60 };
 
@@ -108,7 +113,7 @@ int App::Run(int nCmdShow)
             MSG msg;
             if (running)
             {
-                d3d_.WaitForFrame(fullscreen_);
+                auto frameReady = d3d_.WaitForFrame(fullscreen_);
 
                 while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
                 {
@@ -125,22 +130,47 @@ int App::Run(int nCmdShow)
                 if (host_.Loaded())
                 {
                     auto audioSamples = 0;
-                    for (auto i = 0u; i < refreshRateSync_.SimulatedFrames(); i++)
-                    {
-                        host_.RunFrame();
 
-                        audioSamples += host_.SamplesPerFrame();
-                        wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame());
+                    auto currentTime = QpcTimer::Current();
+
+                    auto targetTime = currentTime;
+
+                    // if we are more than 4 frames behind, let's resync
+                    bool outOfSync = !frameReady || emulatedTime_ + 4 * frameTime < targetTime;
+                    if (!outOfSync)
+                    {
+                        while (emulatedTime_ < targetTime)
+                        {
+                            host_.RunFrame();
+                            emulatedTime_ += frameTime;
+
+                            audioSamples += host_.SamplesPerFrame();
+                            if (!wasapi_.WriteSamples(host_.AudioSamples(), host_.SamplesPerFrame()))
+                            {
+                                outOfSync = true;
+                                break;
+                            }
+
+                            d3d_.RenderFrame(host_.PixelData(), 0);
+                        }
                     }
 
-                    d3d_.RenderFrame(host_.PixelData(), fullscreen_ ? refreshRateSync_.DisplayFrames() : 0);
+                    if (outOfSync)
+                    {
+                        emulatedTime_ = targetTime;
 
-                    sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
+                        wasapi_.Stop();
+                        sampler_.Reset();
 
-                    if (refreshRateSync_.IsSynchronized())
+                        wasapi_.Start();
+                        wasapi_.WritePadding(sampler_.TargetLatency());
+                    }
+                    else
+                    {
+                        sampler_.OnFrame(audioSamples, wasapi_.GetPosition());
+
                         host_.SetSamplesPerFrame(sampler_.SampleRate());
-
-                    refreshRateSync_.NextFrame();
+                    }
                 }
 
                 running = host_.Running();
@@ -183,10 +213,12 @@ int App::Run(int nCmdShow)
 
 void App::StartRunning()
 {
-    refreshRateSync_.Reset(host_.RefreshRate(), d3d_.RefreshRate(fullscreen_));
-    refreshRateSync_.NextFrame();
+    // wait for a vsync to get an accurate time
+    d3d_.WaitForFrame(fullscreen_);
 
-    //d3d_.WaitForFrame();
+    emulatedTime_ = QpcTimer::Current();
+
+    d3d_.RenderClear();
 
     wasapi_.Start();
     wasapi_.WritePadding(sampler_.TargetLatency());

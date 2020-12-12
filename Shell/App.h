@@ -7,7 +7,6 @@
 
 #include "D3DRenderer.h"
 #include "DynamicSampleRate.h"
-#include "RefreshRateSynchronization.h"
 #include "WasapiRenderer.h"
 
 #include "../NesCoreCpp/RomFile.h"
@@ -66,6 +65,6 @@ private:
     D3DRenderer d3d_;
     WasapiRenderer wasapi_;
 
-    RefreshRateSynchronization refreshRateSync_;
+    uint64_t emulatedTime_;
     DynamicSampleRate sampler_{ 800 };
 };

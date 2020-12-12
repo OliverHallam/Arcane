@@ -62,9 +62,10 @@ void WasapiRenderer::Initialize()
         && ((channelMask_ & SPEAKER_FRONT_CENTER) != SPEAKER_FRONT_CENTER))
         throw Error(L"Unsupported speaker configuration");
 
-    // we write one frame while the previous one is playing - so we'll store a buffer big enough for two
+    // we write one frame while the previous one is playing - so we'll need a buffer big enough for two
+    // I've doubled this to 4 for the cases we have low/unreliable vsyncs
     auto samplesPerFrame = sampleRate_ / 60;
-    auto bufferDuration = (uint64_t) 10000000 / 60 * 8;
+    auto bufferDuration = (uint64_t) 10000000 / 60 * 4;
 
     hr = client_->Initialize(
         AUDCLNT_SHAREMODE_SHARED,
@@ -124,11 +125,18 @@ void WasapiRenderer::WritePadding(int sampleCount)
     audioRenderClient_->ReleaseBuffer(sampleCount, AUDCLNT_BUFFERFLAGS_SILENT);
 }
 
-void WasapiRenderer::WriteSamples(const int16_t* samples, int sampleCount)
+bool WasapiRenderer::WriteSamples(const int16_t* samples, int sampleCount)
 {
     BYTE* data;
 
     auto hr = audioRenderClient_->GetBuffer(sampleCount, &data);
+
+    if (hr == AUDCLNT_E_BUFFER_TOO_LARGE)
+    {
+        // we've got ahead of ourselves - this should ideally reset our sync.
+        return false;
+    }
+
     winrt::check_hresult(hr);
 
     auto inSampleMono = samples;
@@ -162,6 +170,8 @@ void WasapiRenderer::WriteSamples(const int16_t* samples, int sampleCount)
     }
 
     audioRenderClient_->ReleaseBuffer(sampleCount, 0);
+
+    return true;
 }
 
 uint64_t WasapiRenderer::GetPosition()

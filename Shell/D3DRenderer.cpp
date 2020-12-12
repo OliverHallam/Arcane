@@ -64,23 +64,39 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->PSSetSamplers(0, 1, samplers);
 }
 
-void D3DRenderer::WaitForFrame(bool fullscreen) const
+bool D3DRenderer::WaitForFrame(bool fullscreen) const
 {
     if (fullscreen)
     {
-        auto result = WaitForSingleObjectEx(frameLatencyWaitableObject_.get(), 1000, TRUE);
+        auto result = WaitForSingleObjectEx(frameLatencyWaitableObject_.get(), 100, TRUE);
 
-        if (result != WAIT_OBJECT_0)
-            throw Error(L"Error in WaitForFrame");
+        return result == WAIT_OBJECT_0;
     }
     else
     {
-        DwmFlush();
+        auto hr = DwmFlush();
+        winrt::check_hresult(hr);
+        return true;
     }
+}
+
+uint64_t D3DRenderer::GetLastSyncTime(bool reset) const
+{
+    DXGI_FRAME_STATISTICS stats;
+    ZeroMemory(&stats, sizeof(DXGI_FRAME_STATISTICS));
+    auto hr = swapChain_->GetFrameStatistics(&stats);
+
+    if (!reset || hr != DXGI_ERROR_FRAME_STATISTICS_DISJOINT)
+        winrt::check_hresult(hr);
+
+    return stats.SyncQPCTime.QuadPart;
 }
 
 void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
 {
+    FLOAT grey[4]{ 0.125, 0.125, 0.125, 1.0 };
+    deviceContext_->ClearRenderTargetView(renderTargetView_.get(), grey);
+
     auto renderTargetView = renderTargetView_.get();
     deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
 
@@ -111,6 +127,9 @@ void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
 
 void D3DRenderer::RepeatLastFrame()
 {
+    FLOAT grey[4]{ 0.125, 0.125, 0.125, 1.0 };
+    deviceContext_->ClearRenderTargetView(renderTargetView_.get(), grey);
+
     auto renderTargetView = renderTargetView_.get();
     deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
 
@@ -296,8 +315,8 @@ void D3DRenderer::CreateRenderTarget()
     viewport.Height = static_cast<FLOAT>(height);
     viewport.MinDepth = 0;
     viewport.MaxDepth = 1;
-    viewport.TopLeftX = x;
-    viewport.TopLeftY = y;
+    viewport.TopLeftX = static_cast<FLOAT>(x);
+    viewport.TopLeftY = static_cast<FLOAT>(y);
 
     deviceContext_->RSSetViewports(1, &viewport);
 }

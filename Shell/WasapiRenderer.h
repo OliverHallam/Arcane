@@ -14,7 +14,7 @@ public:
     void Start();
 
     void WritePadding(int sampleCount);
-    void WriteSamples(const int16_t* samples, int sampleCount);
+    bool WriteSamples(const int16_t* samples, int sampleCount);
 
     uint64_t GetPosition();
 

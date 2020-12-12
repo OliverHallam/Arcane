@@ -238,7 +238,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="RefreshRateSynchronization.cpp" />
+    <ClCompile Include="QpcTimer.cpp" />
     <ClCompile Include="SaveFile.cpp" />
     <ClCompile Include="WasapiRenderer.cpp" />
   </ItemGroup>
@@ -258,7 +258,7 @@
     <ClInclude Include="Menu.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PixelShader.h" />
-    <ClInclude Include="RefreshRateSynchronization.h" />
+    <ClInclude Include="QpcTimer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SaveFile.h" />
     <ClInclude Include="Shell.h" />
