@@ -625,6 +625,12 @@ bool App::ProcessCommand(WORD command)
         return true;
     }
 
+    if (command == static_cast<WORD>(MenuCommand::Fullscreen))
+    {
+        SetFullscreen(!fullscreen_);
+        return true;
+    }
+
     return false;
 }
 
