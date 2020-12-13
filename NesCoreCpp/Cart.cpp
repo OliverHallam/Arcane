@@ -10,7 +10,8 @@ Cart::Cart() :
     mapper_{ 0 },
     bus_{},
     chrMask_{},
-    prgMask_{}
+    prgMask_{},
+    busConflicts_{}
 {
 }
 
@@ -96,6 +97,11 @@ void Cart::SetMirrorMode(MirrorMode mirrorMode)
     {
         UpdatePpuRamMap();
     }
+}
+
+void Cart::EnableBusConflicts(bool conflicts)
+{
+    busConflicts_ = conflicts;
 }
 
 void Cart::Attach(Bus* bus)
@@ -636,7 +642,12 @@ void Cart::UpdatePrgMapMMC1()
 
 void Cart::WriteUxROM(uint16_t address, uint8_t value)
 {
-    // TODO: bus conflicts for older carts
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
     auto bankAddress = (value << 14) & prgMask_;
     auto base = &prgData_[bankAddress];
     state_.CpuBanks[4] = base;
@@ -645,7 +656,12 @@ void Cart::WriteUxROM(uint16_t address, uint8_t value)
 
 void Cart::WriteCNROM(uint16_t address, uint8_t value)
 {
-    // TODO: bus conflicts
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
     // the actual board only takes 2 bits from the value for bank switching
     auto bankAddress = (value << 13) & chrMask_;
 
@@ -1392,15 +1408,18 @@ std::unique_ptr<Cart> TryCreateCart(
         break;
 
     case 2:
+        mapper = MapperType::UxROM;
+
         switch (desc.SubMapper)
         {
-        case 0:
         case 1:
-            mapper = MapperType::UxROM;
+            cart->EnableBusConflicts(false);
             break;
 
+        case 0:
         case 2:
-            return nullptr; // TODO: bus conflicts
+            cart->EnableBusConflicts(true);
+            break;
 
         default:
             return nullptr;
@@ -1408,15 +1427,18 @@ std::unique_ptr<Cart> TryCreateCart(
         break;
 
     case 3:
+        mapper = MapperType::CNROM;
+
         switch (desc.SubMapper)
         {
-        case 0:
         case 1:
-            mapper = MapperType::CNROM;
+            cart->EnableBusConflicts(false);
             break;
 
+        case 0:
         case 2:
-            return nullptr; // TODO: bus conflicts
+            cart->EnableBusConflicts(true);
+            break;
 
         default:
             return nullptr;

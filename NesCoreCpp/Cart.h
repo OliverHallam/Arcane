@@ -24,6 +24,7 @@ public:
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
     void SetMirrorMode(MirrorMode mirrorMode);
+    void EnableBusConflicts(bool conflicts);
 
     void Attach(Bus* bus);
 
@@ -99,6 +100,7 @@ private:
     std::vector<uint8_t*> prgRamBanks_;
 
     bool chrWriteable_;
+    bool busConflicts_;
 };
 
 std::unique_ptr<Cart> TryCreateCart(
