@@ -694,7 +694,9 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
         }
         else
         {
-            assert(false);
+            auto ramEnabled = (value & 0x80) != 0;
+            state_.PrgRamProtect = (value & 0x40) != 0;
+            state_.CpuBanks[3] = ramEnabled ? prgRamBanks_[0] : nullptr;
         }
     }
     else if (address < 0xe000)
@@ -1355,6 +1357,9 @@ std::unique_ptr<Cart> TryCreateCart(
     }
 
     cart->SetMirrorMode(desc.MirrorMode);
+
+    if (desc.Mapper == 4 && desc.SubMapper == 1)
+        return nullptr;
 
     if (desc.Mapper <= 5 ||
         desc.Mapper == 71 && desc.SubMapper == 0)
