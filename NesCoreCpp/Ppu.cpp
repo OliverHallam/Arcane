@@ -653,7 +653,6 @@ RenderVisible:
         goto EndRender;
 
 LoadSprites:
-    assert(bus_.cart_->state_.ScanlinePpuReadCount == 128);
     if (targetCycle >= 320)
     {
         sprites_.RunLoad(state_.CurrentScanline, 256, 320);
@@ -665,7 +664,6 @@ LoadSprites:
     }
 
 LoadBackground:
-    assert(bus_.cart_->state_.ScanlinePpuReadCount == 160);
     background_.RunLoad(320, targetCycle);
 
 EndRender:
