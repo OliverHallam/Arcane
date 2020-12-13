@@ -27,6 +27,8 @@ void PpuBackground::EnableLeftColumn(bool enabled)
 
 void PpuBackground::EnableRendering(int32_t cycle)
 {
+    enabledCycle_ = cycle;
+
     if (cycle <= 0)
     {
         // this happens between scanlines.
@@ -44,6 +46,7 @@ void PpuBackground::EnableRendering(int32_t cycle)
 
 void PpuBackground::BeginScanline()
 {
+    enabledCycle_ = 0;
     currentTileIndex_ = 0;
     currentTile_ = scanlineTiles_[0];
 }
@@ -123,30 +126,37 @@ void PpuBackground::RenderScanline()
     case 7:
         index = (uint8_t)(attributeBits | ((patternBytes >> 14) & 2) | ((patternBytes >> 7) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 6:
         index = (uint8_t)(attributeBits | ((patternBytes >> 13) & 2) | ((patternBytes >> 6) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 5:
         index = (uint8_t)(attributeBits | ((patternBytes >> 12) & 2) | ((patternBytes >> 5) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 4:
         index = (uint8_t)(attributeBits | ((patternBytes >> 11) & 2) | ((patternBytes >> 4) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 3:
         index = (uint8_t)(attributeBits | ((patternBytes >> 10) & 2) | ((patternBytes >> 3) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 2:
         index = (uint8_t)(attributeBits | ((patternBytes >> 9) & 2) | ((patternBytes >> 2) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 1:
         index = (uint8_t)(attributeBits | ((patternBytes >> 8) & 2) | ((patternBytes >> 1) & 1));
         backgroundPixels_[pixelIndex++] = index & 3 ? index : 0;
+        [[fallthrough]];
 
     case 0:
         index = (uint8_t)(attributeBits | ((patternBytes >> 7) & 2) | (patternBytes & 1));
@@ -257,6 +267,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
             cycle++;
             if (cycle >= endCycle)
                 return;
+            [[fallthrough]];
 
     case 1:
             {
@@ -273,11 +284,13 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                     (state_.CurrentAddress >> 12)); // fineY
 
             cycle++;
+            [[fallthrough]];
 
     case 2:
             cycle++;
             if (cycle >= endCycle)
                 return;
+            [[fallthrough]];
 
     case 3:
             {
@@ -296,25 +309,28 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                 scanlineTiles_[loadingIndex_].AttributeBits = attributes << 2;
             }
             cycle++;
+            [[fallthrough]];
 
     case 4:
             cycle++;
             if (cycle >= endCycle)
                 return;
+            [[fallthrough]];
 
     case 5:
             scanlineTiles_[loadingIndex_].PatternBytes = bus_.PpuRead(patternAddress_);
             cycle++;
+            [[fallthrough]];
 
     case 6:
             cycle++;
             if (cycle >= endCycle)
                 return;
+            [[fallthrough]];
 
     case 7:
             // address is 000PTTTTTTTT1YYY
             scanlineTiles_[loadingIndex_].PatternBytes |= bus_.PpuRead((uint16_t)(patternAddress_ | 8)) << 8;
-
 
             // increment the x part of the address
             if ((state_.CurrentAddress & 0x001f) == 0x001f)
@@ -334,6 +350,8 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
             cycle++;
             if (cycle >= endCycle)
                 return;
+#pragma warning(suppress: 4468)
+            [[fallthrough]];
         }
     }
 }
@@ -375,6 +393,7 @@ void PpuBackground::RunLoad()
 
         if (loadingIndex_ == 32)
         {
+            bus_.PpuDummyTileFetch();
             return;
         }
 
@@ -453,6 +472,21 @@ void PpuBackground::VReset(uint16_t initialAddress)
 {
     state_.CurrentAddress &= 0x041f;
     state_.CurrentAddress |= (uint16_t)(initialAddress & 0xfbe0);
+}
+
+uint32_t PpuBackground::GetDummyReadCount() const
+{
+    if (enabledCycle_ <= 336)
+        return 2;
+    else if (enabledCycle_ <= 338)
+        return 1;
+    else
+        return 0;
+}
+
+bool PpuBackground::IsTile3Attribute() const
+{
+    return false;
 }
 
 uint16_t& PpuBackground::CurrentAddress()

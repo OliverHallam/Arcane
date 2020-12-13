@@ -36,6 +36,11 @@ public:
     void HResetRenderDisabled();
     void VReset(uint16_t initialAddress);
 
+    // the number of dummy reads that occurred at the end of the last scanline (for MMC5 triggering)
+    uint32_t GetDummyReadCount() const;
+    // is the address of the third tile on the scanline in attribute memory (this can trigger an extra MMC5 scanline)
+    bool IsTile3Attribute() const;
+
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
     uint16_t& CurrentAddress();
     
@@ -82,6 +87,8 @@ private:
 
     // cache for code performance
     uint16_t patternAddress_{};
+
+    uint32_t enabledCycle_{};
 
     std::array<uint8_t, 256> backgroundPixels_{};
 };

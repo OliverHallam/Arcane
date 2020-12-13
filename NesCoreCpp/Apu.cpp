@@ -6,8 +6,8 @@
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
     frameCounter_{ *this },
-    backBuffer_{ new int16_t[samplesPerFrame * 3 / 2] },
-    sampleBuffer_{ new int16_t[samplesPerFrame * 3 / 2] },
+    backBuffer_{ new int16_t[samplesPerFrame * 3ULL / 2] },
+    sampleBuffer_{ new int16_t[samplesPerFrame * 3ULL / 2] },
     samplesPerFrame_(samplesPerFrame),
     pulse1_{ true },
     pulse2_{ false },
@@ -116,7 +116,8 @@ void Apu::Write(uint16_t address, uint8_t value)
         if (bus_.CycleCount() & 1)
             nextTick++;
 
-        bus_.RescheduleFrameCounter(nextTick);
+        bus_.Deschedule(SyncEvent::ApuFrameCounter);
+        bus_.Schedule(nextTick, SyncEvent::ApuFrameCounter);
         break;
     }
 }
@@ -154,6 +155,16 @@ uint8_t Apu::Read(uint16_t address)
     }
 
     return 0;
+}
+
+void Apu::EnableMMC5(bool enabled)
+{
+    mmc5enabled_ = enabled;
+}
+
+void Apu::WriteMMC5(uint16_t address, uint8_t value)
+{
+    // TODO
 }
 
 uint32_t Apu::SamplesPerFrame() const

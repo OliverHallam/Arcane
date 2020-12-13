@@ -26,16 +26,28 @@ public:
 
     void Attach(Bus* bus);
 
-    uint8_t CpuRead(uint16_t address) const;
+    uint8_t CpuRead(uint16_t address);
     void CpuWrite(uint16_t address, uint8_t value);
     void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
-    uint8_t PpuRead(uint16_t address) const;
-    uint16_t PpuReadChr16(uint16_t address) const;
+    uint8_t PpuRead(uint16_t address);
+    uint16_t PpuReadChr16(uint16_t address);
+    void PpuDummyTileFetch();
+    void PpuDummyNametableFetch();
     void PpuWrite(uint16_t address, uint8_t value);
 
-    bool SensitiveToChrA12();
+    bool SensitiveToChrA12() const;
     void SetChrA12(bool set);
+
+    bool HasScanlineCounter() const;
+    void ScanlineCounterBeginScanline();
+    void ScanlineCounterEndFrame();
+    void TileSplitBeginScanline(bool firstTileIsAttribute);
+
+    void InterceptWritePpuCtrl(bool largeSprites);
+    void InterceptWritePpuMask(bool renderingEnabled);
+
+    bool UsesMMC5Audio() const;
 
     void CaptureState(CartState* state) const;
     void RestoreState(const CartState& state);
@@ -55,6 +67,13 @@ private:
     void SetChrModeMMC3(uint8_t mode);
     void SetBankMMC3(uint32_t bank);
 
+    uint8_t ReadMMC5(uint16_t address);
+    void WriteMMC5(uint16_t address, uint8_t value);
+    void UpdatePrgMapMMC5();
+    void UpdateChrMapMMC5();
+    void UpdateNametableMapMMC5();
+    void UpdateNametableMMC5(uint32_t index, uint8_t mode);
+
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 
@@ -69,8 +88,7 @@ private:
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;
 
-    uint32_t prgMask32k_;
-    uint32_t prgMask16k_;
+    uint32_t prgMask_;
 
     uint32_t chrMask_;
 

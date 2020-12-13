@@ -13,7 +13,8 @@ public:
     static const uint32_t MAX_EVENTS = 32;
 
     void Schedule(uint32_t cycles, SyncEvent value);
-    void Unschedule(SyncEvent value);
+    bool Deschedule(SyncEvent value);
+    bool DescheduleAll(SyncEvent value);
 
     bool Empty() const;
     uint32_t GetNextEventTime() const;

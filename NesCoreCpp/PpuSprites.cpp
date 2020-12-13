@@ -1,6 +1,7 @@
 #include "Bus.h"
 #include "PpuSprites.h"
 
+#include <cassert>
 #include <cstdint>
 
 PpuSprites::PpuSprites(Bus& bus) :
@@ -272,6 +273,14 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
         bus_.SetChrA12(state_.largeSprites_ || state_.spritePatternBase_ != 0);
+
+        while (spriteIndex_ < 8)
+        {
+            // no harm in this getting ahead since it only affects the PPU
+            bus_.PpuDummyTileFetch();
+            spriteIndex_++;
+        }
+
         return;
     }
 
@@ -325,8 +334,18 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                     {
                         bus_.SetChrA12(true);
                     }
+
+                    while (spriteIndex_ < 8)
+                    {
+                        // no harm in this getting ahead since it only affects the PPU
+                        bus_.PpuDummyTileFetch();
+                        spriteIndex_++;
+                    }
+
                     return;
                 }
+
+                bus_.PpuDummyNametableFetch();
 
                 auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
 
@@ -458,6 +477,8 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
                     (tileId << 4) | tileFineY);
         }
 
+        bus_.PpuDummyNametableFetch();
+
         sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
 
         // address is 000PTTTTTTTT1YYY
@@ -465,8 +486,17 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
         spriteIndex_++;
     }
 
-    if (scanlineSpriteCount_ < 8 && state_.largeSprites_)
-        bus_.SetChrA12(true);
+    if (scanlineSpriteCount_ < 8)
+    {
+        if (state_.largeSprites_)
+            bus_.SetChrA12(true);
+
+        while (spriteIndex_ < 8)
+        {
+            bus_.PpuDummyTileFetch();
+            spriteIndex_++;
+        }
+    }
 }
 
 uint8_t PpuSprites::GetLoadingOamData(uint32_t cycle)
@@ -475,7 +505,7 @@ uint8_t PpuSprites::GetLoadingOamData(uint32_t cycle)
     auto spriteIndex = (cycle - 256) >> 3;
     auto tileCycle = cycle & 7;
 
-    if (spriteIndex > scanlineSpriteCount_)
+    if (static_cast<int32_t>(spriteIndex) > scanlineSpriteCount_)
         return 0xff;
 
     auto byteIndex = tileCycle > 3 ? 3 : tileCycle;

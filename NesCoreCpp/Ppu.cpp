@@ -32,9 +32,9 @@ void Ppu::Sync()
 
 uint8_t Ppu::Read(uint16_t address)
 {
-    address &= 0x07;
+    auto registerAddress = address & 0x07;
 
-    if (address == 0x02)
+    if (registerAddress == 0x02)
     {
         state_.AddressLatch = false;
 
@@ -71,7 +71,7 @@ uint8_t Ppu::Read(uint16_t address)
 
         return status;
     }
-    else if (address == 0x07)
+    else if (registerAddress == 0x07)
     {
         Sync(state_.TargetCycle);
         auto data = state_.PpuData;
@@ -79,6 +79,13 @@ uint8_t Ppu::Read(uint16_t address)
         // the address is aliased with the PPU background render address, so we use that.
         auto ppuAddress = (uint16_t)(background_.CurrentAddress() & 0x3fff);
         state_.PpuData = bus_.PpuRead(ppuAddress);
+
+        // this can trip up the "end-of-frame" detection in the scanline detector, so delay that if it's in progress
+        if (bus_.HasScanlineCounter())
+        {
+            if (bus_.Deschedule(SyncEvent::ScanlineCounterEndFrame))
+                bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
+        }
 
         if (ppuAddress >= 0x3f00)
         {
@@ -90,7 +97,7 @@ uint8_t Ppu::Read(uint16_t address)
         bus_.SetChrA12(background_.CurrentAddress() & 0x1000);
         return data;
     }
-    else if (address == 0x04)
+    else if (registerAddress == 0x04)
     {
         // If we call this during sprite loading then we intercept the values being read there instead of at the OAM
         // address.
@@ -118,8 +125,7 @@ uint8_t Ppu::Read(uint16_t address)
 
 void Ppu::Write(uint16_t address, uint8_t value)
 {
-    address &= 0x07;
-    switch (address)
+    switch (address & 0x07)
     {
     case 0:
     {
@@ -129,7 +135,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
 
         // PPUCTRL flags
         state_.EnableVBlankInterrupt = (value & 0x80) != 0;
-        sprites_.SetLargeSprites((value & 0x20) != 0);
+        auto largeSprites = (value & 0x20) != 0;
+        sprites_.SetLargeSprites(largeSprites);
         background_.SetBasePatternAddress((uint16_t)((value & 0x10) << 8));
         sprites_.SetBasePatternAddress((uint16_t)((value & 0x08) << 9));
         state_.AddressIncrement = (value & 0x04) != 0 ? 32 : 1;
@@ -144,6 +151,9 @@ void Ppu::Write(uint16_t address, uint8_t value)
             bus_.Schedule(1, SyncEvent::PpuStateUpdate);
         }
 
+        if (address == 0x2000) // doesn't apply to mirrors
+            bus_.InterceptPpuCtrl(largeSprites);
+
         return;
     }
 
@@ -151,6 +161,11 @@ void Ppu::Write(uint16_t address, uint8_t value)
         state_.Mask = value;
         state_.UpdateMask = true;
         bus_.Schedule(1, SyncEvent::PpuStateUpdate);
+
+        if (address == 0x2001)
+        {
+            bus_.InterceptPpuMask((value & 0x18) != 0);
+        }
         return;
 
     case 3:
@@ -301,9 +316,22 @@ void Ppu::SyncState()
         auto prevRenderingEnabled = state_.EnableRendering;
         state_.EnableRendering = (state_.Mask & 0x18) != 0;
 
-        if (state_.EnableRendering && !prevRenderingEnabled && (state_.CurrentScanline < 240))
+        if (state_.EnableRendering != prevRenderingEnabled && (state_.CurrentScanline < 240))
         {
-            background_.EnableRendering(state_.TargetCycle - 1);
+            if (state_.EnableRendering)
+                background_.EnableRendering(state_.TargetCycle - 1);
+            else if (bus_.HasScanlineCounter())
+            {
+                // we will stop reading memory, so cancel any pending scanline counter events.
+                if (state_.TargetCycle < 5)
+                {
+                    // we could have two events in the queue
+                    bus_.DescheduleAll(SyncEvent::ScanlineCounterScanline);
+                }
+
+                // and if no memory is read in the next 3 cycles, the scanline detector will register an end-of-frame.
+                bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
+            }
         }
 
         state_.GrayscaleMask = (state_.Mask & 0x01) ? 0x30 : 0xff;
@@ -387,9 +415,65 @@ void Ppu::SyncScanline()
     state_.ScanlineCycle = 0;
     state_.TargetCycle -= 341;
 
-    // For A12 we want to sync when we start the sprites.
-    if (state_.EnableRendering && bus_.SensitiveToChrA12() && state_.CurrentScanline < 240)
-        bus_.Schedule((259 - state_.TargetCycle) / 3, SyncEvent::PpuSyncA12);
+    if (state_.EnableRendering && state_.CurrentScanline <= 240)
+    {
+        if (state_.CurrentScanline == 240)
+        {
+            if (bus_.HasScanlineCounter())
+            {
+                // after 3 cycles without a read the "end frame" event should be triggered.
+                bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
+            }
+        }
+        else
+        {
+            if (bus_.HasScanlineCounter())
+            {
+                // There's two sides to the MMC5 scanline counter.  The triggering of the start of the scanline can
+                // cause an interrupt on the CPU so has to be scheduled carefully.  At the same time, this also
+                // causes the MMC5 to start counting memory accesses and swap out the CHR memory appropriately
+
+                // we need to trigger the MMC5 scanline counter if we access the nametable for the same address 3 times
+                // in a row.  We usually see two dummy accesses for the current tile at the end of the previous
+                // scanline- the first tile hits this again, and then the next memory access (on cycle 2) will trip the
+                // detector
+
+                // In the hardware these events are the same thing, but we are emulating these in two different
+                // timelines (PPU time and CPU time) so need to track them seperately.
+
+                // There's an edge case if the first tile is pointing to attribute memorwhich can cause it to trip
+                // twice so we may need to schedule this event twice, 2 PPU cycles apart
+                auto dummyReads = background_.GetDummyReadCount();
+                auto nextTileIsAttribute = (background_.CurrentAddress() & 0x03ff) >= 0x03c0;
+
+                // First let's schedule the Scanline Counter events
+                if (dummyReads == 2)
+                {
+                    // is it this CPU cycle or the next one?
+                    if (state_.TargetCycle >= 2)
+                        bus_.ScanlineCounterBeginScanline();
+                    else
+                        bus_.Schedule(1, SyncEvent::ScanlineCounterScanline);
+                }
+
+                // if the current tile is pointing at attribute memory, this can trigger an extra scanline
+                if (dummyReads > 1 && nextTileIsAttribute)
+                {
+                    if (state_.TargetCycle >= 4)
+                        bus_.ScanlineCounterBeginScanline();
+                    else
+                        bus_.Schedule(state_.TargetCycle < 2 ? 2 : 1, SyncEvent::ScanlineCounterScanline);
+                }
+
+                // and then start the split counter for our lazy timeline
+                bus_.TileSplitBeginScanline(nextTileIsAttribute);
+            }
+
+            // For A12 we want to sync when we start the sprites.
+            if (bus_.SensitiveToChrA12())
+                bus_.Schedule((259 - state_.TargetCycle) / 3, SyncEvent::PpuSyncA12);
+        }
+    }
 
     bus_.Schedule((342 - state_.TargetCycle) / 3, SyncEvent::PpuScanline);
 }
@@ -569,6 +653,7 @@ RenderVisible:
         goto EndRender;
 
 LoadSprites:
+    assert(bus_.cart_->state_.ScanlinePpuReadCount == 128);
     if (targetCycle >= 320)
     {
         sprites_.RunLoad(state_.CurrentScanline, 256, 320);
@@ -580,6 +665,7 @@ LoadSprites:
     }
 
 LoadBackground:
+    assert(bus_.cart_->state_.ScanlinePpuReadCount == 160);
     background_.RunLoad(320, targetCycle);
 
 EndRender:
@@ -629,6 +715,7 @@ void Ppu::RenderScanline()
     if (state_.EnableRendering)
     {
         sprites_.RunLoad(state_.CurrentScanline);
+
         background_.RunLoad(320, 336);
     }
 }

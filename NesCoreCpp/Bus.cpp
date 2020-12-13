@@ -39,11 +39,22 @@ void Bus::Attach(Cart* cart)
 {
     cart_ = std::move(cart);
     if (cart_)
+    {
         cart_->Attach(this);
+
+        if (cart_->UsesMMC5Audio())
+            apu_->EnableMMC5(true);
+    }
 }
 
 void Bus::DetachCart()
 {
+    if (!cart_)
+        return;
+
+    if (cart_->UsesMMC5Audio())
+        apu_->EnableMMC5(false);
+
     cart_ = nullptr;
 }
 
@@ -83,6 +94,21 @@ bool Bus::SensitiveToChrA12() const
 void Bus::SetChrA12(bool set)
 {
     cart_->SetChrA12(set);
+}
+
+bool Bus::HasScanlineCounter() const
+{
+    return cart_->HasScanlineCounter();
+}
+
+void Bus::ScanlineCounterBeginScanline()
+{
+    cart_->ScanlineCounterBeginScanline();
+}
+
+void Bus::TileSplitBeginScanline(bool firstTileIsAttribute)
+{
+    cart_->TileSplitBeginScanline(firstTileIsAttribute);
 }
 
 void Bus::CpuDummyRead(uint16_t address)
@@ -152,7 +178,7 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
         else
             apu_->Write(address, value);
     }
-    else if (address >= 0x6000)
+    else
     {
         cart_->CpuWrite(address, value);
     }
@@ -200,7 +226,7 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             apu_->Write(address, secondValue);
         }
     }
-    else if (address >= 0x6000)
+    else
     {
         cart_->CpuWrite2(address, firstValue, secondValue);
     }
@@ -221,9 +247,34 @@ uint16_t Bus::PpuReadChr16(uint16_t address) const
     return cart_->PpuReadChr16(address);
 }
 
+void Bus::PpuDummyTileFetch() const
+{
+    cart_->PpuDummyTileFetch();
+}
+
+void Bus::PpuDummyNametableFetch() const
+{
+    cart_->PpuDummyNametableFetch();
+}
+
 void Bus::PpuWrite(uint16_t address, uint8_t value)
 {
     cart_->PpuWrite(address, value);
+}
+
+void Bus::InterceptPpuCtrl(bool largeSprites)
+{
+    cart_->InterceptWritePpuCtrl(largeSprites);
+}
+
+void Bus::InterceptPpuMask(bool renderingEnabled)
+{
+    cart_->InterceptWritePpuMask(renderingEnabled);
+}
+
+void Bus::WriteMMC5Audio(uint16_t address, uint8_t value)
+{
+    apu_->WriteMMC5(address, value);
 }
 
 void Bus::SignalNmi()
@@ -285,10 +336,14 @@ void Bus::Schedule(uint32_t cycles, SyncEvent evt)
     state_.SyncQueue.Schedule(state_.CycleCount + cycles, evt);
 }
 
-void Bus::RescheduleFrameCounter(uint32_t cycles)
+bool Bus::Deschedule(SyncEvent evt)
 {
-    state_.SyncQueue.Unschedule(SyncEvent::ApuFrameCounter);
-    state_.SyncQueue.Schedule(state_.CycleCount + cycles, SyncEvent::ApuFrameCounter);
+    return state_.SyncQueue.Deschedule(evt);
+}
+
+bool Bus::DescheduleAll(SyncEvent evt)
+{
+    return state_.SyncQueue.DescheduleAll(evt);
 }
 
 void Bus::CaptureState(BusState* state) const
@@ -361,6 +416,14 @@ void Bus::RunEvent()
 
     case SyncEvent::PpuSync:
         ppu_->Sync();
+        break;
+
+    case SyncEvent::ScanlineCounterScanline:
+        cart_->ScanlineCounterBeginScanline();
+        break;
+
+    case SyncEvent::ScanlineCounterEndFrame:
+        cart_->ScanlineCounterEndFrame();
         break;
     }
 }

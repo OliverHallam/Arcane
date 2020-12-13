@@ -3,7 +3,8 @@
 #include <algorithm>
 
 EventQueue::EventQueue()
-    : count_(0)
+    : count_(0),
+    heap_{}
 {
 }
 
@@ -13,7 +14,7 @@ void EventQueue::Schedule(uint32_t cycles, SyncEvent value)
     std::push_heap(begin(heap_), begin(heap_) + count_);
 }
 
-void EventQueue::Unschedule(SyncEvent value)
+bool EventQueue::Deschedule(SyncEvent value)
 {
     auto current = begin(heap_);
     auto end = current + count_;
@@ -22,9 +23,29 @@ void EventQueue::Unschedule(SyncEvent value)
         if (current->Value == value)
         {
             current->Value = SyncEvent::None;
-            return;
+            return true;
         }
     }
+
+    return false;
+}
+
+bool EventQueue::DescheduleAll(SyncEvent value)
+{
+    bool descheduled = false;
+
+    auto current = begin(heap_);
+    auto end = current + count_;
+    for (auto current = begin(heap_); current != end; ++current)
+    {
+        if (current->Value == value)
+        {
+            current->Value = SyncEvent::None;
+            descheduled = true;
+        }
+    }
+
+    return descheduled;
 }
 
 bool EventQueue::Empty() const
