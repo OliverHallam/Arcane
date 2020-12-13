@@ -222,6 +222,7 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="GameDatabase.h" />
+    <ClInclude Include="MapperType.h" />
     <ClInclude Include="PpuBackgroundState.h" />
     <ClInclude Include="PpuCoreState.h" />
     <ClInclude Include="PpuSpritesState.h" />

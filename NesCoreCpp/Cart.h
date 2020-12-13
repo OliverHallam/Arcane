@@ -3,6 +3,7 @@
 #include "CartDescriptor.h"
 #include "CartCoreState.h"
 #include "CartState.h"
+#include "MapperType.h"
 
 #include <cstdint>
 #include <memory>
@@ -16,7 +17,7 @@ class Cart
 public:
     Cart();
 
-    void SetMapper(int mapper);
+    void SetMapper(MapperType mapper);
     void SetPrgRom(std::vector<uint8_t> prgData);
     void AddPrgRam();
     void AddPrgRam(uint8_t* data);
@@ -83,7 +84,7 @@ private:
 
     Bus* bus_;
 
-    uint32_t mapper_;
+    MapperType mapper_;
 
     std::vector<uint8_t> prgData_;
     std::vector<uint8_t> chrData_;

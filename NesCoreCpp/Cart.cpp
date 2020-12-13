@@ -14,16 +14,13 @@ Cart::Cart() :
 {
 }
 
-void Cart::SetMapper(int mapper)
+void Cart::SetMapper(MapperType mapper)
 {
-    if (mapper == 71)
-        mapper_ = 2; // clone
-    else
-        mapper_ = mapper;
+    mapper_ = mapper;
 
-    if (mapper_ == 1)
+    if (mapper_ == MapperType::MMC1)
         state_.PrgMode = 3;
-    else if (mapper_ == 5)
+    else if (mapper_ == MapperType::MMC5)
     {
         state_.PrgMode = 3;
         state_.PrgRamProtect = 3; // two protect flags
@@ -124,7 +121,7 @@ uint8_t Cart::CpuRead(uint16_t address)
 
     if (bank == nullptr)
     {
-        if (mapper_ == 5)
+        if (mapper_ == MapperType::MMC5)
             return ReadMMC5(address);
 
         return 0;
@@ -137,7 +134,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 {
     if (address < 0x8000)
     {
-        if (mapper_ == 5 && address < 0x6000)
+        if (mapper_ == MapperType::MMC5 && address < 0x6000)
         {
             WriteMMC5(address, value);
             return;
@@ -154,20 +151,25 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     switch (mapper_)
     {
-    case 1:
+    case MapperType::MMC1:
         WriteMMC1(address, value);
         break;
 
-    case 2:
+    case MapperType::UxROM:
         WriteUxROM(address, value);
         break;
 
-    case 3:
+    case MapperType::CNROM:
         WriteCNROM(address, value);
         break;
 
-    case 4:
+    case MapperType::MMC3:
         WriteMMC3(address, value);
+        break;
+
+    case MapperType::BF9093:
+        if (address >= 0xc000)
+            WriteUxROM(address, value);
         break;
     }
 }
@@ -176,7 +178,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 {
     if (address < 0x8000)
     {
-        if (mapper_ == 5 && address < 0x6000)
+        if (mapper_ == MapperType::MMC5 && address < 0x6000)
         {
             WriteMMC5(address, firstValue);
             bus_->TickCpuWrite();
@@ -198,24 +200,24 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 
     switch (mapper_)
     {
-    case 1:
+    case MapperType::MMC1:
         // The MMC1 takes the first value and ignores the second.
         WriteMMC1(address, firstValue);
         bus_->TickCpuWrite();
         break;
 
-    case 2:
+    case MapperType::UxROM:
         bus_->TickCpuWrite();
         WriteUxROM(address, secondValue);
         break;
 
-    case 3:
+    case MapperType::CNROM:
         WriteCNROM(address, firstValue);
         bus_->TickCpuWrite();
         WriteCNROM(address, secondValue);
         break;
 
-    case 4:
+    case MapperType::MMC3:
         WriteMMC3(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC3(address, secondValue);
@@ -231,7 +233,7 @@ uint8_t Cart::PpuRead(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
-    if (mapper_ == 5)
+    if (mapper_ == MapperType::MMC5)
     {
         // Check if we need to switch to or from the sprite nametable.
         if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
@@ -259,7 +261,7 @@ uint16_t Cart::PpuReadChr16(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
-    if (mapper_ == 5)
+    if (mapper_ == MapperType::MMC5)
     {
         // this is only called for background fetches, so I don't think it's possible to trigger a switch to sprites,
         // and it should be too late for the switch back to tiles
@@ -292,7 +294,7 @@ void Cart::PpuDummyTileFetch()
 
 void Cart::PpuDummyNametableFetch()
 {
-    if (mapper_ == 5)
+    if (mapper_ == MapperType::MMC5)
     {
         // Check if we need to switch to or from the sprite nametable.
         if ((state_.ScanlinePpuReadCount == 127 || state_.ScanlinePpuReadCount == 128) && state_.RenderingEnabled && state_.LargeSprites)
@@ -330,7 +332,7 @@ void Cart::SetChrA12(bool set)
 
 bool Cart::HasScanlineCounter() const
 {
-    return mapper_ == 5;
+    return mapper_ == MapperType::MMC5;
 }
 
 void Cart::ScanlineCounterBeginScanline()
@@ -359,7 +361,7 @@ void Cart::ScanlineCounterEndFrame()
     state_.InFrame = false;
     state_.IrqPending = false;
 
-    if (state_.RenderingEnabled && state_.LargeSprites && mapper_ == 5)
+    if (state_.RenderingEnabled && state_.LargeSprites && mapper_ == MapperType::MMC5)
     {
         bus_->SyncPpu();
         state_.PpuInFrame = false;
@@ -1173,6 +1175,7 @@ void Cart::UpdateChrMapMMC5()
         state_.PpuBanks[5] = base2 + 0x0400;
         state_.PpuBanks[6] = base3;
         state_.PpuBanks[7] = base3 + 0x0400;
+        break;
     }
 
     case 3:
@@ -1300,14 +1303,14 @@ void Cart::SetChrA12Impl(bool set)
 {
     if (set != state_.ChrA12)
     {
-        if (mapper_ == 1)
+        if (mapper_ == MapperType::MMC1)
         {
             UpdatePrgMapMMC1();
 
             if (state_.CpuBanks[3])
                 state_.CpuBanks[3] = set ? prgRamBanks_[state_.PrgRamBank1] : prgRamBanks_[state_.PrgRamBank0];
         }
-        else // mapper = 3
+        else // MMC3
         {
             if (set)
             {
@@ -1358,14 +1361,102 @@ std::unique_ptr<Cart> TryCreateCart(
 
     cart->SetMirrorMode(desc.MirrorMode);
 
-    if (desc.Mapper == 4 && desc.SubMapper == 1)
-        return nullptr;
+    MapperType mapper;
+    switch (desc.Mapper)
+    {
+    case 0:
+        if (desc.SubMapper != 0)
+            return nullptr;
+        mapper = MapperType::NROM;
+        break;
 
-    if (desc.Mapper <= 5 ||
-        desc.Mapper == 71 && desc.SubMapper == 0)
-        cart->SetMapper(desc.Mapper);
-    else
+    case 1:
+        switch (desc.SubMapper)
+        {
+        case 0: // MMC1
+        case 1: // SUROM
+        case 2: // SOROM
+        case 4: // SXROM
+        case 5: // SEROM, SHROM, SH1ROM
+                // TODO: disconnect A14 from MMC1
+            mapper = MapperType::MMC1;
+            break;
+
+        case 3:
+            // mapper 155
+            return nullptr;
+
+        default:
+            return nullptr;
+        }
+        break;
+
+    case 2:
+        switch (desc.SubMapper)
+        {
+        case 0:
+        case 1:
+            mapper = MapperType::UxROM;
+            break;
+
+        case 2:
+            return nullptr; // TODO: bus conflicts
+
+        default:
+            return nullptr;
+        }
+        break;
+
+    case 3:
+        switch (desc.SubMapper)
+        {
+        case 0:
+        case 1:
+            mapper = MapperType::CNROM;
+            break;
+
+        case 2:
+            return nullptr; // TODO: bus conflicts
+
+        default:
+            return nullptr;
+        }
+        break;
+
+    case 4:
+        switch (desc.SubMapper)
+        {
+        case 0:
+            mapper = MapperType::MMC3;
+            break;
+
+        case 1: // MMC6
+        case 2: // deprecated
+        case 3: // MMC-ACC
+        case 4: // MMC3A
+        default:
+            return nullptr; 
+        }
+        break;
+
+    case 5:
+        mapper = MapperType::MMC5;
+        break;
+
+    case 71:
+        switch (desc.SubMapper)
+        {
+        case 0:
+            mapper = MapperType::BF9093;
+            break;
+        }
+        break;
+
+    default:
         return nullptr;
+    }
+
+    cart->SetMapper(mapper);
 
     if (desc.PrgRamSize != 0 && desc.PrgRamSize != 0x2000)
         return nullptr;
