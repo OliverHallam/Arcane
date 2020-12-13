@@ -24,7 +24,7 @@ void Cart::SetMapper(MapperType mapper)
     else if (mapper_ == MapperType::MMC5)
     {
         state_.PrgMode = 3;
-        state_.PrgRamProtect = 3; // two protect flags
+        state_.PrgRamProtect0 = 3; // two protect flags
     }
 }
 
@@ -54,7 +54,9 @@ void Cart::AddPrgRam()
 void Cart::AddPrgRam(uint8_t* data)
 {
     prgRamBanks_.push_back(data);
-    state_.CpuBanks[3] = prgRamBanks_[0];
+
+    if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
+        state_.CpuBanks[3] = prgRamBanks_[0];
 }
 
 void Cart::SetChrRom(std::vector<uint8_t> chrData)
@@ -129,6 +131,15 @@ uint8_t Cart::CpuRead(uint16_t address)
     {
         if (mapper_ == MapperType::MMC5)
             return ReadMMC5(address);
+        else if (mapper_ == MapperType::MMC6)
+        {
+            if (address < 0x8000)
+            {
+                auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
+                if ((protect & 6) != 0)
+                    return prgRamBanks_[0][address & 0x3ff];
+            }
+        }
 
         return 0;
     }
@@ -146,8 +157,18 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
             return;
         }
 
-        if (state_.PrgRamProtect)
+        if (mapper_ == MapperType::MMC6)
+        {
+            auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
+            if ((protect & 5) != 0)
+                prgRamBanks_[0][address & 0x3ff] = value;
             return;
+        }
+        else
+        {
+            if (state_.PrgRamProtect0)
+                return;
+        }
 
         auto bank = state_.CpuBanks[address >> 13];
         if (bank)
@@ -170,6 +191,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         break;
 
     case MapperType::MMC3:
+    case MapperType::MMC6:
         WriteMMC3(address, value);
         break;
 
@@ -192,11 +214,21 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             return;
         }
 
-        if (state_.PrgRamProtect)
-            return;
-
         // TODO: it's possible a bank switch happens underneath us
         bus_->TickCpuWrite();
+
+        if (mapper_ == MapperType::MMC6)
+        {
+            auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
+            if ((protect & 5) != 0)
+                prgRamBanks_[0][address & 0x3ff] = secondValue;
+            return;
+        }
+        else
+        {
+            if (state_.PrgRamProtect0)
+                return;
+        }
 
         auto bank = state_.CpuBanks[address >> 13];
         if (bank)
@@ -224,6 +256,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         break;
 
     case MapperType::MMC3:
+    case MapperType::MMC6:
         WriteMMC3(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC3(address, secondValue);
@@ -690,6 +723,22 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
             state_.PrgBank0 = value & 0x07;
             SetPrgModeMMC3((value >> 6) & 1);
             SetChrModeMMC3((value >> 7) & 1);
+
+            if (mapper_ == MapperType::MMC6)
+            {
+                // PRG RAM enable
+                // use bit 3 of the protect flag to signal this 
+                if ((value & 0x20) != 0)
+                {
+                    state_.PrgRamProtect0 |= 4;
+                    state_.PrgRamProtect1 |= 4;
+                }
+                else
+                {
+                    state_.PrgRamProtect0 &= ~4;
+                    state_.PrgRamProtect1 &= ~4;
+                }
+            }
         }
         else
         {
@@ -712,9 +761,20 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
         }
         else
         {
-            auto ramEnabled = (value & 0x80) != 0;
-            state_.PrgRamProtect = (value & 0x40) != 0;
-            state_.CpuBanks[3] = ramEnabled ? prgRamBanks_[0] : nullptr;
+            if (mapper_ == MapperType::MMC6)
+            {
+                state_.PrgRamProtect0 &= ~3;
+                state_.PrgRamProtect0 |= (value >> 4 & 3);
+
+                state_.PrgRamProtect1 &= ~3;
+                state_.PrgRamProtect1 |= (value >> 6 & 3);
+            }
+            else
+            {
+                auto ramEnabled = (value & 0x80) != 0;
+                state_.PrgRamProtect0 = (value & 0x40) != 0;
+                state_.CpuBanks[3] = ramEnabled ? prgRamBanks_[0] : nullptr;
+            }
         }
     }
     else if (address < 0xe000)
@@ -881,16 +941,16 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
 
     case 0x5102:
         if ((value & 0x03) == 0x02)
-            state_.PrgRamProtect &= 0xfd;
+            state_.PrgRamProtect0 &= 0xfd;
         else
-            state_.PrgRamProtect |= 0x02;
+            state_.PrgRamProtect0 |= 0x02;
         break;
 
     case 0x5103:
         if ((value & 0x03) == 0x01)
-            state_.PrgRamProtect &= 0xfe;
+            state_.PrgRamProtect0 &= 0xfe;
         else
-            state_.PrgRamProtect |= 0x01;
+            state_.PrgRamProtect0 |= 0x01;
         break;
 
     case 0x5104:
@@ -1326,7 +1386,7 @@ void Cart::SetChrA12Impl(bool set)
             if (state_.CpuBanks[3])
                 state_.CpuBanks[3] = set ? prgRamBanks_[state_.PrgRamBank1] : prgRamBanks_[state_.PrgRamBank0];
         }
-        else // MMC3
+        else // MMC3, MMC6
         {
             if (set)
             {
@@ -1394,7 +1454,7 @@ std::unique_ptr<Cart> TryCreateCart(
         case 2: // SOROM
         case 4: // SXROM
         case 5: // SEROM, SHROM, SH1ROM
-                // TODO: disconnect A14 from MMC1
+                // TODO: disconnect A14 from MMC1?
             mapper = MapperType::MMC1;
             break;
 
@@ -1453,6 +1513,9 @@ std::unique_ptr<Cart> TryCreateCart(
             break;
 
         case 1: // MMC6
+            mapper = MapperType::MMC6;
+            break;
+
         case 2: // deprecated
         case 3: // MMC-ACC
         case 4: // MMC3A

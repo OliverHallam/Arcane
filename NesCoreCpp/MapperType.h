@@ -3,10 +3,11 @@
 enum class MapperType
 {
     NROM,
-    MMC1, //SxROM
+    MMC1, // SxROM
     UxROM,
     CNROM,
-    MMC3, //TxROM
-    MMC5, //ExROM
+    MMC3, // TxROM
+    MMC6, // HxROM
+    MMC5, // ExROM
     BF9093, // Codemasters UNROM clone
 };
