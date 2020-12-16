@@ -527,9 +527,17 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             else
             {
-                StopRunning();
-                d3d_.OnSize();
-                StartRunning();
+                if (host_.Running())
+                {
+                    StopRunning();
+                    d3d_.OnSize();
+                    StartRunning();
+                }
+                else
+                {
+                    d3d_.OnSize();
+                    d3d_.RepeatLastFrame();
+                }
                 return 0;
             }
         }
@@ -544,24 +552,33 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ENTERMENULOOP:
-        StopRunning();
+        if (host_.Running())
+            StopRunning();
         return 0;
 
     case WM_EXITMENULOOP:
-        StartRunning();
+        if (host_.Running())
+            StartRunning();
         return 0;
 
     case WM_ENTERSIZEMOVE:
         inSizeMove_ = true;
         resized_ = false;
-        StopRunning();
+        if (host_.Running())
+            StopRunning();
         return 0;
 
     case WM_EXITSIZEMOVE:
         inSizeMove_ = false;
         if (resized_)
+        {
             d3d_.OnSize();
-        StartRunning();
+            if (!host_.Running())
+                d3d_.RepeatLastFrame();
+        }
+
+        if (host_.Running())
+            StartRunning();
         return 0;
     }
 
@@ -613,16 +630,16 @@ bool App::ProcessKey(WPARAM key, bool down)
     case VK_PAUSE:
         if (down)
         {
-            if (NesHost.Running())
-                NesHost.Stop();
+            if (host_.Running())
+                host_.Stop();
             else
-                NesHost.Start();
+                host_.Start();
         }
         return true;
 
     case VK_SPACE:
         if (down)
-            NesHost.Step();
+            host_.Step();
         return true;
 #endif
     }

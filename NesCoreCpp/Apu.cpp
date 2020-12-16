@@ -201,7 +201,7 @@ void Apu::SetFrameCounterInterrupt(bool interrupt)
 void Apu::SetDmcInterrupt(bool interrupt)
 {
     state_.DmcInterrupt = interrupt;
-    bus_.SetCartIrq(state_.FrameCounterInterrupt || state_.DmcInterrupt);
+    bus_.SetAudioIrq(state_.FrameCounterInterrupt || state_.DmcInterrupt);
 }
 
 void Apu::Sync()
