@@ -214,6 +214,7 @@
     <ClInclude Include="CartData.h" />
     <ClInclude Include="CartDescriptor.h" />
     <ClInclude Include="CartState.h" />
+    <ClInclude Include="ChrA12Sensitivity.h" />
     <ClInclude Include="Controller.h" />
     <ClInclude Include="ControllerState.h" />
     <ClInclude Include="Cpu.h" />

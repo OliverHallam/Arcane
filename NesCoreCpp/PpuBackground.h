@@ -12,6 +12,7 @@ class PpuBackground
 public:
     PpuBackground(Bus& bus);
 
+    uint16_t GetBasePatternAddress() const;
     void SetBasePatternAddress(uint16_t address);
 
     void SetFineX(uint8_t value);

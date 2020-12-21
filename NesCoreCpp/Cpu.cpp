@@ -2,6 +2,8 @@
 
 #include "Bus.h"
 
+#include <cassert>
+
 Cpu::Cpu(Bus& bus) :
     bus_{ bus }
 {
@@ -28,7 +30,7 @@ void Cpu::SetIrq(bool irq)
     }
 }
 
-void Cpu::SignalNmi()
+void Cpu::Nmi()
 {
     if (state_.InterruptVector != 1)
         state_.InterruptVector = 0xfffa;
@@ -44,14 +46,15 @@ void Cpu::RunInstruction()
         }
         else
         {
-            if (state_.InterruptVector == 1)
+            if (state_.InterruptVector != 0xfffe)
             {
                 bus_.CpuDummyRead(state_.PC);
-                return;
-            }
 
-            bus_.CpuDummyRead(state_.PC);
-            bus_.CpuDummyRead(state_.PC);
+                if (state_.InterruptVector == 1)
+                    return;
+
+                bus_.CpuDummyRead(state_.PC);
+            }
             Interrupt();
             state_.InterruptVector = 0;
             return;
@@ -949,25 +952,21 @@ void Cpu::RunInstruction()
 
     case 0x94:
         ZeroPageX();
-        LoadZeroPage();
         Sty();
         return;
 
     case 0x95:
         ZeroPageX();
-        LoadZeroPage();
         Sta();
         return;
 
     case 0x96:
         ZeroPageY();
-        LoadZeroPage();
         Stx();
         return;
 
     case 0x97:
         ZeroPageY();
-        LoadZeroPage();
         Sax();
         return;
 
@@ -978,7 +977,7 @@ void Cpu::RunInstruction()
 
     case 0x99:
         AbsoluteYWrite();
-        Load();
+        bus_.CpuDummyRead(address_);
         Sta();
         return;
 

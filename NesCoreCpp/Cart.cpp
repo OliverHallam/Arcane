@@ -26,6 +26,10 @@ void Cart::SetMapper(MapperType mapper)
         state_.PrgMode = 3;
         state_.PrgRamProtect0 = 3; // two protect flags
     }
+    if (mapper_ == MapperType::MCACC)
+    {
+        state_.ChrA12PulseCounter = 1;
+    }
 }
 
 void Cart::SetPrgRom(std::vector<uint8_t> prgData)
@@ -192,6 +196,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     case MapperType::MMC3:
     case MapperType::MMC6:
+    case MapperType::MCACC:
         WriteMMC3(address, value);
         break;
 
@@ -257,6 +262,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 
     case MapperType::MMC3:
     case MapperType::MMC6:
+    case MapperType::MCACC:
         WriteMMC3(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC3(address, secondValue);
@@ -331,7 +337,7 @@ void Cart::PpuDummyTileFetch()
     state_.ScanlinePpuReadCount += 4;
 }
 
-void Cart::PpuDummyNametableFetch()
+void Cart::PpuSpriteNametableFetch()
 {
     if (mapper_ == MapperType::MMC5)
     {
@@ -354,19 +360,62 @@ void Cart::PpuWrite(uint16_t address, uint8_t value)
     }
 }
 
-bool Cart::SensitiveToChrA12() const
+ChrA12Sensitivity Cart::ChrA12Sensitivity() const
 {
-    return state_.ChrA12Sensitive;
+    return state_.ChrA12Sensitivity;
 }
 
-void Cart::SetChrA12(bool set)
+void Cart::ChrA12Rising()
 {
-    if (state_.ChrA12Sensitive)
-    {
-        SetChrA12Impl(set);
-    }
+    state_.ChrA12 = true;
 
-    state_.ChrA12 = set;
+    if (mapper_ == MapperType::MMC1)
+    {
+        if (state_.ChrA12Sensitivity == ChrA12Sensitivity::AllEdges)
+        {
+            UpdatePrgMapMMC1();
+
+            if (state_.CpuBanks[3])
+                state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
+        }
+    }
+    else // MMC3, MMC6
+    {
+        if (state_.ChrA12Sensitivity != ChrA12Sensitivity::None)
+        {
+            // MMC3 takes a smoothed signal, and clocks on the rising edge of A12
+            ClockScanlineCounter();
+        }
+    }
+}
+
+void Cart::ChrA12Falling()
+{
+    state_.ChrA12 = false;
+
+    if (mapper_ == MapperType::MMC1)
+    {
+        if (state_.ChrA12Sensitivity == ChrA12Sensitivity::AllEdges)
+        {
+            if (state_.CpuBanks[3])
+                state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank0];
+        }
+    }
+    else if (mapper_ == MapperType::MCACC)
+    {
+        // MC-ACC clocks on every falling edge of A12, and triggers the scanline counter every 8 times.
+        state_.ChrA12PulseCounter--;
+        if (state_.ChrA12PulseCounter == 0)
+        {
+            ClockScanlineCounter();
+            state_.ChrA12PulseCounter = 8;
+        }
+    }
+}
+
+uint32_t Cart::A12PulsesUntilSync()
+{
+    return mapper_ == MapperType::MCACC ? state_.ChrA12PulseCounter : 0;
 }
 
 bool Cart::HasScanlineCounter() const
@@ -519,18 +568,23 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         break;
 
     case 5:
+    {
         // CHR bank 0
         state_.ChrBank0 = value << 12;
         UpdateChrMapMMC1();
 
-        state_.ChrA12Sensitive = false;
+        auto sensitivityBefore = state_.ChrA12Sensitivity;
+
+        state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
 
         // TODO: SNROM PRG RAM disable line
         if (prgData_.size() == 0x80000)
         {
             state_.PrgPlane0 = ((state_.ChrBank0 << 2) & 0x40000);
-            state_.ChrA12Sensitive |= state_.PrgPlane0 != state_.PrgPlane1;
+            if (state_.PrgPlane0 != state_.PrgPlane1)
+                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
 
+            // TODO: we need to get the current A12 state from the PPU.
             if (!state_.ChrA12)
                 UpdatePrgMapMMC1();
         }
@@ -542,26 +596,37 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
             else
                 state_.PrgRamBank0 = (value >> 1) & 0x01;
 
-            state_.ChrA12Sensitive |= state_.PrgRamBank0 != state_.PrgRamBank1;
+            if (state_.PrgRamBank0 != state_.PrgRamBank1)
+                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
+
+            // TODO: we need to get the current A12 state from the PPU.
             if (!state_.ChrA12 && state_.CpuBanks[3])
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank0];
         }
 
+        if (state_.ChrA12Sensitivity != sensitivityBefore)
+            bus_->UpdateA12Sensitivity();
         break;
+    }
 
     case 6:
+    {
         // CHR bank 1
         state_.ChrBank1 = value << 12;
         UpdateChrMapMMC1();
 
-        state_.ChrA12Sensitive = false;
+        auto sensitivityBefore = state_.ChrA12Sensitivity;
+        state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
 
         // TODO: SNROM PRG RAM disable line
         if (prgData_.size() == 0x80000)
         {
             state_.PrgPlane1 = ((state_.ChrBank1 << 2) & 0x40000);
-            state_.ChrA12Sensitive |= state_.PrgPlane0 != state_.PrgPlane1;
 
+            if (state_.PrgPlane0 != state_.PrgPlane1)
+                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
+
+            // TODO: we need to get the current A12 state from the PPU.
             if (state_.ChrA12)
                 UpdatePrgMapMMC1();
         }
@@ -574,12 +639,19 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
             else
                 state_.PrgRamBank1 = (value >> 1) & 0x01;
 
-            state_.ChrA12Sensitive |= state_.PrgRamBank0 != state_.PrgRamBank1;
+            if (state_.PrgRamBank0 != state_.PrgRamBank1)
+                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
+
+            // TODO: we need to get the current A12 state from the PPU.
             if (state_.ChrA12 && state_.CpuBanks[3])
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
         }
 
+        if (state_.ChrA12Sensitivity != sensitivityBefore)
+            bus_->UpdateA12Sensitivity();
+
         break;
+    }
 
     case 7:
         // PRG bank
@@ -773,7 +845,7 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
             {
                 auto ramEnabled = (value & 0x80) != 0;
                 state_.PrgRamProtect0 = (value & 0x40) != 0;
-                state_.CpuBanks[3] = ramEnabled ? prgRamBanks_[0] : nullptr;
+                state_.CpuBanks[3] = ramEnabled && prgRamBanks_.size() ? prgRamBanks_[0] : nullptr;
             }
         }
     }
@@ -786,9 +858,23 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
         else
         {
             state_.ReloadCounter = true;
+
+            // MC-ACC:
+            // "writing to 0xC001 resets the pulse counter"
+            state_.ChrA12PulseCounter = 1;
         }
 
-        state_.ChrA12Sensitive = state_.ScanlineCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled;
+        auto sensitivityBefore = state_.ChrA12Sensitivity;
+        if (state_.ScanlineCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
+            state_.ChrA12Sensitivity =
+                mapper_ == MapperType::MCACC
+                    ? ChrA12Sensitivity::FallingEdgeDivided
+                    : ChrA12Sensitivity::RisingEdgeSmoothed;
+        else
+            state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
+
+        if (state_.ChrA12Sensitivity != sensitivityBefore)
+            bus_->UpdateA12Sensitivity();
     }
     else
     {
@@ -802,7 +888,17 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
             state_.IrqEnabled = true;
         }
 
-        state_.ChrA12Sensitive = state_.ScanlineCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled;
+        auto sensitivityBefore = state_.ChrA12Sensitivity;
+        if (state_.ScanlineCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
+            state_.ChrA12Sensitivity =
+            mapper_ == MapperType::MCACC
+            ? ChrA12Sensitivity::FallingEdgeDivided
+            : ChrA12Sensitivity::RisingEdgeSmoothed;
+        else
+            state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
+
+        if (state_.ChrA12Sensitivity != sensitivityBefore)
+            bus_->UpdateA12Sensitivity();
     }
 }
 
@@ -870,6 +966,30 @@ void Cart::SetBankMMC3(uint32_t bank)
     case 7:
         state_.CpuBanks[5] = &prgData_[(bank << 13) & prgMask_];
         break;
+    }
+}
+
+void Cart::ClockScanlineCounter()
+{
+    if (state_.ScanlineCounter == 0 || state_.ReloadCounter)
+    {
+        state_.ScanlineCounter = state_.ReloadValue;
+        state_.ReloadCounter = false;
+
+        if (state_.ScanlineCounter == 0 && !state_.IrqEnabled)
+        {
+            state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
+            bus_->UpdateA12Sensitivity();
+        }
+    }
+    else
+    {
+        state_.ScanlineCounter--;
+    }
+
+    if (state_.ScanlineCounter == 0 && state_.IrqEnabled)
+    {
+        bus_->SetCartIrq(true);
     }
 }
 
@@ -1375,42 +1495,6 @@ void Cart::UpdatePpuRamMap()
     }
 }
 
-void Cart::SetChrA12Impl(bool set)
-{
-    if (set != state_.ChrA12)
-    {
-        if (mapper_ == MapperType::MMC1)
-        {
-            UpdatePrgMapMMC1();
-
-            if (state_.CpuBanks[3])
-                state_.CpuBanks[3] = set ? prgRamBanks_[state_.PrgRamBank1] : prgRamBanks_[state_.PrgRamBank0];
-        }
-        else // MMC3, MMC6
-        {
-            if (set)
-            {
-                if (state_.ScanlineCounter == 0 || state_.ReloadCounter)
-                {
-                    state_.ScanlineCounter = state_.ReloadValue;
-                    state_.ReloadCounter = false;
-
-                    state_.ChrA12Sensitive = state_.ScanlineCounter > 0 || state_.IrqEnabled;
-                }
-                else
-                {
-                    state_.ScanlineCounter--;
-                }
-
-                if (state_.ScanlineCounter == 0 && state_.IrqEnabled)
-                {
-                    bus_->SetCartIrq(true);
-                }
-            }
-        }
-    }
-}
-
 std::unique_ptr<Cart> TryCreateCart(
     const CartDescriptor& desc,
     std::vector<uint8_t> prgData,
@@ -1516,8 +1600,11 @@ std::unique_ptr<Cart> TryCreateCart(
             mapper = MapperType::MMC6;
             break;
 
-        case 2: // deprecated
         case 3: // MMC-ACC
+            mapper = MapperType::MCACC;
+            break;
+
+        case 2: // deprecated
         case 4: // MMC3A
         default:
             return nullptr; 

@@ -10,6 +10,7 @@ public:
 
     uint32_t GetPixel(uint8_t palleteIndex, uint8_t emphasis);
     uint32_t* GetScanlinePtr();
+    uint32_t* GetScanlinePtr(int32_t scanline);
 
     void HBlank();
     void VBlank();
@@ -18,7 +19,7 @@ public:
 
 #ifdef DIAGNOSTIC
     static const int WIDTH{ 341 };
-    static const int HEIGHT{ 261 };
+    static const int HEIGHT{ 262 };
 #else
     static const int WIDTH{ 256 };
     static const int HEIGHT{ 240 };

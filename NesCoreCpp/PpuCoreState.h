@@ -19,6 +19,7 @@ struct PpuCoreState
     bool EnableRendering{};
 
     // PPUSTATUS
+    bool SuppressVBlank{};
     bool InVBlank{};
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
@@ -34,6 +35,7 @@ struct PpuCoreState
     int32_t CurrentScanline{ 0 };
     int32_t ScanlineCycle{ 0 };
     int32_t CompositeCycle{ 0 };
+    int32_t ChrA12Cycle{ 0 };
     int32_t TargetCycle{ 0 };
 
     // a 3-cycle delay for updating the background address
@@ -42,7 +44,4 @@ struct PpuCoreState
     // a 2-cycle delay for updating the PPU masks.
     bool UpdateMask{};
     uint8_t Mask{};
-
-    // the next tick should trigger the VBlank interrupt
-    bool SignalVBlank{};
 };

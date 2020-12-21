@@ -35,7 +35,8 @@ public:
     bool Sprite0Hit();
     bool SpriteOverflow();
 
-    void DummyLoad();
+    bool IsHighTable(uint32_t spriteIndex);
+
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
     void RunLoad(uint32_t scanline);
     uint8_t GetLoadingOamData(uint32_t cycle);

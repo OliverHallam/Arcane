@@ -78,7 +78,7 @@ void Bus::TickCpuWrite()
 
 uint32_t Bus::CycleCount() const
 {
-    return state_.CycleCount;
+    return state_.CycleCount / 3;
 }
 
 void Bus::SyncPpu()
@@ -86,14 +86,29 @@ void Bus::SyncPpu()
     ppu_->Sync();
 }
 
-bool Bus::SensitiveToChrA12() const
+ChrA12Sensitivity Bus::ChrA12Sensitivity() const
 {
-    return cart_->SensitiveToChrA12();
+    return cart_->ChrA12Sensitivity();
 }
 
-void Bus::SetChrA12(bool set)
+void Bus::UpdateA12Sensitivity()
 {
-    cart_->SetChrA12(set);
+    return ppu_->UpdateA12Sensitivity(false);
+}
+
+uint32_t Bus::GetChrA12PulsesRequiredForSync() const
+{
+    return cart_->A12PulsesUntilSync();
+}
+
+void Bus::ChrA12Rising()
+{
+    cart_->ChrA12Rising();
+}
+
+void Bus::ChrA12Falling()
+{
+    cart_->ChrA12Falling();
 }
 
 bool Bus::HasScanlineCounter() const
@@ -119,52 +134,58 @@ void Bus::CpuDummyRead(uint16_t address)
 
 uint8_t Bus::CpuReadData(uint16_t address)
 {
-    TickCpuRead();
-
+    uint8_t data;
     if (address < 0x2000)
-        return state_.CpuRam[address & 0x7ff];
+        data = state_.CpuRam[address & 0x7ff];
     else if (address < 0x4020)
     {
         if (address < 0x4000)
-            return ppu_->Read(address);
+            data = ppu_->Read(address);
         else if (address == 0x4016)
-            return -controller_->Read();
+            data = -controller_->Read();
         else
-            return apu_->Read(address);
+            data = apu_->Read(address);
     }
     else if (cart_)
-        return cart_->CpuRead(address);
+        data = cart_->CpuRead(address);
     else
-        return 0;
+        data = 0;
+
+    TickCpuRead();
+    return data;
 }
 
 uint8_t Bus::CpuReadZeroPage(uint16_t address)
 {
+    auto data = state_.CpuRam[address];
     TickCpuRead();
-
-    return state_.CpuRam[address];
+    return data;
 }
 
 uint8_t Bus::CpuReadProgramData(uint16_t address)
 {
-    TickCpuRead();
+    uint8_t data;
 
     // program data most likely comes from cartridge
     if (address > 0x4020)
     {
         if (cart_)
-            return cart_->CpuRead(address);
+            data = cart_->CpuRead(address);
         else
-            return 0;
+            data = 0;
+    }
+    else
+    {
+        data = CpuReadProgramDataRare(address);
     }
 
-    return CpuReadProgramDataRare(address);
+    TickCpuRead();
+
+    return data;
 }
 
 void Bus::CpuWrite(uint16_t address, uint8_t value)
 {
-    TickCpuWrite();
-
     if (address < 0x2000)
         state_.CpuRam[address & 0x7ff] = value;
     else if (address < 0x4000)
@@ -182,19 +203,19 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     {
         cart_->CpuWrite(address, value);
     }
+
+    TickCpuWrite();
 }
 
 void Bus::CpuWriteZeroPage(uint16_t address, uint8_t value)
 {
-    TickCpuWrite();
-
     state_.CpuRam[address] = value;
+
+    TickCpuWrite();
 }
 
 void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 {
-    TickCpuWrite();
-
     if (address < 0x2000)
     {
         Tick();
@@ -230,6 +251,8 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     {
         cart_->CpuWrite2(address, firstValue, secondValue);
     }
+
+    TickCpuWrite();
 }
 
 uint8_t* Bus::GetPpuRamBase()
@@ -254,7 +277,7 @@ void Bus::PpuDummyTileFetch() const
 
 void Bus::PpuDummyNametableFetch() const
 {
-    cart_->PpuDummyNametableFetch();
+    cart_->PpuSpriteNametableFetch();
 }
 
 void Bus::PpuWrite(uint16_t address, uint8_t value)
@@ -279,19 +302,31 @@ void Bus::WriteMMC5Audio(uint16_t address, uint8_t value)
 
 void Bus::SignalNmi()
 {
-    cpu_->SignalNmi();
+    // There a 2 cycle delay to the NMI triggering
+    // Another 3 cycles to fake the fact that the CPU pipelines this by one cycle.
+    SchedulePpu(5, SyncEvent::CpuNmi);
 }
 
 void Bus::SetAudioIrq(bool irq)
 {
-    state_.AudioIrq = irq;
-    cpu_->SetIrq(state_.AudioIrq || state_.CartIrq);
+    if (irq != state_.AudioIrq)
+    {
+        state_.AudioIrq = irq;
+
+        if (!state_.CartIrq)
+            SchedulePpu(5, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
+    }
 }
 
 void Bus::SetCartIrq(bool irq)
 {
-    state_.CartIrq = irq;
-    cpu_->SetIrq(state_.AudioIrq || state_.CartIrq);
+    if (irq != state_.CartIrq)
+    {
+        state_.CartIrq = irq;
+
+        if (!state_.AudioIrq)
+            SchedulePpu(5, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
+    }
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)
@@ -308,8 +343,8 @@ uint8_t Bus::DmcDmaRead(uint16_t address)
 
 void Bus::OamDmaWrite(uint8_t value)
 {
-    Tick();
     ppu_->DmaWrite(value);
+    Tick();
 }
 
 void Bus::BeginOamDma(uint8_t page)
@@ -332,6 +367,11 @@ void Bus::OnFrame()
 }
 
 void Bus::Schedule(uint32_t cycles, SyncEvent evt)
+{
+    state_.SyncQueue.Schedule(state_.CycleCount + cycles * 3, evt);
+}
+
+void Bus::SchedulePpu(uint32_t cycles, SyncEvent evt)
 {
     state_.SyncQueue.Schedule(state_.CycleCount + cycles, evt);
 }
@@ -358,14 +398,16 @@ void Bus::RestoreState(const BusState& state)
 
 void Bus::Tick()
 {
-    state_.CycleCount++;
-
-    ppu_->Tick3();
-
-    // there is always at least one event scheduled so we can skip the check that the queue is empty
-    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+    for (auto i = 0; i < 3; i++)
     {
-        RunEvent();
+        ppu_->Tick();
+        state_.CycleCount++;
+
+        // there is always at least one event scheduled so we can skip the check that the queue is empty
+        while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+        {
+            RunEvent();
+        }
     }
 }
 
@@ -425,6 +467,17 @@ void Bus::RunEvent()
     case SyncEvent::ScanlineCounterEndFrame:
         cart_->ScanlineCounterEndFrame();
         break;
+
+    case SyncEvent::CpuNmi:
+        cpu_->Nmi();
+        break;
+
+    case SyncEvent::CpuSetIrq:
+        cpu_->SetIrq(true);
+        break;
+
+    case SyncEvent::CpuClearIrq:
+        cpu_->SetIrq(false);
     }
 }
 

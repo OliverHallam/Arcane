@@ -17,7 +17,7 @@ public:
 
     uint32_t FrameCount();
 
-    void Tick3();
+    void Tick();
     void Sync();
     void SyncA12();
     void SyncScanline();
@@ -30,6 +30,8 @@ public:
 
     void CaptureState(PpuState* state) const;
     void RestoreState(const PpuState& state);
+
+    void UpdateA12Sensitivity(bool isLow);
 
 private:
     void Sync(int32_t targetCycle);
@@ -45,8 +47,20 @@ private:
     void Composite(int32_t startCycle, int32_t endCycle);
     void FinishRender();
 
+#ifdef DIAGNOSTIC
+    void Clear(int32_t scanline);
+    void RenderOverlay(int32_t scanline);
+#endif
+
     void EnterVBlank();
-    void SignalVBlank();
+
+    void SetCurrentAddress(uint16_t address);
+
+    int32_t GetA12EdgeCycle();
+    int32_t GetA12RaisingEdgeCycleFiltered(int32_t cycle, bool isLow);
+    int32_t GetA12TrailingEdgeCycles(uint32_t cycles);
+
+    void ScheduleA12Sync(int32_t cycle, bool isLow);
 
     Bus& bus_;
     Display& display_;
@@ -57,6 +71,6 @@ private:
     PpuCoreState state_;
 
 #if DIAGNOSTIC
-    std::array<uint32_t, 341> diagnosticOverlay_;
+    std::array<uint32_t, 341> diagnosticOverlay_{};
 #endif
 };

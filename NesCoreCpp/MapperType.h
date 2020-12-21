@@ -8,6 +8,7 @@ enum class MapperType
     CNROM,
     MMC3, // TxROM
     MMC6, // HxROM
+    MCACC,
     MMC5, // ExROM
     BF9093, // Codemasters UNROM clone
 };

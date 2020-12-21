@@ -15,6 +15,11 @@ uint32_t* Display::GetScanlinePtr()
     return currentPixelAddress_;
 }
 
+uint32_t* Display::GetScanlinePtr(int32_t scanline)
+{
+    return &buffer_[scanline * WIDTH];
+}
+
 void Display::HBlank()
 {
     currentPixelAddress_ += WIDTH;

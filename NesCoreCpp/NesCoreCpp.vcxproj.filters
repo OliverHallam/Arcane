@@ -57,6 +57,7 @@
     <ClInclude Include="CartCoreState.h" />
     <ClInclude Include="ControllerState.h" />
     <ClInclude Include="MapperType.h" />
+    <ClInclude Include="ChrA12Sensitivity.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />

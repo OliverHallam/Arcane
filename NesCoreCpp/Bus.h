@@ -6,6 +6,7 @@
 
 #include "BusState.h"
 #include "Cart.h"
+#include "ChrA12Sensitivity.h"
 #include "Controller.h"
 #include "Cpu.h"
 #include "Ppu.h"
@@ -34,8 +35,11 @@ public:
 
     void SyncPpu();
 
-    bool SensitiveToChrA12() const;
-    void SetChrA12(bool set);
+    ChrA12Sensitivity ChrA12Sensitivity() const;
+    void UpdateA12Sensitivity();
+    uint32_t GetChrA12PulsesRequiredForSync() const;
+    void ChrA12Rising();
+    void ChrA12Falling();
 
     bool HasScanlineCounter() const;
     void ScanlineCounterBeginScanline();
@@ -71,6 +75,7 @@ public:
     void OnFrame();
 
     void Schedule(uint32_t cycles, SyncEvent evt);
+    void SchedulePpu(uint32_t cycles, SyncEvent evt);
     bool Deschedule(SyncEvent evt);
     bool DescheduleAll(SyncEvent evt);
 
