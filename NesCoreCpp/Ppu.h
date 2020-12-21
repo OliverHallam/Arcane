@@ -17,7 +17,7 @@ public:
 
     uint32_t FrameCount();
 
-    void Tick3();
+    void Tick();
     void Sync();
     void SyncA12();
     void SyncScanline();

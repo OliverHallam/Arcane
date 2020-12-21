@@ -71,6 +71,7 @@ public:
     void OnFrame();
 
     void Schedule(uint32_t cycles, SyncEvent evt);
+    void SchedulePpu(uint32_t cycles, SyncEvent evt);
     bool Deschedule(SyncEvent evt);
     bool DescheduleAll(SyncEvent evt);
 

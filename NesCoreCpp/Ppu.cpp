@@ -12,7 +12,7 @@ Ppu::Ppu(Bus& bus, Display& display) :
     background_{ bus },
     sprites_{ bus }
 {
-    bus_.Schedule(342 / 3, SyncEvent::PpuScanline);
+    bus_.SchedulePpu(340, SyncEvent::PpuScanline);
 }
 
 uint32_t Ppu::FrameCount()
@@ -20,9 +20,9 @@ uint32_t Ppu::FrameCount()
     return state_.FrameCount;
 }
 
-void Ppu::Tick3()
+void Ppu::Tick()
 {
-    state_.TargetCycle += 3;
+    state_.TargetCycle++;
 }
 
 void Ppu::Sync()
@@ -160,7 +160,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
     case 1:
         state_.Mask = value;
         state_.UpdateMask = true;
-        bus_.Schedule(1, SyncEvent::PpuStateUpdate);
+        bus_.SchedulePpu(2, SyncEvent::PpuStateUpdate);
 
         if (address == 0x2001)
         {
@@ -215,7 +215,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
             state_.InitialAddress = (uint16_t)((state_.InitialAddress & 0xff00) | value);
             // update the address in 3 cycles time.
             state_.UpdateBaseAddress = true;
-            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
+            bus_.SchedulePpu(3, SyncEvent::PpuStateUpdate);
 
             state_.AddressLatch = false;
         }
@@ -305,8 +305,7 @@ void Ppu::SyncState()
     }
     else if (state_.UpdateMask)
     {
-        // mask updates after 2 cycles
-        Sync(state_.TargetCycle - 1);
+        Sync(state_.TargetCycle);
 
         background_.EnableLeftColumn((state_.Mask & 0x02) != 0);
         sprites_.EnableLeftColumn((state_.Mask & 0x04) != 0);
@@ -366,8 +365,7 @@ void Ppu::SyncA12()
 
 void Ppu::SyncScanline()
 {
-    if (state_.TargetCycle < 340)
-        return;
+    assert(state_.TargetCycle == 340);
 
     // we're at the end of the scanline, so lets render the whole thing
     if (state_.CurrentScanline < 240)
@@ -449,20 +447,13 @@ void Ppu::SyncScanline()
                 // First let's schedule the Scanline Counter events
                 if (dummyReads == 2)
                 {
-                    // is it this CPU cycle or the next one?
-                    if (state_.TargetCycle >= 2)
-                        bus_.ScanlineCounterBeginScanline();
-                    else
-                        bus_.Schedule(1, SyncEvent::ScanlineCounterScanline);
+                    bus_.SchedulePpu(2, SyncEvent::ScanlineCounterScanline);
                 }
 
                 // if the current tile is pointing at attribute memory, this can trigger an extra scanline
                 if (dummyReads > 1 && nextTileIsAttribute)
                 {
-                    if (state_.TargetCycle >= 4)
-                        bus_.ScanlineCounterBeginScanline();
-                    else
-                        bus_.Schedule(state_.TargetCycle < 2 ? 2 : 1, SyncEvent::ScanlineCounterScanline);
+                    bus_.SchedulePpu(4, SyncEvent::ScanlineCounterScanline);
                 }
 
                 // and then start the split counter for our lazy timeline
@@ -471,11 +462,11 @@ void Ppu::SyncScanline()
 
             // For A12 we want to sync when we start the sprites.
             if (bus_.SensitiveToChrA12())
-                bus_.Schedule((259 - state_.TargetCycle) / 3, SyncEvent::PpuSyncA12);
+                bus_.SchedulePpu(258 - state_.TargetCycle, SyncEvent::PpuSyncA12);
         }
     }
 
-    bus_.Schedule((342 - state_.TargetCycle) / 3, SyncEvent::PpuScanline);
+    bus_.SchedulePpu(340- state_.TargetCycle, SyncEvent::PpuScanline);
 }
 
 void Ppu::Sync(int32_t targetCycle)
@@ -824,13 +815,7 @@ void Ppu::FinishRender()
 void Ppu::EnterVBlank()
 {
     display_.VBlank();
-
-    static int lastCycleCount = 0;
-
-    lastCycleCount = bus_.CycleCount();
-
     bus_.OnFrame();
-
     state_.FrameCount++;
 }
 

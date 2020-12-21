@@ -78,7 +78,7 @@ void Bus::TickCpuWrite()
 
 uint32_t Bus::CycleCount() const
 {
-    return state_.CycleCount;
+    return state_.CycleCount / 3;
 }
 
 void Bus::SyncPpu()
@@ -333,6 +333,11 @@ void Bus::OnFrame()
 
 void Bus::Schedule(uint32_t cycles, SyncEvent evt)
 {
+    state_.SyncQueue.Schedule(state_.CycleCount + cycles * 3, evt);
+}
+
+void Bus::SchedulePpu(uint32_t cycles, SyncEvent evt)
+{
     state_.SyncQueue.Schedule(state_.CycleCount + cycles, evt);
 }
 
@@ -358,14 +363,16 @@ void Bus::RestoreState(const BusState& state)
 
 void Bus::Tick()
 {
-    state_.CycleCount++;
-
-    ppu_->Tick3();
-
-    // there is always at least one event scheduled so we can skip the check that the queue is empty
-    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+    for (auto i = 0; i < 3; i++)
     {
-        RunEvent();
+        state_.CycleCount++;
+        ppu_->Tick();
+
+        // there is always at least one event scheduled so we can skip the check that the queue is empty
+        while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+        {
+            RunEvent();
+        }
     }
 }
 
