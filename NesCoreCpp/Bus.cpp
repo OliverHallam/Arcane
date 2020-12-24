@@ -303,8 +303,7 @@ void Bus::WriteMMC5Audio(uint16_t address, uint8_t value)
 void Bus::SignalNmi()
 {
     // There a 2 cycle delay to the NMI triggering
-    // Another 3 cycles to fake the fact that the CPU pipelines this by one cycle.
-    SchedulePpu(5, SyncEvent::CpuNmi);
+    SchedulePpu(2, SyncEvent::CpuNmi);
 }
 
 void Bus::SetAudioIrq(bool irq)
@@ -314,7 +313,7 @@ void Bus::SetAudioIrq(bool irq)
         state_.AudioIrq = irq;
 
         if (!state_.CartIrq)
-            SchedulePpu(5, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
+            SchedulePpu(2, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
     }
 }
 
@@ -325,7 +324,7 @@ void Bus::SetCartIrq(bool irq)
         state_.CartIrq = irq;
 
         if (!state_.AudioIrq)
-            SchedulePpu(5, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
+            SchedulePpu(2, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
     }
 }
 

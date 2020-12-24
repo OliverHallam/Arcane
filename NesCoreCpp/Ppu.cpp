@@ -42,12 +42,13 @@ uint8_t Ppu::Read(uint16_t address)
 
         if (state_.InVBlank)
         {
-            // This is in lieu of a sync - the flag would have got unset by 260/1
+            // This is in lieu of a sync - the flag would have got unset by 261/1
             if (state_.CurrentScanline != 261 || state_.TargetCycle < 0)
             {
                 // Reading PPUSTATUS within two cycles of the start of vertical blank will return 0 in bit 7 but clear the latch anyway, causing NMI to not occur that frame.
                 status |= 0x80;
             }
+            
             state_.InVBlank = false;
         }
 
@@ -170,7 +171,7 @@ void Ppu::Write(uint16_t address, uint8_t value)
                 if (state_.CurrentScanline != 261)
                     bus_.SignalNmi();
             }
-            else 
+            else
             {
                 // if we call this just after the VBlank flag gets set, we toggle the NMI signal off quick enough
                 // that the CPU doensn't see it
@@ -356,9 +357,7 @@ void Ppu::SyncState()
     if (state_.UpdateBaseAddress)
     {
         Sync(state_.TargetCycle);
-
         SetCurrentAddress(state_.InitialAddress);
-
         state_.UpdateBaseAddress = false;
     }
     else if (state_.UpdateMask)
@@ -513,7 +512,6 @@ void Ppu::SyncScanline()
         // the target cycle starts at -1 which gives us our extra tick at the start of the line
         state_.ScanlineCycle = -1;
         state_.TargetCycle = -1;
-
     }
     else if (state_.CurrentScanline == 261)
     {

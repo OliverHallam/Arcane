@@ -55,6 +55,7 @@ void Cpu::RunInstruction()
 
                 bus_.CpuDummyRead(state_.PC);
             }
+
             Interrupt();
             state_.InterruptVector = 0;
             return;
