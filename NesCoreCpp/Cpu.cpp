@@ -951,25 +951,21 @@ void Cpu::RunInstruction()
 
     case 0x94:
         ZeroPageX();
-        LoadZeroPage();
         Sty();
         return;
 
     case 0x95:
         ZeroPageX();
-        LoadZeroPage();
         Sta();
         return;
 
     case 0x96:
         ZeroPageY();
-        LoadZeroPage();
         Stx();
         return;
 
     case 0x97:
         ZeroPageY();
-        LoadZeroPage();
         Sax();
         return;
 
@@ -980,7 +976,7 @@ void Cpu::RunInstruction()
 
     case 0x99:
         AbsoluteYWrite();
-        Load();
+        bus_.CpuDummyRead(address_);
         Sta();
         return;
 
