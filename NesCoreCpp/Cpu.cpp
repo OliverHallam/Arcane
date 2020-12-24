@@ -28,7 +28,7 @@ void Cpu::SetIrq(bool irq)
     }
 }
 
-void Cpu::SignalNmi()
+void Cpu::Nmi()
 {
     if (state_.InterruptVector != 1)
         state_.InterruptVector = 0xfffa;
@@ -44,14 +44,16 @@ void Cpu::RunInstruction()
         }
         else
         {
-            if (state_.InterruptVector == 1)
+            if (state_.InterruptVector != 0xfffe)
             {
                 bus_.CpuDummyRead(state_.PC);
-                return;
+
+                if (state_.InterruptVector == 1)
+                    return;
+
+                bus_.CpuDummyRead(state_.PC);
             }
 
-            bus_.CpuDummyRead(state_.PC);
-            bus_.CpuDummyRead(state_.PC);
             Interrupt();
             state_.InterruptVector = 0;
             return;

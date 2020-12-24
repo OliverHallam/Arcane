@@ -14,7 +14,7 @@ public:
 
     void SetIrq(bool irq);
 
-    void SignalNmi();
+    void Nmi();
 
     void RunInstruction();
 

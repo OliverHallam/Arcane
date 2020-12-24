@@ -279,19 +279,30 @@ void Bus::WriteMMC5Audio(uint16_t address, uint8_t value)
 
 void Bus::SignalNmi()
 {
-    cpu_->SignalNmi();
+    // There a 2 cycle delay to the NMI triggering
+    SchedulePpu(2, SyncEvent::CpuNmi);
 }
 
 void Bus::SetAudioIrq(bool irq)
 {
-    state_.AudioIrq = irq;
-    cpu_->SetIrq(state_.AudioIrq || state_.CartIrq);
+    if (irq != state_.AudioIrq)
+    {
+        state_.AudioIrq = irq;
+
+        if (!state_.CartIrq)
+            SchedulePpu(2, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
+    }
 }
 
 void Bus::SetCartIrq(bool irq)
 {
-    state_.CartIrq = irq;
-    cpu_->SetIrq(state_.AudioIrq || state_.CartIrq);
+    if (irq != state_.CartIrq)
+    {
+        state_.CartIrq = irq;
+
+        if (!state_.AudioIrq)
+            SchedulePpu(2, irq ? SyncEvent::CpuSetIrq : SyncEvent::CpuClearIrq);
+    }
 }
 
 uint8_t Bus::DmcDmaRead(uint16_t address)
@@ -432,6 +443,17 @@ void Bus::RunEvent()
     case SyncEvent::ScanlineCounterEndFrame:
         cart_->ScanlineCounterEndFrame();
         break;
+
+    case SyncEvent::CpuNmi:
+        cpu_->Nmi();
+        break;
+
+    case SyncEvent::CpuSetIrq:
+        cpu_->SetIrq(true);
+        break;
+
+    case SyncEvent::CpuClearIrq:
+        cpu_->SetIrq(false);
     }
 }
 

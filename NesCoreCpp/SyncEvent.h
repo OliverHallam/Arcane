@@ -14,4 +14,7 @@ enum class SyncEvent : uint32_t
     PpuSync,
     ScanlineCounterScanline,
     ScanlineCounterEndFrame,
+    CpuNmi,
+    CpuSetIrq,
+    CpuClearIrq
 };

@@ -46,7 +46,8 @@ private:
     void FinishRender();
 
     void EnterVBlank();
-    void SignalVBlank();
+
+    void SetCurrentAddress(uint16_t address);
 
     Bus& bus_;
     Display& display_;

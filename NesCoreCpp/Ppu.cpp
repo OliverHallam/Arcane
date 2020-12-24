@@ -42,12 +42,27 @@ uint8_t Ppu::Read(uint16_t address)
 
         if (state_.InVBlank)
         {
-            status |= 0x80;
+            // This is in lieu of a sync - the flag would have got unset by 261/1
+            if (state_.CurrentScanline != 261 || state_.TargetCycle < 0)
+            {
+                // Reading PPUSTATUS within two cycles of the start of vertical blank will return 0 in bit 7 but clear the latch anyway, causing NMI to not occur that frame.
+                status |= 0x80;
+            }
+
             state_.InVBlank = false;
         }
 
-        // if the status is read at the point we were about to signal a vblank, that can cause it to be skipped.
-        state_.SignalVBlank = false;
+        if (state_.CurrentScanline == 241)
+        {
+            if (state_.TargetCycle <= 1)
+            {
+                if (state_.TargetCycle == -1)
+                    state_.SuppressVBlank = true;
+
+                // The NMI line is pulled back down before the CPU notices
+                bus_.Deschedule(SyncEvent::CpuNmi);
+            }
+        }
 
         // the flag should be reset at the start of the pre-render row, we need to sync in that case
         if (sprites_.Sprite0Hit())
@@ -84,7 +99,10 @@ uint8_t Ppu::Read(uint16_t address)
         if (bus_.HasScanlineCounter())
         {
             if (bus_.Deschedule(SyncEvent::ScanlineCounterEndFrame))
+            {
+                // TODO: check the number here
                 bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
+            }
         }
 
         if (ppuAddress >= 0x3f00)
@@ -92,9 +110,8 @@ uint8_t Ppu::Read(uint16_t address)
             data = state_.Palette[ppuAddress & 0x1f] & state_.GrayscaleMask;
         }
 
-        background_.CurrentAddress() += state_.AddressIncrement;
-        background_.CurrentAddress() &= 0x7fff;
-        bus_.SetChrA12(background_.CurrentAddress() & 0x1000);
+        SetCurrentAddress((background_.CurrentAddress() + state_.AddressIncrement) & 0x7fff);
+
         return data;
     }
     else if (registerAddress == 0x04)
@@ -145,10 +162,22 @@ void Ppu::Write(uint16_t address, uint8_t value)
         state_.InitialAddress &= 0xf3ff;
         state_.InitialAddress |= (uint16_t)((value & 3) << 10);
 
-        if (state_.EnableVBlankInterrupt && !wasVblankInterruptEnabled && state_.InVBlank)
+        if (state_.InVBlank && state_.EnableVBlankInterrupt != wasVblankInterruptEnabled)
         {
-            state_.SignalVBlank = true;
-            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
+            if (state_.EnableVBlankInterrupt)
+            {
+                // if we call this just before the VBlank flag gets cleared, we toggle the NMI signal off quick enough
+                // that the CPU doesn't see it
+                if (state_.CurrentScanline != 261)
+                    bus_.SignalNmi();
+            }
+            else
+            {
+                // if we call this just after the VBlank flag gets set, we toggle the NMI signal off quick enough
+                // that the CPU doensn't see it
+                if (state_.CurrentScanline == 241 && state_.TargetCycle < 2)
+                    bus_.Deschedule(SyncEvent::CpuNmi);
+            }
         }
 
         if (address == 0x2000) // doesn't apply to mirrors
@@ -257,9 +286,8 @@ void Ppu::Write(uint16_t address, uint8_t value)
             bus_.PpuWrite(writeAddress, value);
         }
 
-        background_.CurrentAddress() += state_.AddressIncrement;
-        background_.CurrentAddress() &= 0x7fff;
-        bus_.SetChrA12(background_.CurrentAddress() & 0x1000);
+        SetCurrentAddress((background_.CurrentAddress() + state_.AddressIncrement) & 0x7fff);
+
         // TODO: when rendering is enabled, this behaves weirdly.
         return;
     }
@@ -290,17 +318,10 @@ void Ppu::RestoreState(const PpuState& state)
 
 void Ppu::SyncState()
 {
-    if (state_.SignalVBlank)
-    {
-        SignalVBlank();
-        state_.SignalVBlank = false;
-    }
-
     if (state_.UpdateBaseAddress)
     {
         Sync(state_.TargetCycle);
-        bus_.SetChrA12((state_.InitialAddress & 0x1000) != 0);
-        background_.CurrentAddress() = state_.InitialAddress;
+        SetCurrentAddress(state_.InitialAddress);
         state_.UpdateBaseAddress = false;
     }
     else if (state_.UpdateMask)
@@ -380,40 +401,47 @@ void Ppu::SyncScanline()
         }
 
         state_.CurrentScanline++;
+
+        // the target cycle starts at -1 which gives us our extra tick at the start of the line
+        state_.ScanlineCycle = -1;
+        state_.TargetCycle = -1;
     }
     else if (state_.CurrentScanline == 240)
     {
         EnterVBlank();
 
-        // if we've stepped over the start of VBlank, we should sync that too.
-        if (state_.TargetCycle > 0)
-        {
-            SignalVBlank();
-        }
-        else
-        {
-            // otherwise we process the VBlank on the next update
-            state_.SignalVBlank = true;
-            bus_.Schedule(1, SyncEvent::PpuStateUpdate);
-        }
-
         state_.CurrentScanline = 241;
+
+        // the target cycle starts at -1 which gives us our extra tick at the start of the line
+        state_.ScanlineCycle = -1;
+        state_.TargetCycle = -1;
     }
     else if (state_.CurrentScanline == 261)
     {
         PreRenderScanline(340);
         state_.CurrentScanline = 0;
+
+        if (state_.EnableRendering && (state_.FrameCount & 1))
+        {
+            state_.ScanlineCycle = 0;
+            state_.TargetCycle = 0;
+        }
+        else
+        {
+            state_.ScanlineCycle = -1;
+            state_.TargetCycle = -1;
+        }
     }
     else
     {
         state_.CurrentScanline++;
+
+        // the target cycle starts at -1 which gives us our extra tick at the start of the line
+        state_.ScanlineCycle = -1;
+        state_.TargetCycle = -1;
     }
 
-    // the target cycle starts at -1 which gives us our extra tick at the start of the line
-    state_.ScanlineCycle = 0;
-    state_.TargetCycle -= 341;
-
-    if (state_.EnableRendering && state_.CurrentScanline <= 240)
+    if (state_.EnableRendering && (state_.CurrentScanline < 240 || state_.CurrentScanline == 261))
     {
         if (state_.CurrentScanline == 240)
         {
@@ -466,7 +494,14 @@ void Ppu::SyncScanline()
         }
     }
 
-    bus_.SchedulePpu(340- state_.TargetCycle, SyncEvent::PpuScanline);
+    if (state_.CurrentScanline == 241)
+    {
+        // trigger the NMI if necessary.
+        // TODO: we could skip this when NMI is disabled
+        bus_.SchedulePpu(1, SyncEvent::PpuSync);
+    }
+
+    bus_.SchedulePpu(340 - state_.TargetCycle, SyncEvent::PpuScanline);
 }
 
 void Ppu::Sync(int32_t targetCycle)
@@ -481,6 +516,22 @@ void Ppu::Sync(int32_t targetCycle)
     if (state_.CurrentScanline < 240)
     {
         RenderScanline(targetCycle);
+    }
+    else if (state_.CurrentScanline == 241)
+    {
+        if (state_.ScanlineCycle <= 0 && targetCycle >= 0)
+        {
+            if (state_.SuppressVBlank)
+                state_.SuppressVBlank = false;
+            else
+            {
+                state_.InVBlank = true;
+                assert(targetCycle == 0);
+                if (state_.EnableVBlankInterrupt)
+                    bus_.SignalNmi();
+            }
+        }
+        state_.ScanlineCycle = 340; // nothing interesting can happen this scanline
     }
     else if (state_.CurrentScanline == 261)
     {
@@ -506,8 +557,9 @@ void Ppu::SyncComposite(int32_t targetCycle)
 
 void Ppu::PreRenderScanline(int32_t targetCycle)
 {
-    if (state_.ScanlineCycle == 0)
+    if (state_.ScanlineCycle <= 0)
     {
+        state_.ScanlineCycle = 0;
         background_.BeginScanline();
         sprites_.VReset();
         state_.InVBlank = false;
@@ -576,8 +628,9 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
 void Ppu::RenderScanline(int32_t targetCycle)
 {
-    if (state_.ScanlineCycle == 0)
+    if (state_.ScanlineCycle < 0)
     {
+        state_.ScanlineCycle = 0;
         goto RenderVisible;
     }
 
@@ -819,10 +872,8 @@ void Ppu::EnterVBlank()
     state_.FrameCount++;
 }
 
-void Ppu::SignalVBlank()
+void Ppu::SetCurrentAddress(uint16_t address)
 {
-    // The VBlank flag of the PPU is set at tick 1 (the second tick) of scanline 241
-    state_.InVBlank = true;
-    if (state_.EnableVBlankInterrupt)
-        bus_.SignalNmi();
+    background_.CurrentAddress() = address;
+    bus_.SetChrA12((background_.CurrentAddress() & 0x1000) != 0);
 }
