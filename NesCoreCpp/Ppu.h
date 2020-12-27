@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ChrA12.h"
 #include "PpuBackground.h"
 #include "PpuSprites.h"
 #include "PpuCoreState.h"
@@ -31,6 +32,8 @@ public:
     void CaptureState(PpuState* state) const;
     void RestoreState(const PpuState& state);
 
+    void UpdateA12Sensitivity(bool isLow);
+
 private:
     void Sync(int32_t targetCycle);
     void SyncComposite(int32_t targetCycle);
@@ -45,19 +48,29 @@ private:
     void Composite(int32_t startCycle, int32_t endCycle);
     void FinishRender();
 
+#ifdef DIAGNOSTIC
+    void Clear(int32_t scanline);
+    void RenderOverlay(int32_t scanline);
+#endif
+
     void EnterVBlank();
 
     void SetCurrentAddress(uint16_t address);
 
+    void ScheduleA12Sync(int32_t cycle, bool isLow);
+
     Bus& bus_;
     Display& display_;
+
+    ChrA12 chrA12_;
 
     PpuBackground background_;
     PpuSprites sprites_;
 
     PpuCoreState state_;
 
+
 #if DIAGNOSTIC
-    std::array<uint32_t, 341> diagnosticOverlay_;
+    std::array<uint32_t, 341> diagnosticOverlay_{};
 #endif
 };

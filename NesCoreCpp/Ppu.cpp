@@ -10,7 +10,8 @@ Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
     display_{ display },
     background_{ bus },
-    sprites_{ bus }
+    sprites_{ bus },
+    chrA12_{ background_, sprites_ }
 {
     bus_.SchedulePpu(340, SyncEvent::PpuScanline);
 }
@@ -48,7 +49,7 @@ uint8_t Ppu::Read(uint16_t address)
                 // Reading PPUSTATUS within two cycles of the start of vertical blank will return 0 in bit 7 but clear the latch anyway, causing NMI to not occur that frame.
                 status |= 0x80;
             }
-
+            
             state_.InVBlank = false;
         }
 
@@ -161,6 +162,11 @@ void Ppu::Write(uint16_t address, uint8_t value)
         // set base nametable address
         state_.InitialAddress &= 0xf3ff;
         state_.InitialAddress |= (uint16_t)((value & 3) << 10);
+
+        if (state_.EnableRendering && bus_.ChrA12Sensitivity() != ChrA12Sensitivity::None)
+        {
+            UpdateA12Sensitivity(true);
+        }
 
         if (state_.InVBlank && state_.EnableVBlankInterrupt != wasVblankInterruptEnabled)
         {
@@ -316,10 +322,48 @@ void Ppu::RestoreState(const PpuState& state)
     sprites_.RestoreState(state.Sprites);
 }
 
+void Ppu::UpdateA12Sensitivity(bool isLow)
+{
+    // TODO: we need to sort out the smoothing here - this is a function of when A12 was last high.
+    if (state_.CurrentScanline < 240 || state_.CurrentScanline == 261)
+    {
+        bus_.Deschedule(SyncEvent::PpuSyncA12);
+        ScheduleA12Sync(state_.TargetCycle, isLow);
+    }
+}
+
+void Ppu::ScheduleA12Sync(int32_t cycle, bool isLow)
+{
+    if (!state_.EnableRendering)
+        return;
+
+    int32_t edgeCycle = -1;
+    switch (bus_.ChrA12Sensitivity())
+    {
+    case ChrA12Sensitivity::RisingEdgeSmoothed:
+        edgeCycle = chrA12_.NextRaisingEdgeCycleFiltered(cycle, isLow);
+        break;
+
+    case ChrA12Sensitivity::FallingEdgeDivided:
+        edgeCycle = chrA12_.NextTrailingEdgeCycle(cycle);
+        break;
+
+    case ChrA12Sensitivity::AllEdges:
+        edgeCycle = chrA12_.NextEdgeCycle(cycle);
+        break;
+    }
+
+    if (edgeCycle >= 0)
+    {
+        bus_.SchedulePpu(edgeCycle - state_.TargetCycle, SyncEvent::PpuSyncA12);
+    }
+}
+
 void Ppu::SyncState()
 {
     if (state_.UpdateBaseAddress)
     {
+        // TODO: reschedule A12 if rendering
         Sync(state_.TargetCycle);
         SetCurrentAddress(state_.InitialAddress);
         state_.UpdateBaseAddress = false;
@@ -352,6 +396,9 @@ void Ppu::SyncState()
                 // and if no memory is read in the next 3 cycles, the scanline detector will register an end-of-frame.
                 bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
             }
+
+            // restart the A12 sync
+            UpdateA12Sensitivity(true);
         }
 
         state_.GrayscaleMask = (state_.Mask & 0x01) ? 0x30 : 0xff;
@@ -372,21 +419,48 @@ void Ppu::SyncState()
     }
 }
 
+#define NOMINMAX
+#include <Windows.h>
+#include <string>
+
 void Ppu::SyncA12()
 {
-    // in the simple case the only effect we care about here is that the flag toggles, and we don't need to sync.
-    if (!sprites_.LargeSprites())
+    if (bus_.ChrA12Sensitivity() == ChrA12Sensitivity::None || !state_.EnableRendering)
+        return; // we don't care any more
+
+    // there can be a possible change every 4 cycles (flipping between background and sprites)
+    auto edgeCycle = state_.TargetCycle;
+
+#ifdef DIAGNOSTIC
+    diagnosticOverlay_[edgeCycle] = 0XFF00FFFF;
+#endif
+
+    if (sprites_.LargeSprites() && edgeCycle >= 256 && edgeCycle < 320 && state_.EnableForeground)
     {
-        bus_.SetChrA12(sprites_.BasePatternAddress()!= 0);
-        return;
+        // we need the sprites to be loaded.
+        Sync(256);
     }
 
-    Sync();
+    auto edge = chrA12_.GetEdge(edgeCycle, bus_.ChrA12Sensitivity() == ChrA12Sensitivity::RisingEdgeSmoothed);
+
+    if (edge == SignalEdge::Rising)
+    {
+        OutputDebugString((std::to_string(state_.CurrentScanline) + "\n").c_str());
+        bus_.ChrA12Rising();
+    }
+    else if (edge == SignalEdge::Falling)
+        bus_.ChrA12Falling();
+
+    ScheduleA12Sync(edgeCycle, false);
 }
 
 void Ppu::SyncScanline()
 {
     assert(state_.TargetCycle == 340);
+
+#if DIAGNOSTIC
+    auto currentScanline = state_.CurrentScanline;
+#endif
 
     // we're at the end of the scanline, so lets render the whole thing
     if (state_.CurrentScanline < 240)
@@ -441,7 +515,13 @@ void Ppu::SyncScanline()
         state_.TargetCycle = -1;
     }
 
-    if (state_.EnableRendering && (state_.CurrentScanline < 240 || state_.CurrentScanline == 261))
+
+#if DIAGNOSTIC
+    RenderOverlay(currentScanline);
+    Clear(state_.CurrentScanline);
+#endif
+
+    if (state_.EnableRendering && (state_.CurrentScanline <= 240 || state_.CurrentScanline == 261))
     {
         if (state_.CurrentScanline == 240)
         {
@@ -488,9 +568,7 @@ void Ppu::SyncScanline()
                 bus_.TileSplitBeginScanline(nextTileIsAttribute);
             }
 
-            // For A12 we want to sync when we start the sprites.
-            if (bus_.SensitiveToChrA12())
-                bus_.SchedulePpu(258 - state_.TargetCycle, SyncEvent::PpuSyncA12);
+            ScheduleA12Sync(0, state_.CurrentScanline == 261);
         }
     }
 
@@ -560,6 +638,7 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
     if (state_.ScanlineCycle <= 0)
     {
         state_.ScanlineCycle = 0;
+
         background_.BeginScanline();
         sprites_.VReset();
         state_.InVBlank = false;
@@ -595,8 +674,6 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
     {
         auto maxCycle = std::min(targetCycle, 320);
 
-        sprites_.DummyLoad();
-
         if (state_.EnableRendering)
         {
             if (targetCycle >= 280 && state_.ScanlineCycle < 304)
@@ -628,7 +705,7 @@ void Ppu::PreRenderScanline(int32_t targetCycle)
 
 void Ppu::RenderScanline(int32_t targetCycle)
 {
-    if (state_.ScanlineCycle < 0)
+    if (state_.ScanlineCycle <= 0)
     {
         state_.ScanlineCycle = 0;
         goto RenderVisible;
@@ -838,22 +915,6 @@ void Ppu::FinishRender()
 
 #if DIAGNOSTIC
     sprites_.MarkSprites(&diagnosticOverlay_[0]);
-
-    auto pDisplay = display_.GetScanlinePtr();
-    for (auto i = 256; i < Display::WIDTH; i++)
-    {
-        pDisplay[i] = 0;
-    }
-
-    for (auto pixel : diagnosticOverlay_)
-    {
-        if (pixel)
-            *pDisplay = pixel;
-
-        pDisplay++;
-    }
-
-    diagnosticOverlay_.fill(0);
 #endif
 
     sprites_.HReset();
@@ -865,15 +926,54 @@ void Ppu::FinishRender()
         background_.HResetRenderDisabled();
 }
 
+#if DIAGNOSTIC
+
+void Ppu::Clear(int32_t scanline)
+{
+    auto pDisplay = display_.GetScanlinePtr(scanline);
+    for (auto i = 0; i < Display::WIDTH; i++)
+    {
+        pDisplay[i] = 0;
+    }
+
+    diagnosticOverlay_.fill(0);
+}
+
+void Ppu::RenderOverlay(int32_t scanline)
+{
+    auto pDisplay = display_.GetScanlinePtr(scanline);
+    for (auto pixel : diagnosticOverlay_)
+    {
+        if (pixel)
+            *pDisplay = pixel;
+
+        pDisplay++;
+    }
+}
+
+#endif
+
 void Ppu::EnterVBlank()
 {
     display_.VBlank();
+
     bus_.OnFrame();
+
     state_.FrameCount++;
 }
 
 void Ppu::SetCurrentAddress(uint16_t address)
 {
+    auto a12Before = (background_.CurrentAddress() & 0x1000) != 0;
     background_.CurrentAddress() = address;
-    bus_.SetChrA12((background_.CurrentAddress() & 0x1000) != 0);
+    auto a12After = (background_.CurrentAddress() & 0x1000) != 0;
+
+    if (a12Before != a12After)
+    {
+        if (a12After)
+            bus_.ChrA12Rising();
+        else
+            bus_.ChrA12Falling();
+    }
 }
+

@@ -12,6 +12,11 @@ void PpuBackground::SetBasePatternAddress(uint16_t address)
     state_.BackgroundPatternBase = address;
 }
 
+uint16_t PpuBackground::GetBasePatternAddress() const
+{
+    return state_.BackgroundPatternBase;
+}
+
 void PpuBackground::SetFineX(uint8_t value)
 {
     patternBitShift_ += state_.FineX - value;
@@ -255,9 +260,6 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
         return;
     }
 
-    // TODO this should happen on cycle 324
-    bus_.SetChrA12(state_.BackgroundPatternBase);
-
     auto cycle = startCycle;
     switch (cycle & 0x07)
     {
@@ -358,8 +360,6 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
 void PpuBackground::RunLoad()
 {
-    bus_.SetChrA12(state_.BackgroundPatternBase != 0);
-
     while (true)
     {
         auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
@@ -487,6 +487,11 @@ uint32_t PpuBackground::GetDummyReadCount() const
 bool PpuBackground::IsTile3Attribute() const
 {
     return false;
+}
+
+uint16_t PpuBackground::CurrentAddress() const
+{
+    return state_.CurrentAddress;
 }
 
 uint16_t& PpuBackground::CurrentAddress()

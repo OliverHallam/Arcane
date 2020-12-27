@@ -181,7 +181,7 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
     }
 }
 
-bool PpuSprites::SpritesVisible()
+bool PpuSprites::SpritesVisible() const
 {
     return spritesRendered_;
 }
@@ -238,24 +238,29 @@ void PpuSprites::RestoreState(const PpuSpritesState& state)
     state_ = state;
 }
 
-bool PpuSprites::Sprite0Visible()
+bool PpuSprites::Sprite0Visible() const
 {
     return sprite0Visible_;
 }
 
-bool PpuSprites::Sprite0Hit()
+bool PpuSprites::Sprite0Hit() const
 {
     return state_.sprite0Hit_;
 }
 
-bool PpuSprites::SpriteOverflow()
+bool PpuSprites::SpriteOverflow() const
 {
     return state_.spriteOverflow_;
 }
 
-void PpuSprites::DummyLoad()
+bool PpuSprites::IsHighTable(int32_t spriteIndex) const
 {
-    bus_.SetChrA12(state_.largeSprites_ || state_.spritePatternBase_ != 0);
+    if (spriteIndex >= scanlineSpriteCount_)
+        return true;
+
+    auto oamAddress = static_cast<size_t>(spriteIndex) << 2;
+    auto tileId = oamCopy_[oamAddress + 1];
+    return tileId & 1;
 }
 
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
@@ -272,8 +277,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
-        bus_.SetChrA12(state_.largeSprites_ || state_.spritePatternBase_ != 0);
-
         while (spriteIndex_ < 8)
         {
             // no harm in this getting ahead since it only affects the PPU
@@ -283,19 +286,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
         return;
     }
-
-    if (!state_.largeSprites_)
-        bus_.SetChrA12(state_.spritePatternBase_ != 0);
-    else
-    {
-        if (targetCycle < 262)
-        {
-            // TODO: we may need to be really precise exactly at what point in each CPU cycle the memory access happens to schedule this right!
-            // come back when we load the first sprite
-            bus_.Schedule((262 - targetCycle + 2) / 3, SyncEvent::PpuSync);
-        }
-    }
-    
 
     switch (scanlineCycle & 0x07)
     {
@@ -307,6 +297,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 break;
 
     case 1:
+            bus_.PpuDummyNametableFetch();
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
                 break;
@@ -330,11 +321,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
             {
                 if (spriteIndex_ >= scanlineSpriteCount_)
                 {
-                    if (state_.largeSprites_ && scanlineSpriteCount_ < 8)
-                    {
-                        bus_.SetChrA12(true);
-                    }
-
                     while (spriteIndex_ < 8)
                     {
                         // no harm in this getting ahead since it only affects the PPU
@@ -344,8 +330,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
                     return;
                 }
-
-                bus_.PpuDummyNametableFetch();
 
                 auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
 
@@ -369,23 +353,12 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 {
                     // address is 000PTTTTTTTY0YYY
                     auto bankAddress = (tileId & 1) << 12;
-                    // TODO: this should happen one cycle sooner
-                    bus_.SetChrA12(bankAddress != 0);
 
                     tileId &= 0xfe;
                     tileId |= tileFineY >> 3;
                     tileFineY &= 0x07;
                     patternAddress_ = (uint16_t)
                         (bankAddress | (tileId << 4) | tileFineY);
-
-                    if (bus_.SensitiveToChrA12())
-                    {
-                        if (targetCycle <= scanlineCycle + 8)
-                        {
-                            // we'll need to sync when we read the next sprite
-                            bus_.Schedule((scanlineCycle + 9 - targetCycle + 2) / 3, SyncEvent::PpuSync);
-                        }
-                    }
                 }
                 else
                 {
@@ -434,9 +407,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
     // the OAM address is forced to 0 during the whole load phase.
     state_.oamAddress_ = 0;
 
-    if (!state_.largeSprites_)
-        bus_.SetChrA12(state_.spritePatternBase_ != 0);
-
     while (spriteIndex_ < scanlineSpriteCount_)
     {
         auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
@@ -461,8 +431,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
         {
             // address is 000PTTTTTTTY0YYY
             auto bankAddress = (tileId & 1) << 12;
-            bus_.SetChrA12(bankAddress != 0);
-
             tileId &= 0xfe;
             tileId |= tileFineY >> 3;
             tileFineY &= 0x07;
@@ -488,9 +456,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 
     if (scanlineSpriteCount_ < 8)
     {
-        if (state_.largeSprites_)
-            bus_.SetChrA12(true);
-
         while (spriteIndex_ < 8)
         {
             bus_.PpuDummyTileFetch();

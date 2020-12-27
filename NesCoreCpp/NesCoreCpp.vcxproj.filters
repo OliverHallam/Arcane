@@ -57,6 +57,9 @@
     <ClInclude Include="CartCoreState.h" />
     <ClInclude Include="ControllerState.h" />
     <ClInclude Include="MapperType.h" />
+    <ClInclude Include="ChrA12Sensitivity.h" />
+    <ClInclude Include="ChrA12.h" />
+    <ClInclude Include="SignalEdge.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -83,5 +86,6 @@
     <ClCompile Include="EventQueue.cpp" />
     <ClCompile Include="BusState.cpp" />
     <ClCompile Include="CpuState.cpp" />
+    <ClCompile Include="ChrA12.cpp" />
   </ItemGroup>
 </Project>

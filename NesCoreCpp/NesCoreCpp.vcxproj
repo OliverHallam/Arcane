@@ -214,6 +214,8 @@
     <ClInclude Include="CartData.h" />
     <ClInclude Include="CartDescriptor.h" />
     <ClInclude Include="CartState.h" />
+    <ClInclude Include="ChrA12.h" />
+    <ClInclude Include="ChrA12Sensitivity.h" />
     <ClInclude Include="Controller.h" />
     <ClInclude Include="ControllerState.h" />
     <ClInclude Include="Cpu.h" />
@@ -233,6 +235,7 @@
     <ClInclude Include="Ppu.h" />
     <ClInclude Include="PpuBackground.h" />
     <ClInclude Include="PpuSprites.h" />
+    <ClInclude Include="SignalEdge.h" />
     <ClInclude Include="SyncEvent.h" />
     <ClInclude Include="SystemState.h" />
   </ItemGroup>
@@ -249,6 +252,7 @@
     <ClCompile Include="Bus.cpp" />
     <ClCompile Include="BusState.cpp" />
     <ClCompile Include="Cart.cpp" />
+    <ClCompile Include="ChrA12.cpp" />
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Cpu.cpp" />
     <ClCompile Include="CpuState.cpp" />

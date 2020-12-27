@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ChrA12Sensitivity.h"
 #include "MirrorMode.h"
 
 #include <array>
@@ -40,7 +41,6 @@ struct CartCoreState
     uint8_t NametableMode3{};
     bool UseSecondaryChrForData{};
 
-    bool ChrA12{};
     uint32_t PrgPlane0{};
     uint32_t PrgPlane1{};
     uint32_t PrgRamBank0{};
@@ -50,10 +50,12 @@ struct CartCoreState
 
     uint32_t ExtendedRamMode{};
 
-    bool ChrA12Sensitive{};
+    ChrA12Sensitivity ChrA12Sensitivity{};
+    bool ChrA12{};
 
     bool IrqEnabled{};
     uint32_t ScanlineCounter{};
+    uint32_t ChrA12PulseCounter{};
 
     bool ReloadCounter{};
     uint8_t ReloadValue{};

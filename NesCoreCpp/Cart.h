@@ -3,7 +3,9 @@
 #include "CartDescriptor.h"
 #include "CartCoreState.h"
 #include "CartState.h"
+#include "ChrA12Sensitivity.h"
 #include "MapperType.h"
+
 
 #include <cstdint>
 #include <memory>
@@ -35,11 +37,13 @@ public:
     uint8_t PpuRead(uint16_t address);
     uint16_t PpuReadChr16(uint16_t address);
     void PpuDummyTileFetch();
-    void PpuDummyNametableFetch();
+    void PpuSpriteNametableFetch();
     void PpuWrite(uint16_t address, uint8_t value);
 
-    bool SensitiveToChrA12() const;
-    void SetChrA12(bool set);
+    ChrA12Sensitivity ChrA12Sensitivity() const;
+    void ChrA12Rising();
+    void ChrA12Falling();
+    uint32_t A12PulsesUntilSync();
 
     bool HasScanlineCounter() const;
     void ScanlineCounterBeginScanline();
@@ -68,6 +72,7 @@ private:
     void SetPrgModeMMC3(uint8_t mode);
     void SetChrModeMMC3(uint8_t mode);
     void SetBankMMC3(uint32_t bank);
+    void ClockScanlineCounter();
 
     uint8_t ReadMMC5(uint16_t address);
     void WriteMMC5(uint16_t address, uint8_t value);
@@ -80,8 +85,6 @@ private:
     void SetChrBank2k(uint32_t bank, uint32_t value);
 
     void UpdatePpuRamMap();
-
-    void SetChrA12Impl(bool set);
 
     Bus* bus_;
 

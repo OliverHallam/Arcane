@@ -2,6 +2,8 @@
 
 #include "Bus.h"
 
+#include <cassert>
+
 Cpu::Cpu(Bus& bus) :
     bus_{ bus }
 {

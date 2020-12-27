@@ -86,14 +86,29 @@ void Bus::SyncPpu()
     ppu_->Sync();
 }
 
-bool Bus::SensitiveToChrA12() const
+ChrA12Sensitivity Bus::ChrA12Sensitivity() const
 {
-    return cart_->SensitiveToChrA12();
+    return cart_->ChrA12Sensitivity();
 }
 
-void Bus::SetChrA12(bool set)
+void Bus::UpdateA12Sensitivity()
 {
-    cart_->SetChrA12(set);
+    return ppu_->UpdateA12Sensitivity(false);
+}
+
+uint32_t Bus::GetChrA12PulsesRequiredForSync() const
+{
+    return cart_->A12PulsesUntilSync();
+}
+
+void Bus::ChrA12Rising()
+{
+    cart_->ChrA12Rising();
+}
+
+void Bus::ChrA12Falling()
+{
+    cart_->ChrA12Falling();
 }
 
 bool Bus::HasScanlineCounter() const
@@ -141,7 +156,6 @@ uint8_t Bus::CpuReadData(uint16_t address)
 uint8_t Bus::CpuReadZeroPage(uint16_t address)
 {
     TickCpuRead();
-
     return state_.CpuRam[address];
 }
 
@@ -157,8 +171,10 @@ uint8_t Bus::CpuReadProgramData(uint16_t address)
         else
             return 0;
     }
-
-    return CpuReadProgramDataRare(address);
+    else
+    {
+        return CpuReadProgramDataRare(address);
+    }
 }
 
 void Bus::CpuWrite(uint16_t address, uint8_t value)
@@ -254,7 +270,7 @@ void Bus::PpuDummyTileFetch() const
 
 void Bus::PpuDummyNametableFetch() const
 {
-    cart_->PpuDummyNametableFetch();
+    cart_->PpuSpriteNametableFetch();
 }
 
 void Bus::PpuWrite(uint16_t address, uint8_t value)
@@ -319,8 +335,8 @@ uint8_t Bus::DmcDmaRead(uint16_t address)
 
 void Bus::OamDmaWrite(uint8_t value)
 {
-    Tick();
     ppu_->DmaWrite(value);
+    Tick();
 }
 
 void Bus::BeginOamDma(uint8_t page)
