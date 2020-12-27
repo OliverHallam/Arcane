@@ -33,10 +33,10 @@ struct PpuCoreState
 
     // TODO: we don't need all these fields in our stored state.
     int32_t CurrentScanline{ 0 };
-    int32_t ScanlineCycle{ 0 };
+    uint32_t ScanlineStartCycle{ 0 };
+    int32_t SyncCycle{ 0 };
     int32_t CompositeCycle{ 0 };
     int32_t ChrA12Cycle{ 0 };
-    int32_t TargetCycle{ 0 };
 
     // a 3-cycle delay for updating the background address
     bool UpdateBaseAddress{};

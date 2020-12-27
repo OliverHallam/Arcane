@@ -28,10 +28,11 @@ public:
 
     bool HasCart() const;
 
-    void TickCpuRead();
-    void TickCpuWrite();
+    __forceinline void TickCpuRead();
+    __forceinline void TickCpuWrite();
 
-    uint32_t CycleCount() const;
+    uint32_t CpuCycleCount() const;
+    uint32_t PpuCycleCount() const;
 
     void SyncPpu();
 

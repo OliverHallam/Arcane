@@ -76,9 +76,14 @@ void Bus::TickCpuWrite()
     Tick();
 }
 
-uint32_t Bus::CycleCount() const
+uint32_t Bus::CpuCycleCount() const
 {
     return state_.CycleCount / 3;
+}
+
+uint32_t Bus::PpuCycleCount() const
+{
+    return state_.CycleCount;
 }
 
 void Bus::SyncPpu()
@@ -390,30 +395,17 @@ void Bus::RestoreState(const BusState& state)
 
 void Bus::Tick()
 {
-    state_.CycleCount++;
-    ppu_->Tick();
+    auto nextCycleCount = state_.CycleCount + 3;
 
     // there is always at least one event scheduled so we can skip the check that the queue is empty
-    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+    uint32_t nextEventTime;
+    while ((nextEventTime = state_.SyncQueue.GetNextEventTime()) <= nextCycleCount)
     {
+        state_.CycleCount = nextEventTime;
         RunEvent();
     }
 
-    state_.CycleCount++;
-    ppu_->Tick();
-
-    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
-    {
-        RunEvent();
-    }
-
-    state_.CycleCount++;
-    ppu_->Tick();
-
-    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
-    {
-        RunEvent();
-    }
+    state_.CycleCount = nextCycleCount;
 }
 
 uint8_t Bus::CpuReadProgramDataRare(uint16_t address)
@@ -511,7 +503,7 @@ void Bus::RunOamDma()
     // TODO: phantom read.
     Tick();
 
-    if (CycleCount() & 1)
+    if (CpuCycleCount() & 1)
     {
         // TODO: phantom read.
         Tick();

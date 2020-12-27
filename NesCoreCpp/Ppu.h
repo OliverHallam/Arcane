@@ -18,7 +18,6 @@ public:
 
     uint32_t FrameCount();
 
-    void Tick();
     void Sync();
     void SyncA12();
     void SyncScanline();
@@ -35,6 +34,8 @@ public:
     void UpdateA12Sensitivity(bool isLow);
 
 private:
+    int32_t ScanlineCycle() const;
+
     void Sync(int32_t targetCycle);
     void SyncComposite(int32_t targetCycle);
 

@@ -113,7 +113,7 @@ void Apu::Write(uint16_t address, uint8_t value)
         auto nextTick = frameCounter_.SetMode(value >> 7);
 
         // sync to audio clock
-        if (bus_.CycleCount() & 1)
+        if (bus_.CpuCycleCount() & 1)
             nextTick++;
 
         bus_.Deschedule(SyncEvent::ApuFrameCounter);
@@ -206,7 +206,7 @@ void Apu::SetDmcInterrupt(bool interrupt)
 
 void Apu::Sync()
 {
-    auto cycle = bus_.CycleCount();
+    auto cycle = bus_.CpuCycleCount();
     auto pendingCycles = cycle - state_.LastSyncCycle;
 
     pulse1_.Run(pendingCycles);
