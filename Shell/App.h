@@ -58,6 +58,8 @@ private:
     bool fullscreen_;
     RECT windowRect_;
 
+    bool foreground_;
+
     Host host_;
 
     SaveFile save_;

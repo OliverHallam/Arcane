@@ -25,7 +25,8 @@ App::App(HINSTANCE hInstance)
     window_{ },
     windowRect_{ },
     fullscreen_{ false },
-    initialized_{ false }
+    initialized_{ false },
+    foreground_{ false }
 {
 }
 
@@ -189,7 +190,7 @@ int App::Run(int nCmdShow)
                     }
                     else
                     {
-                        d3d_.RenderFrame(host_.PixelData(), fullscreen_ ? 0 : 1);
+                        d3d_.RenderFrame(host_.PixelData(), fullscreen_ && foreground_ ? 0 : 1);
                     }
 
                     // allow ourselves to run slightly behind if it means we nicely hit a frame boundary.
@@ -580,6 +581,10 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (host_.Running())
             StartRunning();
         return 0;
+
+    case WM_ACTIVATE:
+        foreground_ = wParam != WA_INACTIVE;
+        break;
     }
 
     return DefWindowProc(window_, uMsg, wParam, lParam);
