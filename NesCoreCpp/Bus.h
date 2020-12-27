@@ -83,7 +83,7 @@ public:
     void RestoreState(const BusState& state);
 
 private:
-    void Tick();
+    __forceinline void Tick();
 
     __declspec(noinline)
     uint8_t CpuReadProgramDataRare(uint16_t address);

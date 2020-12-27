@@ -390,16 +390,29 @@ void Bus::RestoreState(const BusState& state)
 
 void Bus::Tick()
 {
-    for (auto i = 0; i < 3; i++)
-    {
-        state_.CycleCount++;
-        ppu_->Tick();
+    state_.CycleCount++;
+    ppu_->Tick();
 
-        // there is always at least one event scheduled so we can skip the check that the queue is empty
-        while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
-        {
-            RunEvent();
-        }
+    // there is always at least one event scheduled so we can skip the check that the queue is empty
+    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+    {
+        RunEvent();
+    }
+
+    state_.CycleCount++;
+    ppu_->Tick();
+
+    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+    {
+        RunEvent();
+    }
+
+    state_.CycleCount++;
+    ppu_->Tick();
+
+    while (state_.CycleCount == state_.SyncQueue.GetNextEventTime())
+    {
+        RunEvent();
     }
 }
 
