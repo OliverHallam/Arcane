@@ -10,7 +10,8 @@ Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
     display_{ display },
     background_{ bus },
-    sprites_{ bus }
+    sprites_{ bus },
+    chrA12_{ background_, sprites_ }
 {
     bus_.SchedulePpu(340, SyncEvent::PpuScanline);
 }
@@ -161,6 +162,11 @@ void Ppu::Write(uint16_t address, uint8_t value)
         // set base nametable address
         state_.InitialAddress &= 0xf3ff;
         state_.InitialAddress |= (uint16_t)((value & 3) << 10);
+
+        if (state_.EnableRendering && bus_.ChrA12Sensitivity() != ChrA12Sensitivity::None)
+        {
+            UpdateA12Sensitivity(true);
+        }
 
         if (state_.InVBlank && state_.EnableVBlankInterrupt != wasVblankInterruptEnabled)
         {
@@ -318,11 +324,12 @@ void Ppu::RestoreState(const PpuState& state)
 
 void Ppu::UpdateA12Sensitivity(bool isLow)
 {
-    bus_.Deschedule(SyncEvent::PpuSyncA12);
-
     // TODO: we need to sort out the smoothing here - this is a function of when A12 was last high.
     if (state_.CurrentScanline < 240 || state_.CurrentScanline == 261)
+    {
+        bus_.Deschedule(SyncEvent::PpuSyncA12);
         ScheduleA12Sync(state_.TargetCycle, isLow);
+    }
 }
 
 void Ppu::ScheduleA12Sync(int32_t cycle, bool isLow)
@@ -334,15 +341,15 @@ void Ppu::ScheduleA12Sync(int32_t cycle, bool isLow)
     switch (bus_.ChrA12Sensitivity())
     {
     case ChrA12Sensitivity::RisingEdgeSmoothed:
-        edgeCycle = GetA12RaisingEdgeCycleFiltered(cycle, isLow);
+        edgeCycle = chrA12_.NextRaisingEdgeCycleFiltered(cycle, isLow);
         break;
 
     case ChrA12Sensitivity::FallingEdgeDivided:
-        edgeCycle = GetA12TrailingEdgeCycles(1);
+        edgeCycle = chrA12_.NextTrailingEdgeCycle(cycle);
         break;
 
     case ChrA12Sensitivity::AllEdges:
-        edgeCycle = GetA12EdgeCycle();
+        edgeCycle = chrA12_.NextEdgeCycle(cycle);
         break;
     }
 
@@ -356,6 +363,7 @@ void Ppu::SyncState()
 {
     if (state_.UpdateBaseAddress)
     {
+        // TODO: reschedule A12 if rendering
         Sync(state_.TargetCycle);
         SetCurrentAddress(state_.InitialAddress);
         state_.UpdateBaseAddress = false;
@@ -411,6 +419,10 @@ void Ppu::SyncState()
     }
 }
 
+#define NOMINMAX
+#include <Windows.h>
+#include <string>
+
 void Ppu::SyncA12()
 {
     if (bus_.ChrA12Sensitivity() == ChrA12Sensitivity::None || !state_.EnableRendering)
@@ -423,56 +435,21 @@ void Ppu::SyncA12()
     diagnosticOverlay_[edgeCycle] = 0XFF00FFFF;
 #endif
 
-    if (edgeCycle < 256 || edgeCycle >= 320)
+    if (sprites_.LargeSprites() && edgeCycle >= 256 && edgeCycle < 320 && state_.EnableForeground)
     {
-        if (edgeCycle & 0x04)
-            bus_.ChrA12Rising();
-        else
-            bus_.ChrA12Falling();
+        // we need the sprites to be loaded.
+        Sync(256);
     }
-    else
+
+    auto edge = chrA12_.GetEdge(edgeCycle, bus_.ChrA12Sensitivity() == ChrA12Sensitivity::RisingEdgeSmoothed);
+
+    if (edge == SignalEdge::Rising)
     {
-        if (!sprites_.LargeSprites())
-        {
-            if (edgeCycle & 0x04)
-                bus_.ChrA12Rising();
-            else
-                bus_.ChrA12Falling();
-
-            if (bus_.ChrA12Sensitivity() == ChrA12Sensitivity::RisingEdgeSmoothed)
-            {
-                // skip the rest of the sprites
-                edgeCycle = 320;
-            }
-        }
-        else
-        {
-            if (state_.EnableForeground)
-            {
-                // sync the sprite evaluation
-                Sync(256);
-            }
-
-            int currentSprite = (edgeCycle - 256) / 8;
-            if (sprites_.IsHighTable(currentSprite))
-            {
-                if (edgeCycle & 0x04)
-                    bus_.ChrA12Rising();
-                else
-                    bus_.ChrA12Falling();
-            }
-
-            if (bus_.ChrA12Sensitivity() == ChrA12Sensitivity::RisingEdgeSmoothed)
-            {
-                // skip over any other following high sprites as we want to smooth over these edges
-                do
-                {
-                    ++currentSprite;
-                    edgeCycle += 8;
-                } while (currentSprite < 8 && sprites_.IsHighTable(currentSprite));
-            }
-        }
+        OutputDebugString((std::to_string(state_.CurrentScanline) + "\n").c_str());
+        bus_.ChrA12Rising();
     }
+    else if (edge == SignalEdge::Falling)
+        bus_.ChrA12Falling();
 
     ScheduleA12Sync(edgeCycle, false);
 }
@@ -544,7 +521,7 @@ void Ppu::SyncScanline()
     Clear(state_.CurrentScanline);
 #endif
 
-    if (state_.EnableRendering && (state_.CurrentScanline < 240 || state_.CurrentScanline == 261))
+    if (state_.EnableRendering && (state_.CurrentScanline <= 240 || state_.CurrentScanline == 261))
     {
         if (state_.CurrentScanline == 240)
         {
@@ -1000,197 +977,3 @@ void Ppu::SetCurrentAddress(uint16_t address)
     }
 }
 
-int32_t Ppu::GetA12EdgeCycle()
-{
-    auto cycle = state_.TargetCycle;
-    if (cycle < 256)
-    {
-        if ((background_.CurrentAddress() & 0x1000) != 0)
-        {
-            // background loading will alternate between low and high every 4 cycles, starting low
-            // (the nametable bytes)
-            cycle &= ~3;
-            cycle += 4;
-            return cycle;
-        }
-        // otherwise, it will stay low the whole time
-
-        cycle = 256;
-    }
-
-    if (cycle < 320)
-    {
-        if ((sprites_.BasePatternAddress() & 0x1000) != 0 || sprites_.LargeSprites())
-        {
-            // For large sprites we would need calculate this properly we will need to wait until sprite evaluation has
-            // occurred and then determine the sprites in the high plane.
-            // However, this is an edge case, so I'm not going to optimize for that.  We can just sync on every sprite.
-            cycle &= ~3;
-            cycle += 4;
-            return cycle;
-        }
-
-        // otherwise, it will stay low the whole time
-        cycle = 320;
-    }
-
-    if (cycle < 336)
-    {
-        if ((background_.CurrentAddress() & 0x1000) != 0)
-        {
-            // background loading will alternate between low and high every 4 cycles, starting low
-            // (the nametable bytes)
-            cycle &= ~3;
-            cycle += 4;
-            return cycle;
-        }
-        // otherwise, it will stay low the whole time
-    }
-
-    // and then it stays low for the rest of the scanline.
-    return -1;
-}
-
-int32_t Ppu::GetA12RaisingEdgeCycleFiltered(int32_t cycle, bool isLow)
-{
-    auto backgroundHigh = (background_.GetBasePatternAddress() & 0x1000) != 0;
-    auto spritesHigh = (sprites_.BasePatternAddress() & 0x1000) != 0;
-
-    if (isLow)
-    {
-        if (cycle < 256)
-        {
-            if (backgroundHigh)
-            {
-                cycle += 4;
-                cycle &= ~7;
-                cycle += 4;
-                return cycle;
-            }
-            cycle = 256;
-        }
-
-        if (cycle < 320)
-        {
-            if (sprites_.LargeSprites() || spritesHigh)
-            {
-                cycle += 4;
-                cycle &= ~7;
-                cycle += 4;
-                return cycle;
-            }
-            cycle = 320;
-        }
-
-        if (cycle < 340)
-        {
-            if (backgroundHigh)
-            {
-                cycle += 4;
-                cycle &= ~7;
-                cycle += 4;
-                return cycle;
-            }
-        }
-    }
-    if (sprites_.LargeSprites())
-    {
-        // we don't know where each sprite will be loaded from, so will have to assume the signal could be raised for any
-        // of them.
-
-        if (cycle < 256)
-        {
-            cycle = 256; // a raising edge won't be triggered by the background.
-        }
-
-        if (cycle < 320) // sprite loading
-        {
-            if (cycle < 316)
-            {
-                cycle += 4;
-                cycle &= ~7;
-                cycle += 4;
-                return cycle;
-            }
-
-            cycle = 320;
-        }
-
-        // finally, this could trigger when we start to load the background again
-        if (backgroundHigh)
-        {
-            if (backgroundHigh && cycle < 324)
-                return 324;
-        }
-    }
-    else
-    {
-        // The filtered signal will either trigger with the first sprite, or the first tile on the next scanline
-        if (backgroundHigh == spritesHigh)
-            return -1;
-
-        if (cycle < 260 && spritesHigh)
-        {
-            return 260;
-        }
-
-        if (cycle < 324 && backgroundHigh)
-        {
-            return 324;
-        }
-    }
-
-    return -1;
-}
-
-int32_t Ppu::GetA12TrailingEdgeCycles(uint32_t cycleCount)
-{
-    auto cycle = state_.TargetCycle;
-
-    if (cycle < 256)
-    {
-        if ((background_.GetBasePatternAddress() & 0x1000) != 0)
-        {
-            // background loading will alternate between low and high every 4 cycles, starting low
-            // (the nametable bytes)
-            cycle &= ~7;
-            cycle += 8;
-            return cycle;
-        }
-        // otherwise, it will stay low the whole time
-
-        cycle = 256;
-    }
-
-    if (cycle < 320)
-    {
-        if ((sprites_.BasePatternAddress() & 0x1000) != 0 || sprites_.LargeSprites())
-        {
-            // For large sprites we would need calculate this properly we will need to wait until sprite evaluation has
-            // occurred and then determine the sprites in the high plane.
-            // However, this is an edge case, so I'm not going to optimize for that.  We can just sync on every sprite.
-            cycle &= ~7;
-            cycle += 8;
-            return cycle;
-        }
-
-        // otherwise, it will stay low the whole time
-        cycle = 320;
-    }
-
-    if (cycle < 332)
-    {
-        if ((background_.GetBasePatternAddress() & 0x1000) != 0)
-        {
-            // background loading will alternate between low and high every 4 cycles, starting low
-            // (the nametable bytes)
-            cycle &= ~7;
-            cycle += 8;
-            return cycle;
-        }
-        // otherwise, it will stay low the whole time
-    }
-
-    // and then it stays low for the rest of the scanline.
-    return -1;
-}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ChrA12.h"
 #include "PpuBackground.h"
 #include "PpuSprites.h"
 #include "PpuCoreState.h"
@@ -56,19 +57,18 @@ private:
 
     void SetCurrentAddress(uint16_t address);
 
-    int32_t GetA12EdgeCycle();
-    int32_t GetA12RaisingEdgeCycleFiltered(int32_t cycle, bool isLow);
-    int32_t GetA12TrailingEdgeCycles(uint32_t cycles);
-
     void ScheduleA12Sync(int32_t cycle, bool isLow);
 
     Bus& bus_;
     Display& display_;
 
+    ChrA12 chrA12_;
+
     PpuBackground background_;
     PpuSprites sprites_;
 
     PpuCoreState state_;
+
 
 #if DIAGNOSTIC
     std::array<uint32_t, 341> diagnosticOverlay_{};

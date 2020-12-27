@@ -181,7 +181,7 @@ void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const s
     }
 }
 
-bool PpuSprites::SpritesVisible()
+bool PpuSprites::SpritesVisible() const
 {
     return spritesRendered_;
 }
@@ -238,22 +238,22 @@ void PpuSprites::RestoreState(const PpuSpritesState& state)
     state_ = state;
 }
 
-bool PpuSprites::Sprite0Visible()
+bool PpuSprites::Sprite0Visible() const
 {
     return sprite0Visible_;
 }
 
-bool PpuSprites::Sprite0Hit()
+bool PpuSprites::Sprite0Hit() const
 {
     return state_.sprite0Hit_;
 }
 
-bool PpuSprites::SpriteOverflow()
+bool PpuSprites::SpriteOverflow() const
 {
     return state_.spriteOverflow_;
 }
 
-bool PpuSprites::IsHighTable(uint32_t spriteIndex)
+bool PpuSprites::IsHighTable(int32_t spriteIndex) const
 {
     if (spriteIndex >= scanlineSpriteCount_)
         return true;

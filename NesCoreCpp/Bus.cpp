@@ -134,58 +134,53 @@ void Bus::CpuDummyRead(uint16_t address)
 
 uint8_t Bus::CpuReadData(uint16_t address)
 {
-    uint8_t data;
+    TickCpuRead();
+
     if (address < 0x2000)
-        data = state_.CpuRam[address & 0x7ff];
+        return state_.CpuRam[address & 0x7ff];
     else if (address < 0x4020)
     {
         if (address < 0x4000)
-            data = ppu_->Read(address);
+            return ppu_->Read(address);
         else if (address == 0x4016)
-            data = -controller_->Read();
+            return -controller_->Read();
         else
-            data = apu_->Read(address);
+            return apu_->Read(address);
     }
     else if (cart_)
-        data = cart_->CpuRead(address);
+        return cart_->CpuRead(address);
     else
-        data = 0;
-
-    TickCpuRead();
-    return data;
+        return 0;
 }
 
 uint8_t Bus::CpuReadZeroPage(uint16_t address)
 {
-    auto data = state_.CpuRam[address];
     TickCpuRead();
-    return data;
+    return state_.CpuRam[address];
 }
 
 uint8_t Bus::CpuReadProgramData(uint16_t address)
 {
-    uint8_t data;
+    TickCpuRead();
 
     // program data most likely comes from cartridge
     if (address > 0x4020)
     {
         if (cart_)
-            data = cart_->CpuRead(address);
+            return cart_->CpuRead(address);
         else
-            data = 0;
+            return 0;
     }
     else
     {
-        data = CpuReadProgramDataRare(address);
+        return CpuReadProgramDataRare(address);
     }
-
-    TickCpuRead();
-
-    return data;
 }
 
 void Bus::CpuWrite(uint16_t address, uint8_t value)
 {
+    TickCpuWrite();
+
     if (address < 0x2000)
         state_.CpuRam[address & 0x7ff] = value;
     else if (address < 0x4000)
@@ -203,19 +198,19 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
     {
         cart_->CpuWrite(address, value);
     }
-
-    TickCpuWrite();
 }
 
 void Bus::CpuWriteZeroPage(uint16_t address, uint8_t value)
 {
-    state_.CpuRam[address] = value;
-
     TickCpuWrite();
+
+    state_.CpuRam[address] = value;
 }
 
 void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 {
+    TickCpuWrite();
+
     if (address < 0x2000)
     {
         Tick();
@@ -251,8 +246,6 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     {
         cart_->CpuWrite2(address, firstValue, secondValue);
     }
-
-    TickCpuWrite();
 }
 
 uint8_t* Bus::GetPpuRamBase()

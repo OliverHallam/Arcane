@@ -29,13 +29,13 @@ public:
 
     void RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const std::array<uint8_t, 256>& backgroundPixels);
 
-    bool SpritesVisible();
+    bool SpritesVisible() const;
 
-    bool Sprite0Visible();
-    bool Sprite0Hit();
-    bool SpriteOverflow();
+    bool Sprite0Visible() const;
+    bool Sprite0Hit() const;
+    bool SpriteOverflow() const;
 
-    bool IsHighTable(uint32_t spriteIndex);
+    bool IsHighTable(int32_t spriteIndex) const;
 
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
     void RunLoad(uint32_t scanline);

@@ -43,8 +43,9 @@ public:
     bool IsTile3Attribute() const;
 
     // the bits in the address registers can be viewed as 0yyy NNYY YYYX XXXX
+    uint16_t CurrentAddress() const;
     uint16_t& CurrentAddress();
-    
+
     const std::array<uint8_t, 256>& ScanlinePixels() const;
 
     void CaptureState(PpuBackgroundState* state) const;

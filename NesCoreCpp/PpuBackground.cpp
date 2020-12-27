@@ -489,6 +489,11 @@ bool PpuBackground::IsTile3Attribute() const
     return false;
 }
 
+uint16_t PpuBackground::CurrentAddress() const
+{
+    return state_.CurrentAddress;
+}
+
 uint16_t& PpuBackground::CurrentAddress()
 {
     return state_.CurrentAddress;
