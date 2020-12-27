@@ -82,7 +82,7 @@ int32_t ChrA12::NextRaisingEdgeCycleFiltered(int32_t cycle, bool isLow)
 
         if (cycle < 320)
         {
-            if (sprites_.LargeSprites() || spritesHigh)
+            if (cycle < 316 && (sprites_.LargeSprites() || spritesHigh))
             {
                 cycle += 4;
                 cycle &= ~7;
@@ -127,11 +127,8 @@ int32_t ChrA12::NextRaisingEdgeCycleFiltered(int32_t cycle, bool isLow)
         }
 
         // finally, this could trigger when we start to load the background again
-        if (backgroundHigh)
-        {
-            if (backgroundHigh && cycle < 324)
-                return 324;
-        }
+        if (backgroundHigh && cycle < 324)
+            return 324;
     }
     else
     {
