@@ -381,7 +381,7 @@ void Cart::ChrA12Rising()
     }
     else // MMC3, MMC6
     {
-        if (state_.ChrA12Sensitivity != ChrA12Sensitivity::None)
+        if (state_.ChrA12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed)
         {
             // MMC3 takes a smoothed signal, and clocks on the rising edge of A12
             ClockScanlineCounter();
@@ -401,14 +401,22 @@ void Cart::ChrA12Falling()
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank0];
         }
     }
-    else if (mapper_ == MapperType::MCACC)
+    else // if (mapper_ == MapperType::MCACC)
     {
-        // MC-ACC clocks on every falling edge of A12, and triggers the scanline counter every 8 times.
-        state_.ChrA12PulseCounter--;
-        if (state_.ChrA12PulseCounter == 0)
+        if (state_.ChrA12Sensitivity == ChrA12Sensitivity::FallingEdgeDivided)
         {
-            ClockScanlineCounter();
-            state_.ChrA12PulseCounter = 8;
+            // MC-ACC clocks on every falling edge of A12, and triggers the scanline counter every 8 times.
+            state_.ChrA12PulseCounter--;
+            if (state_.ChrA12PulseCounter == 0)
+            {
+#ifdef DIAGNOSTIC
+                bus_->MarkDiagnostic(0xff0000ff);
+#endif 
+
+
+                ClockScanlineCounter();
+                state_.ChrA12PulseCounter = 8;
+            }
         }
     }
 }
@@ -862,6 +870,10 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
             // MC-ACC:
             // "writing to 0xC001 resets the pulse counter"
             state_.ChrA12PulseCounter = 1;
+
+#ifdef DIAGNOSTIC
+            bus_->MarkDiagnostic(0xff444444);
+#endif
         }
 
         auto sensitivityBefore = state_.ChrA12Sensitivity;
@@ -875,6 +887,7 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
 
         if (state_.ChrA12Sensitivity != sensitivityBefore)
             bus_->UpdateA12Sensitivity();
+
     }
     else
     {

@@ -162,11 +162,6 @@ void Ppu::Write(uint16_t address, uint8_t value)
         state_.InitialAddress &= 0xf3ff;
         state_.InitialAddress |= (uint16_t)((value & 3) << 10);
 
-        if (state_.EnableRendering && bus_.ChrA12Sensitivity() != ChrA12Sensitivity::None)
-        {
-            UpdateA12Sensitivity(true);
-        }
-
         if (state_.InVBlank && state_.EnableVBlankInterrupt != wasVblankInterruptEnabled)
         {
             if (state_.EnableVBlankInterrupt)
@@ -188,6 +183,10 @@ void Ppu::Write(uint16_t address, uint8_t value)
         if (address == 0x2000) // doesn't apply to mirrors
             bus_.InterceptPpuCtrl(largeSprites);
 
+#ifdef DIAGNOSTIC
+        MarkDiagnostic(0xffffff00);
+#endif
+
         return;
     }
 
@@ -200,6 +199,10 @@ void Ppu::Write(uint16_t address, uint8_t value)
         {
             bus_.InterceptPpuMask((value & 0x18) != 0);
         }
+
+#ifdef DIAGNOSTIC
+        MarkDiagnostic(0xffff00ff);
+#endif
         return;
 
     case 3:
@@ -331,6 +334,14 @@ void Ppu::UpdateA12Sensitivity(bool isLow)
     }
 }
 
+#ifdef DIAGNOSTIC
+void Ppu::MarkDiagnostic(uint32_t color)
+{
+    auto scanlineCycle = ScanlineCycle();
+    diagnosticOverlay_[scanlineCycle + 1] = color;
+}
+#endif
+
 void Ppu::ScheduleA12Sync(int32_t cycle, bool isLow)
 {
     if (!state_.EnableRendering)
@@ -426,10 +437,6 @@ void Ppu::SyncA12()
         return; // we don't care any more
 
     auto edgeCycle = ScanlineCycle();
-
-#ifdef DIAGNOSTIC
-    diagnosticOverlay_[edgeCycle] = 0XFF00FFFF;
-#endif
 
     if (sprites_.LargeSprites() && edgeCycle >= 256 && edgeCycle < 320 && state_.EnableForeground)
     {
@@ -967,6 +974,16 @@ void Ppu::SetCurrentAddress(uint16_t address)
     auto a12Before = (background_.CurrentAddress() & 0x1000) != 0;
     background_.CurrentAddress() = address;
     auto a12After = (background_.CurrentAddress() & 0x1000) != 0;
+
+    // doesn't take effect during sprite loading
+    if (state_.EnableRendering && (state_.CurrentScanline <= 320 || state_.CurrentScanline == 361))
+    {
+        auto scanlineCycle = ScanlineCycle();
+        if (scanlineCycle >= 256 && scanlineCycle < 320)
+        {
+            return;
+        }
+    }
 
     if (a12Before != a12After)
     {

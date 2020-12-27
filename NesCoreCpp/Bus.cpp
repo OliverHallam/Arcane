@@ -104,15 +104,20 @@ void Bus::UpdateA12Sensitivity()
 uint32_t Bus::GetChrA12PulsesRequiredForSync() const
 {
     return cart_->A12PulsesUntilSync();
-}
-
+} 
 void Bus::ChrA12Rising()
 {
+#ifdef DIAGNOSTIC
+    ppu_->MarkDiagnostic(0XFF0080FF);
+#endif
     cart_->ChrA12Rising();
 }
 
 void Bus::ChrA12Falling()
 {
+#ifdef DIAGNOSTIC
+    ppu_->MarkDiagnostic(0XFF00FFFF);
+#endif
     cart_->ChrA12Falling();
 }
 
@@ -393,6 +398,15 @@ void Bus::RestoreState(const BusState& state)
     state_ = state;
 }
 
+#ifdef DIAGNOSTIC
+
+void Bus::MarkDiagnostic(uint32_t color)
+{
+    ppu_->MarkDiagnostic(color);
+}
+
+#endif
+
 void Bus::Tick()
 {
     auto nextCycleCount = state_.CycleCount + 3;
@@ -470,6 +484,9 @@ void Bus::RunEvent()
         break;
 
     case SyncEvent::CpuSetIrq:
+#if DIAGNOSTIC
+        ppu_->MarkDiagnostic(0xff00ff00);
+#endif
         cpu_->SetIrq(true);
         break;
 

@@ -206,8 +206,6 @@ SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed)
 
     if (cycle < 256 || cycle >= 320)
     {
-        assert((background_.GetBasePatternAddress() & 0x1000) != 0);
-
         auto edge = cycle & 0x04 ? SignalEdge::Rising : SignalEdge::Falling;
 
         if (smoothed)
@@ -224,8 +222,6 @@ SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed)
     {
         if (!sprites_.LargeSprites())
         {
-            assert((sprites_.BasePatternAddress() & 0x1000) != 0);
-
             auto edge = cycle & 0x04 ? SignalEdge::Rising : SignalEdge::Falling;
 
             if (smoothed)
@@ -239,7 +235,6 @@ SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed)
         else
         {
             int currentSprite = (cycle - 256) / 8;
-
 
             if (!sprites_.IsHighTable(currentSprite))
                 return SignalEdge::None;

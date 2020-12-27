@@ -33,6 +33,10 @@ public:
 
     void UpdateA12Sensitivity(bool isLow);
 
+#ifdef DIAGNOSTIC
+    void MarkDiagnostic(uint32_t color);
+#endif
+
 private:
     int32_t ScanlineCycle() const;
 

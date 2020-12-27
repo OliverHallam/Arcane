@@ -83,6 +83,10 @@ public:
     void CaptureState(BusState* state) const;
     void RestoreState(const BusState& state);
 
+#ifdef DIAGNOSTIC
+    void MarkDiagnostic(uint32_t color);
+#endif
+
 private:
     __forceinline void Tick();
 
