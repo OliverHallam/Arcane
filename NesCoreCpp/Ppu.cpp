@@ -6,6 +6,7 @@
 
 #include <cassert>
 
+
 Ppu::Ppu(Bus& bus, Display& display) :
     bus_{ bus },
     display_{ display },
@@ -419,10 +420,6 @@ void Ppu::SyncState()
     }
 }
 
-#define NOMINMAX
-#include <Windows.h>
-#include <string>
-
 void Ppu::SyncA12()
 {
     if (bus_.ChrA12Sensitivity() == ChrA12Sensitivity::None || !state_.EnableRendering)
@@ -445,7 +442,6 @@ void Ppu::SyncA12()
 
     if (edge == SignalEdge::Rising)
     {
-        OutputDebugString((std::to_string(state_.CurrentScanline) + "\n").c_str());
         bus_.ChrA12Rising();
     }
     else if (edge == SignalEdge::Falling)
