@@ -48,15 +48,17 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     state_.PrgBank3 = prgMask_ & 0x01fe000;
 }
 
-void Cart::AddPrgRam()
+void Cart::AddPrgRam(uint32_t size)
 {
-    localPrgRam_.resize(0x2000);
+    prgRamMask_ = size - 1;
+    localPrgRam_.resize(size);
     prgRamBanks_.push_back(&localPrgRam_[0]);
     state_.CpuBanks[3] = prgRamBanks_[0];
 }
 
-void Cart::AddPrgRam(uint8_t* data)
+void Cart::AddPrgRam(uint8_t* data, uint32_t size)
 {
+    prgRamMask_ = size - 1;
     prgRamBanks_.push_back(data);
 
     if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
@@ -555,10 +557,10 @@ void Cart::CaptureState(CartState* state) const
     state->Core = state_;
 
     if (prgRamBanks_.size() > 0)
-        std::copy(prgRamBanks_[0], prgRamBanks_[0] + 0x2000, begin(state->PrgRamBank1));
+        std::copy(prgRamBanks_[0], prgRamBanks_[0] + prgRamMask_ + 1, begin(state->PrgRamBank1));
 
     if (prgRamBanks_.size() > 1)
-        std::copy(prgRamBanks_[1], prgRamBanks_[1] + 0x2000, begin(state->PrgRamBank2));
+        std::copy(prgRamBanks_[1], prgRamBanks_[1] + prgRamMask_ + 1, begin(state->PrgRamBank2));
 
     assert(prgRamBanks_.size() <= 2);
 
@@ -1357,12 +1359,19 @@ void Cart::UpdatePrgMapMMC5()
 
     case 1:
     {
-        auto baseLow = state_.PrgBank1Ram
-            ? prgRamBanks_[state_.PrgBank1]
-            : &prgData_[(state_.PrgBank1 & 0xffffc000)];
+        if (state_.PrgBank1Ram)
+        {
+            auto baseLow = prgRamBanks_[state_.PrgBank1];
+            state_.CpuBanks[4] = prgRamBanks_[state_.PrgBank1];
+            state_.CpuBanks[5] = prgRamBanks_[state_.PrgBank1] + (0x2000 & prgRamMask_);
+        }
+        else
+        {
+            auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
+            state_.CpuBanks[4] = baseLow;
+            state_.CpuBanks[5] = baseLow + 0x2000;
+        }
         auto baseHigh = &prgData_[(state_.PrgBank3 & 0xffffc000)];
-        state_.CpuBanks[4] = baseLow;
-        state_.CpuBanks[5] = baseLow + 0x2000;
         state_.CpuBanks[6] = baseHigh;
         state_.CpuBanks[7] = baseHigh + 0x2000;
         break;
@@ -1370,12 +1379,19 @@ void Cart::UpdatePrgMapMMC5()
 
     case 2:
     {
-        auto baseLow = state_.PrgBank1Ram
-            ? prgRamBanks_[state_.PrgBank1]
-            : &prgData_[(state_.PrgBank1 & 0xffffc000)];
+        if (state_.PrgBank1Ram)
+        {
+            auto baseLow = prgRamBanks_[state_.PrgBank1];
+            state_.CpuBanks[4] = prgRamBanks_[state_.PrgBank1];
+            state_.CpuBanks[5] = prgRamBanks_[state_.PrgBank1] + (0x2000 & prgRamMask_);
+        }
+        else
+        {
+            auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
+            state_.CpuBanks[4] = baseLow;
+            state_.CpuBanks[5] = baseLow + 0x2000;
+        }
 
-        state_.CpuBanks[4] = baseLow;
-        state_.CpuBanks[5] = baseLow + 0x2000;
         state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
         state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
         break;
@@ -1737,22 +1753,19 @@ std::unique_ptr<Cart> TryCreateCart(
 
     cart->SetMapper(mapper);
 
-    if (desc.PrgRamSize != 0 && desc.PrgRamSize != 0x2000)
-        return nullptr;
-
-    if (desc.PrgBatteryRamSize != 0 && desc.PrgBatteryRamSize != 0x2000)
+    if (desc.PrgRamSize != 0 && desc.PrgBatteryRamSize != 0 && desc.PrgRamSize != desc.PrgBatteryRamSize)
         return nullptr;
 
     if (desc.PrgBatteryRamSize != 0)
     {
         if (batteryRam)
-            cart->AddPrgRam(batteryRam);
+            cart->AddPrgRam(batteryRam, desc.PrgBatteryRamSize);
         else
-            cart->AddPrgRam();
+            cart->AddPrgRam(desc.PrgBatteryRamSize);
     }
 
     if (desc.PrgRamSize != 0)
-        cart->AddPrgRam();
+        cart->AddPrgRam(desc.PrgRamSize);
 
     if (desc.ChrRamSize != 0 && desc.ChrRamSize != 0x2000)
         return nullptr;

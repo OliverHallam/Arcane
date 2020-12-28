@@ -21,8 +21,8 @@ public:
 
     void SetMapper(MapperType mapper);
     void SetPrgRom(std::vector<uint8_t> prgData);
-    void AddPrgRam();
-    void AddPrgRam(uint8_t* data);
+    void AddPrgRam(uint32_t size);
+    void AddPrgRam(uint8_t* data, uint32_t size);
     void SetChrRom(std::vector<uint8_t> chrData);
     void SetChrRam();
     void SetMirrorMode(MirrorMode mirrorMode);
@@ -101,6 +101,8 @@ private:
 
     std::vector<uint8_t> localPrgRam_;
     std::vector<uint8_t*> prgRamBanks_;
+
+    uint32_t prgRamMask_;
 
     bool chrWriteable_;
     bool busConflicts_;

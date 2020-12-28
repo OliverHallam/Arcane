@@ -4,8 +4,10 @@
 
 #include "SaveFile.h"
 
-void SaveFile::Create(const std::wstring& path)
+void SaveFile::Create(const std::wstring& path, uint32_t size)
 {
+    size_ = size;
+
     hFile_.attach(
         CreateFile(
             path.c_str(),
@@ -26,7 +28,7 @@ void SaveFile::Create(const std::wstring& path)
 
     if (fileExists)
     {
-        if (fileSize.QuadPart != 0x2000)
+        if (fileSize.QuadPart != size)
             throw Error(L"Unexpected save file size");
     }
 
@@ -36,11 +38,11 @@ void SaveFile::Create(const std::wstring& path)
             NULL,
             PAGE_READWRITE,
             0,
-            0x2000,
+            size,
             NULL));
     winrt::check_bool(bool{ mapping_ });
 
-    data_ = reinterpret_cast<uint8_t*>(MapViewOfFile(mapping_.get(), FILE_MAP_ALL_ACCESS, 0, 0, 0x2000));
+    data_ = reinterpret_cast<uint8_t*>(MapViewOfFile(mapping_.get(), FILE_MAP_ALL_ACCESS, 0, 0, size));
     if (data_ == nullptr)
         winrt::throw_last_error();
 }
@@ -60,5 +62,5 @@ uint8_t* SaveFile::Data()
 void SaveFile::Flush()
 {
     if (data_)
-        FlushViewOfFile(data_, 0x2000);
+        FlushViewOfFile(data_, size_);
 }

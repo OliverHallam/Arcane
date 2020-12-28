@@ -349,7 +349,7 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
             auto withoutExtension = romPath.substr(0, dotPos);
             auto savPath = withoutExtension + L".sav";
 
-            save_.Create(savPath);
+            save_.Create(savPath, batteryBackedMemorySize);
         }
         catch (const Error& e)
         {
@@ -374,6 +374,8 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
 
     if (!cart)
     {
+        save_.Close();
+
         MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
         return nullptr;
     }
