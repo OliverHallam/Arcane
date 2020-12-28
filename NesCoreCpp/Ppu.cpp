@@ -310,6 +310,11 @@ void Ppu::DmaWrite(uint8_t value)
     sprites_.WriteOam(value);
 }
 
+void Ppu::DmaCompleted()
+{
+    sprites_.OamDmaCompleted();
+}
+
 void Ppu::CaptureState(PpuState* state) const
 {
     state->Core = state_;
@@ -438,7 +443,7 @@ void Ppu::SyncA12()
 
     auto edgeCycle = ScanlineCycle();
 
-    if (sprites_.LargeSprites() && edgeCycle >= 256 && edgeCycle < 320 && state_.EnableForeground)
+    if (sprites_.LargeSprites() && !sprites_.AllLargeSpritesHighTable() && edgeCycle >= 256 && edgeCycle < 320 && state_.EnableForeground)
     {
         // we need the sprites to be loaded.
         Sync(256);

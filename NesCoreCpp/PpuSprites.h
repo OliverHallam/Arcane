@@ -23,6 +23,8 @@ public:
     void WriteOam(uint8_t value);
     uint8_t ReadOam() const;
 
+    void OamDmaCompleted();
+
     void RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
 
     void HReset();
@@ -35,6 +37,7 @@ public:
     bool Sprite0Hit() const;
     bool SpriteOverflow() const;
 
+    bool AllLargeSpritesHighTable() const;
     bool IsHighTable(int32_t spriteIndex) const;
 
     void RunLoad(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
@@ -76,6 +79,8 @@ private:
     bool sprite0Selected_{};
     bool sprite0Visible_{};
     int32_t scanlineSpriteCount_{};
+
+    bool allLargeSpritesHighTable_{};
 
     bool spritesRendered_{};
 

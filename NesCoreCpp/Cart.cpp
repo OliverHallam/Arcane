@@ -413,7 +413,6 @@ void Cart::ChrA12Falling()
                 bus_->MarkDiagnostic(0xff0000ff);
 #endif 
 
-
                 ClockScanlineCounter();
                 state_.ChrA12PulseCounter = 8;
             }

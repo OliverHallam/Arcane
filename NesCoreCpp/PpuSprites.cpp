@@ -49,6 +49,18 @@ uint8_t PpuSprites::ReadOam() const
     return state_.oam_[state_.oamAddress_];
 }
 
+void PpuSprites::OamDmaCompleted()
+{
+    allLargeSpritesHighTable_ = true;
+
+    for (auto oamAddress = 0; oamAddress < 256; oamAddress += 4)
+    {
+        auto tileId = state_.oam_[oamAddress + 1];
+        allLargeSpritesHighTable_ &= tileId & 1;
+    }
+
+}
+
 void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
     if (scanlineCycle < 64)
@@ -251,6 +263,11 @@ bool PpuSprites::Sprite0Hit() const
 bool PpuSprites::SpriteOverflow() const
 {
     return state_.spriteOverflow_;
+}
+
+bool PpuSprites::AllLargeSpritesHighTable() const
+{
+    return allLargeSpritesHighTable_;
 }
 
 bool PpuSprites::IsHighTable(int32_t spriteIndex) const

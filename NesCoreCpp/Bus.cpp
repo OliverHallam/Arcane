@@ -550,6 +550,8 @@ void Bus::RunOamDma()
         OamDmaWrite(value);
     }
 
+    ppu_->DmaCompleted();
+
     if (dmcStarted)
     {
         auto value = DmcDmaRead(state_.DmcDmaAddress);

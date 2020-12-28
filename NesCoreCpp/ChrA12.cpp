@@ -220,7 +220,7 @@ SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed)
     }
     else
     {
-        if (!sprites_.LargeSprites())
+        if (!sprites_.LargeSprites() || sprites_.AllLargeSpritesHighTable())
         {
             auto edge = cycle & 0x04 ? SignalEdge::Rising : SignalEdge::Falling;
 
