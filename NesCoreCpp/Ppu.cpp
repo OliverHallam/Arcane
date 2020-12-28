@@ -975,14 +975,10 @@ void Ppu::SetCurrentAddress(uint16_t address)
     background_.CurrentAddress() = address;
     auto a12After = (background_.CurrentAddress() & 0x1000) != 0;
 
-    // doesn't take effect during sprite loading
-    if (state_.EnableRendering && (state_.CurrentScanline <= 320 || state_.CurrentScanline == 361))
+    // doesn't take effect during rendering
+    if (state_.EnableRendering && (state_.CurrentScanline < 240 || state_.CurrentScanline == 261))
     {
-        auto scanlineCycle = ScanlineCycle();
-        if (scanlineCycle >= 256 && scanlineCycle < 320)
-        {
-            return;
-        }
+        return;
     }
 
     if (a12Before != a12After)

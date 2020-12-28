@@ -17,6 +17,10 @@ void Cpu::Reset()
 
 void Cpu::SetIrq(bool irq)
 {
+#ifdef DIAGNOSTIC
+    bus_.MarkDiagnostic(0xff404040);
+#endif
+
     state_.Irq = irq;
     if (irq)
     {
@@ -46,15 +50,12 @@ void Cpu::RunInstruction()
         }
         else
         {
-            if (state_.InterruptVector != 0xfffe)
-            {
-                bus_.CpuDummyRead(state_.PC);
+            bus_.CpuDummyRead(state_.PC);
 
-                if (state_.InterruptVector == 1)
-                    return;
+            if (state_.InterruptVector == 1)
+                return;
 
-                bus_.CpuDummyRead(state_.PC);
-            }
+            bus_.CpuDummyRead(state_.PC);
 
             Interrupt();
             state_.InterruptVector = 0;
@@ -1626,6 +1627,10 @@ void Cpu::Interrupt()
     auto pcLow = ReadData(state_.InterruptVector);
     auto pcHigh = ReadData((uint16_t)(state_.InterruptVector + 1));
 
+#ifdef DIAGNOSTIC
+    bus_.MarkDiagnostic(0xffffffff);
+#endif
+
     state_.PC = (uint16_t)((pcHigh << 8) | pcLow);
 
     state_.I = true;
@@ -2221,6 +2226,10 @@ void Cpu::Rti()
     if (!state_.I && state_.Irq && state_.InterruptVector == 0)
     {
         state_.InterruptVector = 0xfffe;
+    }
+    else if (state_.I && state_.InterruptVector == 0xfffe)
+    {
+        state_.InterruptVector = 0;
     }
 }
 
