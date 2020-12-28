@@ -74,7 +74,7 @@ void Cpu::RunInstruction()
 
     case 0x01:
         IndexIndirect();
-        LoadZeroPage();
+        Load();
         Ora();
         return;
 
