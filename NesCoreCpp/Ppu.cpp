@@ -528,56 +528,64 @@ void Ppu::SyncScanline()
     Clear(state_.CurrentScanline);
 #endif
 
-    if (state_.EnableRendering && (state_.CurrentScanline <= 240 || state_.CurrentScanline == 261))
+    if (state_.EnableRendering)
     {
-        if (state_.CurrentScanline == 240)
+        if (state_.CurrentScanline <= 240)
         {
-            if (bus_.HasScanlineCounter())
+            if (state_.CurrentScanline == 240)
             {
-                // after 3 cycles without a read the "end frame" event should be triggered.
-                bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
+                if (bus_.HasScanlineCounter())
+                {
+                    // after 3 cycles without a read the "end frame" event should be triggered.
+                    bus_.Schedule(3, SyncEvent::ScanlineCounterEndFrame);
+                }
+            }
+            else
+            {
+                if (bus_.HasScanlineCounter())
+                {
+                    // There's two sides to the MMC5 scanline counter.  The triggering of the start of the scanline can
+                    // cause an interrupt on the CPU so has to be scheduled carefully.  At the same time, this also
+                    // causes the MMC5 to start counting memory accesses and swap out the CHR memory appropriately
+
+                    // we need to trigger the MMC5 scanline counter if we access the nametable for the same address 3 times
+                    // in a row.  We usually see two dummy accesses for the current tile at the end of the previous
+                    // scanline- the first tile hits this again, and then the next memory access (on cycle 2) will trip the
+                    // detector
+
+                    // In the hardware these events are the same thing, but we are emulating these in two different
+                    // timelines (PPU time and CPU time) so need to track them seperately.
+
+                    // There's an edge case if the first tile is pointing to attribute memory which can cause it to trip
+                    // twice so we may need to schedule this event twice, 2 PPU cycles apart
+                    auto dummyReads = background_.GetDummyReadCount();
+                    auto nextTileIsAttribute = (background_.CurrentAddress() & 0x03ff) >= 0x03c0;
+
+                    // First let's schedule the Scanline Counter events
+                    if (dummyReads == 2)
+                    {
+                        bus_.SchedulePpu(2, SyncEvent::ScanlineCounterScanline);
+                    }
+
+                    // if the current tile is pointing at attribute memory, this can trigger an extra scanline
+                    if (dummyReads > 1 && nextTileIsAttribute)
+                    {
+                        bus_.SchedulePpu(4, SyncEvent::ScanlineCounterScanline);
+                    }
+
+                    // and then start the split counter for our lazy timeline
+                    bus_.TileSplitBeginScanline(nextTileIsAttribute);
+                }
+
+                ScheduleA12Sync(0, false);
             }
         }
-        else
+        else if (state_.CurrentScanline == 261)
         {
-            if (bus_.HasScanlineCounter())
-            {
-                // There's two sides to the MMC5 scanline counter.  The triggering of the start of the scanline can
-                // cause an interrupt on the CPU so has to be scheduled carefully.  At the same time, this also
-                // causes the MMC5 to start counting memory accesses and swap out the CHR memory appropriately
-
-                // we need to trigger the MMC5 scanline counter if we access the nametable for the same address 3 times
-                // in a row.  We usually see two dummy accesses for the current tile at the end of the previous
-                // scanline- the first tile hits this again, and then the next memory access (on cycle 2) will trip the
-                // detector
-
-                // In the hardware these events are the same thing, but we are emulating these in two different
-                // timelines (PPU time and CPU time) so need to track them seperately.
-
-                // There's an edge case if the first tile is pointing to attribute memorwhich can cause it to trip
-                // twice so we may need to schedule this event twice, 2 PPU cycles apart
-                auto dummyReads = background_.GetDummyReadCount();
-                auto nextTileIsAttribute = (background_.CurrentAddress() & 0x03ff) >= 0x03c0;
-
-                // First let's schedule the Scanline Counter events
-                if (dummyReads == 2)
-                {
-                    bus_.SchedulePpu(2, SyncEvent::ScanlineCounterScanline);
-                }
-
-                // if the current tile is pointing at attribute memory, this can trigger an extra scanline
-                if (dummyReads > 1 && nextTileIsAttribute)
-                {
-                    bus_.SchedulePpu(4, SyncEvent::ScanlineCounterScanline);
-                }
-
-                // and then start the split counter for our lazy timeline
-                bus_.TileSplitBeginScanline(nextTileIsAttribute);
-            }
-
-            ScheduleA12Sync(0, state_.CurrentScanline == 261);
+            ScheduleA12Sync(0, true);
         }
     }
+
 
     if (state_.CurrentScanline == 241)
     {
