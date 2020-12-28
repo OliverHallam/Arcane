@@ -817,7 +817,7 @@ void Ppu::RenderScanlineVisible(int32_t targetCycle)
         }
         else
         {
-            background_.RunRenderDisabled(state_.SyncCycle, maxIndex);
+            background_.RunBackgroundDisabled(state_.SyncCycle, maxIndex);
         }
 
         if (state_.EnableForeground && state_.CurrentScanline != 0)
@@ -864,7 +864,7 @@ void Ppu::RenderScanlineVisible()
         }
         else
         {
-            background_.RunRenderDisabled(0, 256);
+            background_.RunBackgroundDisabled(0, 256);
         }
 
         if (state_.EnableForeground && state_.CurrentScanline != 0)

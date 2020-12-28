@@ -89,6 +89,19 @@ void PpuBackground::RunRender(uint32_t startCycle, uint32_t endCycle)
     }
 }
 
+void PpuBackground::RunBackgroundDisabled(uint32_t startCycle, uint32_t endCycle)
+{
+    // if sprites are enabled, the background still does it's fetches, and doesn't expose the full address, so we
+    // don't hit pallette memory.
+
+    // TODO: this can be optimized
+    for (auto pixelIndex = startCycle; pixelIndex < endCycle; pixelIndex++)
+    {
+        backgroundPixels_[pixelIndex] = 0;
+        Tick(pixelIndex);
+    }
+}
+
 void PpuBackground::RunRenderDisabled(uint32_t startCycle, uint32_t endCycle)
 {
     auto paletteIndex = 0;

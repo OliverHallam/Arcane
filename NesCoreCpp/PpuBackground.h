@@ -25,6 +25,7 @@ public:
 
     uint8_t Render();
     void RunRender(uint32_t startCycle, uint32_t endCycle);
+    void RunBackgroundDisabled(uint32_t startCycle, uint32_t endCycle);
     void RunRenderDisabled(uint32_t startCycle, uint32_t endCycle);
 
     void RenderScanline();
