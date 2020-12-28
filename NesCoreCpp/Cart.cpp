@@ -203,7 +203,8 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         break;
 
     case MapperType::MMC5:
-        assert(false);
+        if (state_.CpuBankWritable[address >> 13])
+            state_.CpuBanks[address >> 13][address & 0x1fff] = value;
         break;
 
     case MapperType::BF9093:
@@ -272,6 +273,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteMMC3(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC3(address, secondValue);
+        break;
+
+    case MapperType::MMC5:
+        bus_->TickCpuWrite();
+        if (state_.CpuBankWritable[address >> 13])
+            state_.CpuBanks[address >> 13][address & 0x1fff] = secondValue;
         break;
 
     default:
@@ -1063,7 +1070,7 @@ uint8_t Cart::ReadMMC5(uint16_t address)
 {
     if (address < 0x6000)
     {
-        if (address > 0x5c00)
+        if (address >= 0x5c00)
         {
             if (state_.ExtendedRamMode >= 2)
             {
@@ -1354,6 +1361,11 @@ void Cart::UpdatePrgMapMMC5()
         state_.CpuBanks[5] = base + 0x2000;
         state_.CpuBanks[6] = base + 0x4000;
         state_.CpuBanks[7] = base + 0x6000;
+
+        state_.CpuBankWritable[4] = false;
+        state_.CpuBankWritable[5] = false;
+        state_.CpuBankWritable[6] = false;
+        state_.CpuBankWritable[7] = false;
         break;
     }
 
@@ -1364,16 +1376,26 @@ void Cart::UpdatePrgMapMMC5()
             auto baseLow = prgRamBanks_[state_.PrgBank1];
             state_.CpuBanks[4] = prgRamBanks_[state_.PrgBank1];
             state_.CpuBanks[5] = prgRamBanks_[state_.PrgBank1] + (0x2000 & prgRamMask_);
+
+            state_.CpuBankWritable[4] = state_.PrgRamProtect0 == 0;
+            state_.CpuBankWritable[5] = state_.PrgRamProtect0 == 0;
         }
         else
         {
             auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
             state_.CpuBanks[4] = baseLow;
             state_.CpuBanks[5] = baseLow + 0x2000;
+
+            state_.CpuBankWritable[4] = false;
+            state_.CpuBankWritable[5] = false;
         }
+
         auto baseHigh = &prgData_[(state_.PrgBank3 & 0xffffc000)];
         state_.CpuBanks[6] = baseHigh;
         state_.CpuBanks[7] = baseHigh + 0x2000;
+
+        state_.CpuBankWritable[6] = false;
+        state_.CpuBankWritable[7] = false;
         break;
     }
 
@@ -1384,16 +1406,25 @@ void Cart::UpdatePrgMapMMC5()
             auto baseLow = prgRamBanks_[state_.PrgBank1];
             state_.CpuBanks[4] = prgRamBanks_[state_.PrgBank1];
             state_.CpuBanks[5] = prgRamBanks_[state_.PrgBank1] + (0x2000 & prgRamMask_);
+
+            state_.CpuBankWritable[4] = state_.PrgRamProtect0 == 0;
+            state_.CpuBankWritable[5] = state_.PrgRamProtect0 == 0;
         }
         else
         {
             auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
             state_.CpuBanks[4] = baseLow;
             state_.CpuBanks[5] = baseLow + 0x2000;
+
+            state_.CpuBankWritable[4] = false;
+            state_.CpuBankWritable[5] = false;
         }
 
         state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
         state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
+
+        state_.CpuBankWritable[6] = state_.PrgBank2Ram && (state_.PrgRamProtect0 == 0);
+        state_.CpuBankWritable[7] = false;
         break;
     }
 
@@ -1403,6 +1434,11 @@ void Cart::UpdatePrgMapMMC5()
         state_.CpuBanks[5] = state_.PrgBank1Ram ? prgRamBanks_[state_.PrgBank1] : &prgData_[(state_.PrgBank1)];
         state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
         state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
+
+        state_.CpuBankWritable[4] = state_.PrgBank0Ram && (state_.PrgRamProtect0 == 0);
+        state_.CpuBankWritable[5] = state_.PrgBank1Ram && (state_.PrgRamProtect0 == 0);
+        state_.CpuBankWritable[6] = state_.PrgBank2Ram && (state_.PrgRamProtect0 == 0);
+        state_.CpuBankWritable[7] = false;
     }
     }
 }

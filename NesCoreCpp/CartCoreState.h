@@ -81,6 +81,8 @@ struct CartCoreState
     // TODO: we should reconstruct these on restore, so we can share/save the state
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> CpuBanks{};
+    std::array<bool, 8> CpuBankWritable{};
+
     // The PPU address space in 1K banks
     std::array<uint8_t*, 16> PpuBanks{};
 
