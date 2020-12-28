@@ -1013,7 +1013,9 @@ uint8_t Cart::ReadMMC5(uint16_t address)
 {
     if (address < 0x6000)
     {
-        if (address == 0x5204)
+        switch (address)
+        {
+        case 0x5204:
         {
             uint8_t data = 0;
 
@@ -1030,17 +1032,23 @@ uint8_t Cart::ReadMMC5(uint16_t address)
             return data;
         }
 
-        if (address >= 0x5c00)
-        {
+        case 0x5205:
+            return (state_.MulitplierArg0 * state_.MulitplierArg1);
+
+        case 0x5206:
+            return (state_.MulitplierArg0 * state_.MulitplierArg1) >> 8;
+
+        case 0x5c00:
             if (state_.ExtendedRamMode >= 2)
             {
                 return state_.ExtendedRam[address - 0x5c00];
             }
 
             return 0;
-        }
 
-        assert(false);
+        default:
+            assert(false);
+        }
     }
 
     return 0;
@@ -1113,7 +1121,13 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
 
     case 0x5107:
         bus_->SyncPpu();
-        state_.ChrFillAttributes = value & 0x03;
+
+        // copy the 2 bits 4 times to fill the attribute byte.
+        value &= 0x03;
+        value |= value << 2;
+        value |= value << 4;
+        state_.ChrFillAttributes = value;
+
         UpdateNametableMapMMC5();
         break;
 
@@ -1252,6 +1266,14 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
             bus_->SetCartIrq(state_.IrqEnabled);
         break;
     }
+
+    case 0x5205:
+        state_.MulitplierArg0 = value;
+        break;
+
+    case 0x5206:
+        state_.MulitplierArg1 = value;
+        break;
 
     default:
         assert(false);
@@ -1448,7 +1470,7 @@ void Cart::UpdateNametableMMC5(uint32_t index, uint8_t mode)
     case 2:
         if (state_.ExtendedRamMode < 2)
         {
-            data = bus_->GetPpuRamBase() + 0x0400;
+            data = &state_.ExtendedRam[0];
         }
         else
         {

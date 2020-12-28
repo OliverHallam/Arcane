@@ -71,13 +71,16 @@ struct CartCoreState
     bool ChrMapNeedsUpdate{};
     int32_t ScanlinePpuReadCount{};
 
+    uint8_t MulitplierArg0{};
+    uint8_t MulitplierArg1{};
+
     // TODO: we should reconstruct these on restore, so we can share/save the state
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> CpuBanks{};
     // The PPU address space in 1K banks
     std::array<uint8_t*, 16> PpuBanks{};
 
-    std::array<bool, 4> PpuBankFillBytes{};
+    std::array<uint8_t, 4> PpuBankFillBytes{};
     std::array<uint8_t, 4> PPuBankAttributeBytes{};
 
     std::array<uint8_t, 1024> ExtendedRam{};
