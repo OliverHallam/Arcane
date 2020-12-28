@@ -33,6 +33,7 @@ struct CartCoreState
     uint32_t SecondaryChrBank1{};
     uint32_t SecondaryChrBank2{};
     uint32_t SecondaryChrBank3{};
+    uint32_t ChrBankHighBits{};
     uint8_t ChrFillValue{};
     uint8_t ChrFillAttributes{};
     uint8_t NametableMode0{};

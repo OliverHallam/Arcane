@@ -344,9 +344,9 @@ void Cart::PpuSpriteNametableFetch()
         // Check if we need to switch to or from the sprite nametable.
         if ((state_.ScanlinePpuReadCount == 127 || state_.ScanlinePpuReadCount == 128) && state_.RenderingEnabled && state_.LargeSprites)
             UpdateChrMapMMC5();
-    }
 
-    state_.ScanlinePpuReadCount += 2;
+        state_.ScanlinePpuReadCount += 2;
+    }
 }
 
 void Cart::PpuWrite(uint16_t address, uint8_t value)
@@ -356,7 +356,8 @@ void Cart::PpuWrite(uint16_t address, uint8_t value)
     if (address >= 0x2000 || chrWriteable_)
     {
         auto bank = state_.PpuBanks[address >> 10];
-        bank[address & 0x03ff] = value;
+        if (bank != nullptr)
+            bank[address & 0x03ff] = value;
     }
 }
 
@@ -432,6 +433,10 @@ bool Cart::HasScanlineCounter() const
 
 void Cart::ScanlineCounterBeginScanline()
 {
+#ifdef DIAGNOSTIC
+    bus_->MarkDiagnostic(0xff00ffff);
+#endif
+
     if (state_.InFrame)
     {
         state_.ScanlineCounter++;
@@ -541,7 +546,6 @@ void Cart::WriteMMC1(uint16_t address, uint8_t value)
         return;
     }
 
-    // TODO: ignore if two writes two cycles in a row (e.g. RMW instructions)
     state_.MapperShift |= (value & 1) << state_.MapperShiftCount;
     state_.MapperShiftCount++;
 
@@ -1221,6 +1225,11 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
         state_.SecondaryChrBank3 = value;
         state_.UseSecondaryChrForData = true;
         UpdateChrMapMMC5();
+        break;
+
+    case 0x5130:
+        state_.ChrBankHighBits = (value & 3) << 8;
+        assert(state_.ChrBankHighBits == 0);
         break;
 
     case 0x5200:
