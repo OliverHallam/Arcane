@@ -200,6 +200,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteMMC3(address, value);
         break;
 
+    case MapperType::MMC5:
+        assert(false);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -280,7 +284,16 @@ uint8_t Cart::PpuRead(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
-        if (state_.ExtendedRamMode == 1)
+        // Check if we need to switch to or from the sprite nametable.
+        if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
+        {
+            UpdateChrMapMMC5();
+        }
+
+
+        state_.ScanlinePpuReadCount++;
+
+        if (state_.ExtendedRamMode == 1 && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
         {
             if ((address & 0x03ff) >= 0x03c0)
             {
@@ -307,12 +320,6 @@ uint8_t Cart::PpuRead(uint16_t address)
             }
         }
 
-        // Check if we need to switch to or from the sprite nametable.
-        if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
-            UpdateChrMapMMC5();
-
-        state_.ScanlinePpuReadCount++;
-
         auto bank = state_.PpuBanks[bankIndex];
         if (bank == nullptr)
         {
@@ -335,6 +342,10 @@ uint16_t Cart::PpuReadChr16(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
+        // this is only called for background fetches, so I don't think it's possible to trigger a switch to sprites,
+        // and it should be too late for the switch back to tiles
+        state_.ScanlinePpuReadCount += 2;
+
         if (state_.ExtendedRamMode == 1)
         {
             assert(address < 0x2000);
@@ -346,10 +357,6 @@ uint16_t Cart::PpuReadChr16(uint16_t address)
             chrRamAddress &= (chrData_.size() - 1);
             return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
         }
-
-        // this is only called for background fetches, so I don't think it's possible to trigger a switch to sprites,
-        // and it should be too late for the switch back to tiles
-        state_.ScanlinePpuReadCount += 2;
 
         auto bank = state_.PpuBanks[bankIndex];
         if (bank == nullptr)
@@ -382,7 +389,9 @@ void Cart::PpuSpriteNametableFetch()
     {
         // Check if we need to switch to or from the sprite nametable.
         if ((state_.ScanlinePpuReadCount == 127 || state_.ScanlinePpuReadCount == 128) && state_.RenderingEnabled && state_.LargeSprites)
+        {
             UpdateChrMapMMC5();
+        }
 
         state_.ScanlinePpuReadCount += 2;
     }
@@ -1052,6 +1061,16 @@ uint8_t Cart::ReadMMC5(uint16_t address)
 {
     if (address < 0x6000)
     {
+        if (address > 0x5c00)
+        {
+            if (state_.ExtendedRamMode >= 2)
+            {
+                return state_.ExtendedRam[address - 0x5c00];
+            }
+
+            return 0;
+        }
+
         switch (address)
         {
         case 0x5204:
@@ -1076,14 +1095,6 @@ uint8_t Cart::ReadMMC5(uint16_t address)
 
         case 0x5206:
             return (state_.MulitplierArg0 * state_.MulitplierArg1) >> 8;
-
-        case 0x5c00:
-            if (state_.ExtendedRamMode >= 2)
-            {
-                return state_.ExtendedRam[address - 0x5c00];
-            }
-
-            return 0;
 
         default:
             assert(false);
