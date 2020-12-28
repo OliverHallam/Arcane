@@ -19,6 +19,9 @@ struct CartCoreState
     uint32_t PrgBank1{};
     uint32_t PrgBank2{};
     uint32_t PrgBank3{};
+    bool PrgBank0Ram{};
+    bool PrgBank1Ram{};
+    bool PrgBank2Ram{};
 
     uint32_t ChrMode{};
     uint32_t ChrBank0{};
@@ -50,6 +53,7 @@ struct CartCoreState
     uint32_t PrgRamProtect1{};
 
     uint32_t ExtendedRamMode{};
+    uint16_t ExtendedRamFetchAddress{};
 
     ChrA12Sensitivity ChrA12Sensitivity{};
     bool ChrA12{};

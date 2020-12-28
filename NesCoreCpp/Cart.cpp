@@ -280,6 +280,33 @@ uint8_t Cart::PpuRead(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
+        if (state_.ExtendedRamMode == 1)
+        {
+            if ((address & 0x03ff) >= 0x03c0)
+            {
+                // attribute byte
+                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+                // map the top two bits to the whole attribute byte
+                exData &= 0xc0;
+                exData |= exData >> 2;
+                exData |= exData >> 4;
+                return exData;
+            }
+            else if (address < 0x2000)
+            {
+                // pattern byte
+                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+                auto plane = exData & 0x3f;
+                auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+                return chrData_[chrAddress & (chrData_.size() - 1)];
+            }
+            else
+            {
+                // nametable byte - latch the address for exram.
+                state_.ExtendedRamFetchAddress = address & 0x03ff;
+            }
+        }
+
         // Check if we need to switch to or from the sprite nametable.
         if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
             UpdateChrMapMMC5();
@@ -308,6 +335,18 @@ uint16_t Cart::PpuReadChr16(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
+        if (state_.ExtendedRamMode == 1)
+        {
+            assert(address < 0x2000);
+
+            // pattern byte
+            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+            auto plane = exData & 0x3f;
+            auto chrRamAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+            chrRamAddress &= (chrData_.size() - 1);
+            return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
+        }
+
         // this is only called for background fetches, so I don't think it's possible to trigger a switch to sprites,
         // and it should be too late for the switch back to tiles
         state_.ScanlinePpuReadCount += 2;
@@ -1064,8 +1103,11 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
 
     if (address >= 0x5c00)
     {
-        if (state_.ExtendedRamMode != 2)
+        if (state_.ExtendedRamMode > 2)
+        {
+            // TODO: if PPU is not rendering, this should write 0
             return;
+        }
 
         state_.ExtendedRam[address - 0x5c00] = value;
         return;
@@ -1131,28 +1173,35 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
         UpdateNametableMapMMC5();
         break;
 
+    case 0x5113:
+        state_.CpuBanks[3] = prgRamBanks_[((value & 4) >> 2) & (prgRamBanks_.size() - 1)];
+        break;
+
     case 0x5114:
-        bus_->SyncPpu();
-        state_.PrgBank0 = (value << 13) & prgMask_;
-        bus_->SyncPpu();
+        state_.PrgBank0Ram = (value & 0x80) == 0;
+        state_.PrgBank0 = state_.PrgBank0Ram
+            ? ((value & 4) >> 2 & prgRamBanks_.size() - 1)
+            : (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
 
     case 0x5115:
-        bus_->SyncPpu();
-        state_.PrgBank1 = (value << 13) & prgMask_;
-        bus_->SyncPpu();
+        state_.PrgBank1Ram = (value & 0x80) == 0;
+        state_.PrgBank1 = state_.PrgBank1Ram
+            ? ((value & 4) >> 2 & prgRamBanks_.size() - 1)
+            : (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
 
     case 0x5116:
-        bus_->SyncPpu();
-        state_.PrgBank2 = (value << 13) & prgMask_;
+        state_.PrgBank2Ram = (value & 0x80) == 0;
+        state_.PrgBank2 = state_.PrgBank2Ram
+            ? ((value & 4) >> 2 & prgRamBanks_.size() - 1)
+            : (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
 
     case 0x5117:
-        bus_->SyncPpu();
         state_.PrgBank3 = (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
@@ -1242,8 +1291,7 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
         break;
 
     case 0x5130:
-        state_.ChrBankHighBits = (value & 3) << 8;
-        assert(state_.ChrBankHighBits == 0);
+        state_.ChrBankHighBits = (value & 3) << 14;
         break;
 
     case 0x5200:
@@ -1298,7 +1346,9 @@ void Cart::UpdatePrgMapMMC5()
 
     case 1:
     {
-        auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
+        auto baseLow = state_.PrgBank1Ram
+            ? prgRamBanks_[state_.PrgBank1]
+            : &prgData_[(state_.PrgBank1 & 0xffffc000)];
         auto baseHigh = &prgData_[(state_.PrgBank3 & 0xffffc000)];
         state_.CpuBanks[4] = baseLow;
         state_.CpuBanks[5] = baseLow + 0x2000;
@@ -1309,19 +1359,22 @@ void Cart::UpdatePrgMapMMC5()
 
     case 2:
     {
-        auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
+        auto baseLow = state_.PrgBank1Ram
+            ? prgRamBanks_[state_.PrgBank1]
+            : &prgData_[(state_.PrgBank1 & 0xffffc000)];
+
         state_.CpuBanks[4] = baseLow;
         state_.CpuBanks[5] = baseLow + 0x2000;
-        state_.CpuBanks[6] = &prgData_[(state_.PrgBank2)];
+        state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
         state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
         break;
     }
 
     case 3:
     {
-        state_.CpuBanks[4] = &prgData_[(state_.PrgBank0)];
-        state_.CpuBanks[5] = &prgData_[(state_.PrgBank1)];
-        state_.CpuBanks[6] = &prgData_[(state_.PrgBank2)];
+        state_.CpuBanks[4] = state_.PrgBank0Ram ? prgRamBanks_[state_.PrgBank0] : &prgData_[(state_.PrgBank0)];
+        state_.CpuBanks[5] = state_.PrgBank1Ram ? prgRamBanks_[state_.PrgBank1] : &prgData_[(state_.PrgBank1)];
+        state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
         state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
     }
     }
@@ -1679,9 +1732,6 @@ std::unique_ptr<Cart> TryCreateCart(
     if (desc.PrgBatteryRamSize != 0 && desc.PrgBatteryRamSize != 0x2000)
         return nullptr;
 
-    if (desc.PrgRamSize != 0)
-        cart->AddPrgRam();
-
     if (desc.PrgBatteryRamSize != 0)
     {
         if (batteryRam)
@@ -1689,6 +1739,9 @@ std::unique_ptr<Cart> TryCreateCart(
         else
             cart->AddPrgRam();
     }
+
+    if (desc.PrgRamSize != 0)
+        cart->AddPrgRam();
 
     if (desc.ChrRamSize != 0 && desc.ChrRamSize != 0x2000)
         return nullptr;
