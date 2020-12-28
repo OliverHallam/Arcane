@@ -314,7 +314,9 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 break;
 
     case 1:
-            bus_.PpuDummyNametableFetch();
+            if (spriteIndex_ < scanlineSpriteCount_)
+                bus_.PpuDummyNametableFetch();
+
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
                 break;
