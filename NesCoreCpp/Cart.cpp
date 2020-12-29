@@ -27,9 +27,16 @@ void Cart::SetMapper(MapperType mapper)
         state_.PrgMode = 3;
         state_.PrgRamProtect0 = 3; // two protect flags
     }
-    if (mapper_ == MapperType::MCACC)
+    else if (mapper_ == MapperType::MCACC)
     {
         state_.ChrA12PulseCounter = 1;
+    }
+    else if (mapper_ == MapperType::AxROM)
+    {
+        state_.CpuBanks[4] = &prgData_[0];
+        state_.CpuBanks[5] = &prgData_[0x2000];
+        state_.CpuBanks[6] = &prgData_[0x4000];
+        state_.CpuBanks[7] = &prgData_[0x6000];
     }
 }
 
@@ -208,6 +215,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
             state_.CpuBanks[address >> 13][address & 0x1fff] = value;
         break;
 
+    case MapperType::AxROM:
+        WriteAxROM(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -280,6 +291,17 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         bus_->TickCpuWrite();
         if (state_.CpuBankWritable[address >> 13])
             state_.CpuBanks[address >> 13][address & 0x1fff] = secondValue;
+        break;
+
+    case MapperType::AxROM:
+        bus_->TickCpuWrite();
+        WriteAxROM(address, secondValue);
+        break;
+
+    case MapperType::BF9093:
+        bus_->TickCpuWrite();
+        if (address >= 0xc000)
+            WriteUxROM(address, secondValue);
         break;
 
     default:
@@ -1655,6 +1677,28 @@ void Cart::UpdateNametableMMC5(uint32_t index, uint8_t mode)
     state_.PpuBanks[8ULL + index] = state_.PpuBanks[12ULL + index] = data;
 }
 
+void Cart::WriteAxROM(uint16_t address, uint8_t value)
+{
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    auto mirrorMode = (value & 0x10) ? MirrorMode::SingleScreenHigh : MirrorMode::SingleScreenLow;
+    if (state_.MirrorMode != mirrorMode)
+    {
+        bus_->SyncPpu();
+        SetMirrorMode(mirrorMode);
+    }
+
+    auto prgBank = &prgData_[((value & 0x07) << 15) & prgMask_];
+    state_.CpuBanks[4] = prgBank;
+    state_.CpuBanks[5] = prgBank + 0x2000;
+    state_.CpuBanks[6] = prgBank + 0x4000;
+    state_.CpuBanks[7] = prgBank + 0x6000;
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -1823,6 +1867,25 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 5:
         mapper = MapperType::MMC5;
+        break;
+
+    case 7:
+        mapper = MapperType::AxROM;
+
+        switch (desc.SubMapper)
+        {
+        case 0:
+        case 1:
+            cart->EnableBusConflicts(false);
+            break;
+
+        case 2:
+            cart->EnableBusConflicts(true);
+            break;
+
+        default:
+            return nullptr;
+        }
         break;
 
     case 71:

@@ -82,6 +82,8 @@ private:
     void UpdateNametableMapMMC5();
     void UpdateNametableMMC5(uint32_t index, uint8_t mode);
 
+    void WriteAxROM(uint16_t address, uint8_t value);
+
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 
