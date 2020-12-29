@@ -77,6 +77,7 @@ private:
     uint8_t ReadMMC5(uint16_t address);
     void WriteMMC5(uint16_t address, uint8_t value);
     void UpdatePrgMapMMC5();
+    void MapPrgBankMMC5(bool isRam, int32_t index, uint8_t** bank, bool* writable);
     void UpdateChrMapMMC5();
     void UpdateNametableMapMMC5();
     void UpdateNametableMMC5(uint32_t index, uint8_t mode);

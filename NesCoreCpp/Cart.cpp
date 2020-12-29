@@ -11,7 +11,8 @@ Cart::Cart() :
     bus_{},
     chrMask_{},
     prgMask_{},
-    busConflicts_{}
+    busConflicts_{},
+    prgRamMask_{}
 {
 }
 
@@ -1151,6 +1152,7 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
             state_.PrgRamProtect0 &= 0xfd;
         else
             state_.PrgRamProtect0 |= 0x02;
+        UpdatePrgMapMMC5();
         break;
 
     case 0x5103:
@@ -1158,6 +1160,7 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
             state_.PrgRamProtect0 &= 0xfe;
         else
             state_.PrgRamProtect0 |= 0x01;
+        UpdatePrgMapMMC5();
         break;
 
     case 0x5104:
@@ -1190,18 +1193,20 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
         value |= value << 2;
         value |= value << 4;
         state_.ChrFillAttributes = value;
-
         UpdateNametableMapMMC5();
         break;
 
     case 0x5113:
-        state_.CpuBanks[3] = prgRamBanks_[((value & 4) >> 2) & (prgRamBanks_.size() - 1)];
+    {
+        auto bank = prgRamBanks_[(value & 7) >> 2];
+        state_.CpuBanks[3] = bank ? &bank[(value << 13) & prgRamMask_] : nullptr;
         break;
+    }
 
     case 0x5114:
         state_.PrgBank0Ram = (value & 0x80) == 0;
         state_.PrgBank0 = state_.PrgBank0Ram
-            ? ((value & 4) >> 2 & prgRamBanks_.size() - 1)
+            ? (value & 7)
             : (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
@@ -1209,7 +1214,7 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
     case 0x5115:
         state_.PrgBank1Ram = (value & 0x80) == 0;
         state_.PrgBank1 = state_.PrgBank1Ram
-            ? ((value & 4) >> 2 & prgRamBanks_.size() - 1)
+            ? (value & 7)
             : (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
@@ -1217,7 +1222,7 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
     case 0x5116:
         state_.PrgBank2Ram = (value & 0x80) == 0;
         state_.PrgBank2 = state_.PrgBank2Ram
-            ? ((value & 4) >> 2 & prgRamBanks_.size() - 1)
+            ? (value & 7)
             : (value << 13) & prgMask_;
         UpdatePrgMapMMC5();
         break;
@@ -1374,12 +1379,24 @@ void Cart::UpdatePrgMapMMC5()
     {
         if (state_.PrgBank1Ram)
         {
-            auto baseLow = prgRamBanks_[state_.PrgBank1];
-            state_.CpuBanks[4] = prgRamBanks_[state_.PrgBank1];
-            state_.CpuBanks[5] = prgRamBanks_[state_.PrgBank1] + (0x2000 & prgRamMask_);
+            auto bank = prgRamBanks_[state_.PrgBank1 >> 2];
+            if (bank)
+            {
+                // TODO: what happens if the bank doesn't align with a 4k boundary?
+                state_.CpuBanks[4] = bank + (((state_.PrgBank1 & 0x03 & ~1) << 13) & prgRamMask_);
+                state_.CpuBanks[5] = bank + (((state_.PrgBank1 & 0x03 | 1) << 13) & prgRamMask_);
 
-            state_.CpuBankWritable[4] = state_.PrgRamProtect0 == 0;
-            state_.CpuBankWritable[5] = state_.PrgRamProtect0 == 0;
+                state_.CpuBankWritable[4] = state_.PrgRamProtect0 == 0;
+                state_.CpuBankWritable[5] = state_.PrgRamProtect0 == 0;
+            }
+            else
+            {
+                state_.CpuBanks[4] = nullptr;
+                state_.CpuBanks[5] = nullptr;
+
+                state_.CpuBankWritable[4] = false;
+                state_.CpuBankWritable[5] = false;
+            }
         }
         else
         {
@@ -1404,12 +1421,25 @@ void Cart::UpdatePrgMapMMC5()
     {
         if (state_.PrgBank1Ram)
         {
-            auto baseLow = prgRamBanks_[state_.PrgBank1];
-            state_.CpuBanks[4] = prgRamBanks_[state_.PrgBank1];
-            state_.CpuBanks[5] = prgRamBanks_[state_.PrgBank1] + (0x2000 & prgRamMask_);
+            auto bank = prgRamBanks_[state_.PrgBank1 >> 2];
 
-            state_.CpuBankWritable[4] = state_.PrgRamProtect0 == 0;
-            state_.CpuBankWritable[5] = state_.PrgRamProtect0 == 0;
+            if (bank)
+            {
+                // TODO: what happens if the bank doesn't align with a 4k boundary?
+                state_.CpuBanks[4] = bank + (((state_.PrgBank1 & 0x03 & ~1) << 13) & prgRamMask_);
+                state_.CpuBanks[5] = bank + (((state_.PrgBank1 & 0x03 | 1) << 13) & prgRamMask_);
+
+                state_.CpuBankWritable[4] = state_.PrgRamProtect0 == 0;
+                state_.CpuBankWritable[5] = state_.PrgRamProtect0 == 0;
+            }
+            else
+            {
+                state_.CpuBanks[4] = nullptr;
+                state_.CpuBanks[5] = nullptr;
+
+                state_.CpuBankWritable[4] = false;
+                state_.CpuBankWritable[5] = false;
+            }
         }
         else
         {
@@ -1421,26 +1451,46 @@ void Cart::UpdatePrgMapMMC5()
             state_.CpuBankWritable[5] = false;
         }
 
-        state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
-        state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
+        MapPrgBankMMC5(state_.PrgBank2Ram, state_.PrgBank2, &state_.CpuBanks[6], &state_.CpuBankWritable[6]);
 
-        state_.CpuBankWritable[6] = state_.PrgBank2Ram && (state_.PrgRamProtect0 == 0);
+
+        state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
         state_.CpuBankWritable[7] = false;
         break;
     }
 
     case 3:
     {
-        state_.CpuBanks[4] = state_.PrgBank0Ram ? prgRamBanks_[state_.PrgBank0] : &prgData_[(state_.PrgBank0)];
-        state_.CpuBanks[5] = state_.PrgBank1Ram ? prgRamBanks_[state_.PrgBank1] : &prgData_[(state_.PrgBank1)];
-        state_.CpuBanks[6] = state_.PrgBank2Ram ? prgRamBanks_[state_.PrgBank2] : &prgData_[(state_.PrgBank2)];
-        state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
+        MapPrgBankMMC5(state_.PrgBank0Ram, state_.PrgBank0, &state_.CpuBanks[4], &state_.CpuBankWritable[4]);
+        MapPrgBankMMC5(state_.PrgBank1Ram, state_.PrgBank1, &state_.CpuBanks[5], &state_.CpuBankWritable[5]);
+        MapPrgBankMMC5(state_.PrgBank2Ram, state_.PrgBank2, &state_.CpuBanks[6], &state_.CpuBankWritable[6]);
 
-        state_.CpuBankWritable[4] = state_.PrgBank0Ram && (state_.PrgRamProtect0 == 0);
-        state_.CpuBankWritable[5] = state_.PrgBank1Ram && (state_.PrgRamProtect0 == 0);
-        state_.CpuBankWritable[6] = state_.PrgBank2Ram && (state_.PrgRamProtect0 == 0);
+        state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
         state_.CpuBankWritable[7] = false;
     }
+    }
+}
+
+void Cart::MapPrgBankMMC5(bool isRam, int32_t index, uint8_t** bank, bool* writable)
+{
+    if (isRam)
+    {
+        auto ramBank = prgRamBanks_[index >> 2];
+        if (ramBank)
+        {
+            *bank = ramBank + (((index & 0x03) << 13) & prgRamMask_);
+            *writable = state_.PrgRamProtect0 == 0;
+        }
+        else
+        {
+            *bank = nullptr;
+            *writable = false;
+        }
+    }
+    else
+    {
+        *bank = &prgData_[index];
+        *writable = false;
     }
 }
 
