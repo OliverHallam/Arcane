@@ -294,17 +294,25 @@ uint8_t Cart::PpuRead(uint16_t address)
     if (mapper_ == MapperType::MMC5)
     {
         // Check if we need to switch to or from the sprite nametable.
+
         if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
         {
             UpdateChrMapMMC5();
         }
 
-
         state_.ScanlinePpuReadCount++;
 
         if (state_.ExtendedRamMode == 1 && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
         {
-            if ((address & 0x03ff) >= 0x03c0)
+            if (address < 0x2000)
+            {
+                // pattern byte
+                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+                auto plane = exData & 0x3f;
+                auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+                return chrData_[chrAddress & (chrData_.size() - 1)];
+            }
+            else if ((address & 0x03ff) >= 0x03c0)
             {
                 // attribute byte
                 auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
@@ -313,14 +321,6 @@ uint8_t Cart::PpuRead(uint16_t address)
                 exData |= exData >> 2;
                 exData |= exData >> 4;
                 return exData;
-            }
-            else if (address < 0x2000)
-            {
-                // pattern byte
-                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-                auto plane = exData & 0x3f;
-                auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
-                return chrData_[chrAddress & (chrData_.size() - 1)];
             }
             else
             {
@@ -336,6 +336,7 @@ uint8_t Cart::PpuRead(uint16_t address)
                 state_.PPuBankAttributeBytes[bankIndex & 0x03] :
                 state_.PpuBankFillBytes[bankIndex & 0x03];
         }
+
         return bank[address & 0x03ff];
     }
     else
