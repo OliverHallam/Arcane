@@ -26,6 +26,7 @@ public:
     void OamDmaCompleted();
 
     void RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle);
+    void RunEvaluation(uint32_t scanline);
 
     void HReset();
 

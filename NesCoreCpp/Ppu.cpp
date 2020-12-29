@@ -880,7 +880,7 @@ void Ppu::RenderScanlineVisible()
             sprites_.RunRender(0, 256, background_.ScanlinePixels());
         }
 
-        sprites_.RunEvaluation(state_.CurrentScanline, 0, 256);
+        sprites_.RunEvaluation(state_.CurrentScanline);
     }
     else
     {

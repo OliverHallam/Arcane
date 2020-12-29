@@ -63,6 +63,9 @@ void PpuSprites::OamDmaCompleted()
 
 void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
+    if (state_.oamAddress_ >= 256)
+        return;
+
     if (scanlineCycle < 64)
     {
         if (64 >= targetCycle)
@@ -79,11 +82,6 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
 
     while (scanlineCycle < targetCycle)
     {
-        if (state_.oamAddress_ >= 256)
-        {
-            return;
-        }
-
         auto oamData = state_.oam_[state_.oamAddress_];
         if (oamCopyIndex_ < 32)
         {
@@ -111,7 +109,10 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
             if (oamCopyIndex_ >= 32)
             {
                 state_.spriteOverflow_ = true;
-                state_.oamAddress_ += 4;
+
+                // no more ovserverble side effects
+                state_.oamAddress_ == 256;
+                return;
             }
             else
             {
@@ -128,6 +129,49 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
 
         scanlineCycle += 2;
     }
+}
+
+void PpuSprites::RunEvaluation(uint32_t scanline)
+{
+    auto spriteSize = state_.largeSprites_ ? 16u : 8u;
+
+    auto oamAddress = 0;
+    auto oamCopyIndex = 0;
+
+    while (oamAddress < 256)
+    {
+        auto oamData = state_.oam_[oamAddress];
+        auto spriteRow = (uint32_t)(scanline - oamData);
+        bool visible = spriteRow < spriteSize;
+
+        if (oamAddress == 0)
+        {
+            sprite0Selected_ = visible;
+        }
+
+        if (visible)
+        {
+            if (oamCopyIndex >= 32)
+            {
+                state_.spriteOverflow_ = true;
+                return;
+            }
+            else
+            {
+                oamCopy_[oamCopyIndex++] = state_.oam_[oamAddress++];
+                oamCopy_[oamCopyIndex++] = state_.oam_[oamAddress++];
+                oamCopy_[oamCopyIndex++] = state_.oam_[oamAddress++];
+                oamCopy_[oamCopyIndex++] = state_.oam_[oamAddress++];
+            }
+        }
+        else
+        {
+            oamAddress += 4;
+            // TODO: overflow bug
+        }
+    }
+
+    oamCopyIndex_ = oamCopyIndex;
 }
 
 void PpuSprites::RunRender(uint32_t scanlineCycle, uint32_t targetCycle, const std::array<uint8_t, 256>& backgroundPixels)
