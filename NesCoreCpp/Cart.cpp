@@ -418,14 +418,182 @@ uint8_t Cart::PpuRead(uint16_t address)
     return bank[address & 0x03ff];
 }
 
-uint16_t Cart::PpuReadChr16(uint16_t address)
+uint8_t Cart::PpuReadNametable(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
     if (mapper_ == MapperType::MMC5)
     {
-        // this is only called for background fetches, so I don't think it's possible to trigger a switch to sprites,
-        // and it should be too late for the switch back to tiles
+        // Check if we need to switch to or from the sprite nametable.
+
+        if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
+        {
+            UpdateChrMapMMC5();
+        }
+
+        state_.ScanlinePpuReadCount++;
+
+        if (state_.ExtendedRamMode == 1 && state_.RenderingEnabled && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
+        {
+            // it's possible for a nametable read to hit an attribute byte.
+            if ((address & 0x03ff) >= 0x03c0)
+            {
+                // attribute byte
+                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+                // map the top two bits to the whole attribute byte
+                exData &= 0xc0;
+                exData |= exData >> 2;
+                exData |= exData >> 4;
+                return exData;
+            }
+            else
+            {
+                // nametable byte - latch the address for exram.
+                state_.ExtendedRamFetchAddress = address & 0x03ff;
+            }
+        }
+
+        auto bank = state_.PpuBanks[bankIndex];
+        if (bank == nullptr)
+        {
+            return (address & 0x03ff) >= 0x03c0 ?
+                state_.PPuBankAttributeBytes[bankIndex & 0x03] :
+                state_.PpuBankFillBytes[bankIndex & 0x03];
+        }
+
+        return bank[address & 0x03ff];
+    }
+
+    auto bank = state_.PpuBanks[bankIndex];
+    return bank[address & 0x03ff];
+}
+
+uint8_t Cart::PpuReadAttributes(uint16_t address)
+{
+    auto bankIndex = address >> 10;
+
+    if (mapper_ == MapperType::MMC5)
+    {
+        // this would usually only happen for nametable reads, but can trip up a cycle late.
+        if ((state_.ScanlinePpuReadCount == 128 || state_.ScanlinePpuReadCount == 160) && state_.RenderingEnabled && state_.LargeSprites)
+        {
+            UpdateChrMapMMC5();
+        }
+
+        // Check if we need to switch to or from the sprite nametable.
+        state_.ScanlinePpuReadCount++;
+
+        if (state_.ExtendedRamMode == 1 && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
+        {
+            // attribute byte
+            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+            // map the top two bits to the whole attribute byte
+            exData &= 0xc0;
+            exData |= exData >> 2;
+            exData |= exData >> 4;
+            return exData;
+        }
+
+        auto bank = state_.PpuBanks[bankIndex];
+        if (bank == nullptr)
+        {
+            return (address & 0x03ff) >= 0x03c0 ?
+                state_.PPuBankAttributeBytes[bankIndex & 0x03] :
+                state_.PpuBankFillBytes[bankIndex & 0x03];
+        }
+
+        return bank[address & 0x03ff];
+    }
+
+    auto bank = state_.PpuBanks[bankIndex];
+    return bank[address & 0x03ff];
+}
+
+uint8_t Cart::PpuReadPatternLow(uint16_t address)
+{
+    auto bankIndex = address >> 10;
+
+    if (mapper_ == MapperType::MMC5)
+    {
+        state_.ScanlinePpuReadCount++;
+
+        if (state_.ExtendedRamMode == 1 && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
+        {
+            // pattern byte
+            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+            auto plane = exData & 0x3f;
+            auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+            return chrData_[chrAddress & (chrData_.size() - 1)];
+        }
+    }
+
+    auto bank = state_.PpuBanks[bankIndex];
+    return bank[address & 0x03ff];
+}
+
+uint8_t Cart::PpuReadPatternHigh(uint16_t address)
+{
+    auto bankIndex = address >> 10;
+
+    if (mapper_ == MapperType::MMC5)
+    {
+        state_.ScanlinePpuReadCount++;
+
+        if (state_.ExtendedRamMode == 1 && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
+        {
+            // pattern byte
+            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
+            auto plane = exData & 0x3f;
+            auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+            return chrData_[chrAddress & (chrData_.size() - 1)];
+        }
+    }
+    else if (mapper_ == MapperType::MMC2)
+    {
+        if (address == 0x0fd8)
+        {
+            if (state_.UseSecondaryChr0)
+            {
+                state_.UseSecondaryChr0 = false;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if (address == 0x0fe8)
+        {
+            if (!state_.UseSecondaryChr0)
+            {
+                state_.UseSecondaryChr0 = true;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if ((address & 0xfff8) == 0x1fd8)
+        {
+            if (state_.UseSecondaryChr1)
+            {
+                state_.UseSecondaryChr1 = false;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if ((address & 0xfff8) == 0x1fe8)
+        {
+            if (!state_.UseSecondaryChr1)
+            {
+                state_.UseSecondaryChr1 = true;
+                UpdateChrMapMMC2();
+            }
+        }
+    }
+
+    auto bank = state_.PpuBanks[bankIndex];
+    return bank[address & 0x03ff];
+}
+
+uint16_t Cart::PpuReadPattern16(uint16_t address)
+{
+    auto bankIndex = address >> 10;
+
+    if (mapper_ == MapperType::MMC5)
+    {
         state_.ScanlinePpuReadCount += 2;
 
         if (state_.ExtendedRamMode == 1)
@@ -1483,7 +1651,8 @@ void Cart::UpdatePrgMapMMC5()
     {
         if (state_.PrgBank1Ram)
         {
-            auto bank = prgRamBanks_[state_.PrgBank1 >> 2];
+            auto prgRamIndex = state_.PrgBank1 >> 2;
+            auto bank = prgRamIndex < prgRamBanks_.size() ? prgRamBanks_[prgRamIndex] : nullptr;
             if (bank)
             {
                 // TODO: what happens if the bank doesn't align with a 4k boundary?
@@ -1525,8 +1694,8 @@ void Cart::UpdatePrgMapMMC5()
     {
         if (state_.PrgBank1Ram)
         {
-            auto bank = prgRamBanks_[state_.PrgBank1 >> 2];
-
+            auto prgRamIndex = state_.PrgBank1 >> 2;
+            auto bank = prgRamIndex < prgRamBanks_.size() ? prgRamBanks_[prgRamIndex] : nullptr;
             if (bank)
             {
                 // TODO: what happens if the bank doesn't align with a 4k boundary?
@@ -1579,7 +1748,8 @@ void Cart::MapPrgBankMMC5(bool isRam, int32_t index, uint8_t** bank, bool* writa
 {
     if (isRam)
     {
-        auto ramBank = prgRamBanks_[index >> 2];
+        auto prgRamIndex = index >> 2;
+        auto ramBank = prgRamIndex < prgRamBanks_.size() ? prgRamBanks_[prgRamIndex] : nullptr;
         if (ramBank)
         {
             *bank = ramBank + (((index & 0x03) << 13) & prgRamMask_);

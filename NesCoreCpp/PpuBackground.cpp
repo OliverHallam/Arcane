@@ -287,7 +287,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
     case 1:
             {
                 auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
-                nextTileId_ = bus_.PpuRead(tileAddress);
+                nextTileId_ = bus_.PpuReadNametable(tileAddress);
             }
 
             // Lock this in now - if the base address changes after this it doesn't take effect until the next tile.
@@ -315,7 +315,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
                     (state_.CurrentAddress >> 4) & 0x0038 | // 3 bits of tile y
                     (state_.CurrentAddress >> 2) & 0x0007); // 3 bits of tile x
 
-                auto attributes = bus_.PpuRead(attributeAddress);
+                auto attributes = bus_.PpuReadAttributes(attributeAddress);
 
                 // use one more bit of the tile x and y to get the quadrant
                 attributes >>= ((state_.CurrentAddress & 0x0040) >> 4) | (state_.CurrentAddress & 0x0002);
@@ -333,7 +333,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
             [[fallthrough]];
 
     case 5:
-            scanlineTiles_[loadingIndex_].PatternBytes = bus_.PpuRead(patternAddress_);
+            scanlineTiles_[loadingIndex_].PatternBytes = bus_.PpuReadPatternLow(patternAddress_);
             cycle++;
             [[fallthrough]];
 
@@ -345,7 +345,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
     case 7:
             // address is 000PTTTTTTTT1YYY
-            scanlineTiles_[loadingIndex_].PatternBytes |= bus_.PpuRead((uint16_t)(patternAddress_ | 8)) << 8;
+            scanlineTiles_[loadingIndex_].PatternBytes |= bus_.PpuReadPatternHigh((uint16_t)(patternAddress_ | 8)) << 8;
 
             // increment the x part of the address
             if ((state_.CurrentAddress & 0x001f) == 0x001f)
@@ -376,7 +376,7 @@ void PpuBackground::RunLoad()
     while (true)
     {
         auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
-        nextTileId_ = bus_.PpuRead(tileAddress);
+        nextTileId_ = bus_.PpuReadNametable(tileAddress);
 
         auto attributeAddress = (uint16_t)(
             0x2000 | (state_.CurrentAddress & 0x0C00) | // select table
@@ -384,7 +384,7 @@ void PpuBackground::RunLoad()
             (state_.CurrentAddress >> 4) & 0x0038 | // 3 bits of tile y
             (state_.CurrentAddress >> 2) & 0x0007); // 3 bits of tile x
 
-        auto attributes = bus_.PpuRead(attributeAddress);
+        auto attributes = bus_.PpuReadAttributes(attributeAddress);
 
         // use one more bit of the tile x and y to get the quadrant
         attributes >>= ((state_.CurrentAddress & 0x0040) >> 4) | (state_.CurrentAddress & 0x0002);
@@ -398,9 +398,9 @@ void PpuBackground::RunLoad()
             (nextTileId_ << 4) |
                 (state_.CurrentAddress >> 12)); // fineY
 
-        auto pattern = bus_.PpuReadChr16(patternAddress_);
+        auto pattern = bus_.PpuReadPattern16(patternAddress_);
 
-        // low address is 000PTTTTTTTT1YYY
+        // low address is 000PTTTTTTTT0YYY
         // high address is 000PTTTTTTTT1YYY
         scanlineTiles_[loadingIndex_].PatternBytes = pattern;
 

@@ -387,7 +387,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                             (tileId << 4) | tileFineY);
                 }
 
-                sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
+                sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadPatternLow(patternAddress_);
             }
 
 
@@ -402,7 +402,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     case 7:
             // address is 000PTTTTTTTT1YYY
-            sprites_[spriteIndex_].patternShiftHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+            sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadPatternHigh((uint16_t)(patternAddress_ | 8));
             spriteIndex_++;
 
             if (spriteIndex_ >= scanlineSpriteCount_)
@@ -466,10 +466,11 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 
         bus_.PpuDummyNametableFetch();
 
-        sprites_[spriteIndex_].patternShiftLow = bus_.PpuRead(patternAddress_);
+        // TODO: PpuReadPattern16?
+        sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadPatternLow(patternAddress_);
 
         // address is 000PTTTTTTTT1YYY
-        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuRead((uint16_t)(patternAddress_ | 8));
+        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadPatternHigh((uint16_t)(patternAddress_ | 8));
         spriteIndex_++;
     }
 

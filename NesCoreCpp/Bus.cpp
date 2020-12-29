@@ -268,9 +268,29 @@ uint8_t Bus::PpuRead(uint16_t address) const
     return cart_->PpuRead(address);
 }
 
-uint16_t Bus::PpuReadChr16(uint16_t address) const
+uint8_t Bus::PpuReadNametable(uint16_t address) const
 {
-    return cart_->PpuReadChr16(address);
+    return cart_->PpuReadNametable(address);
+}
+
+uint8_t Bus::PpuReadAttributes(uint16_t address) const
+{
+    return cart_->PpuReadAttributes(address);
+}
+
+uint8_t Bus::PpuReadPatternLow(uint16_t address) const
+{
+    return cart_->PpuReadPatternLow(address);
+}
+
+uint8_t Bus::PpuReadPatternHigh(uint16_t address) const
+{
+    return cart_->PpuReadPatternHigh(address);
+}
+
+uint16_t Bus::PpuReadPattern16(uint16_t address) const
+{
+    return cart_->PpuReadPattern16(address);
 }
 
 void Bus::PpuDummyTileFetch() const

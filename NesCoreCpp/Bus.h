@@ -56,7 +56,11 @@ public:
 
     uint8_t* GetPpuRamBase();
     uint8_t PpuRead(uint16_t address) const;
-    uint16_t PpuReadChr16(uint16_t address) const;
+    uint8_t PpuReadNametable(uint16_t address) const;
+    uint8_t PpuReadAttributes(uint16_t address) const;
+    uint8_t PpuReadPatternLow(uint16_t address) const;
+    uint8_t PpuReadPatternHigh(uint16_t address) const;
+    uint16_t PpuReadPattern16(uint16_t address) const;
     void PpuDummyTileFetch() const;
     void PpuDummyNametableFetch() const;
     void PpuWrite(uint16_t address, uint8_t value);
