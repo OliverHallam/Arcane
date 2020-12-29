@@ -43,6 +43,8 @@ struct CartCoreState
     uint8_t NametableMode1{};
     uint8_t NametableMode2{};
     uint8_t NametableMode3{};
+    bool UseSecondaryChr0{};
+    bool UseSecondaryChr1{};
     bool UseSecondaryChrForData{};
 
     uint32_t PrgPlane0{};

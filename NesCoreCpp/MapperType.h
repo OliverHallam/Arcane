@@ -11,5 +11,6 @@ enum class MapperType
     MCACC,
     MMC5, // ExROM
     AxROM,
+    MMC2, // PxROM
     BF9093, // Codemasters UNROM clone
 };

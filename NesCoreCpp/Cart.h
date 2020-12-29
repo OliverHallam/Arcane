@@ -84,6 +84,9 @@ private:
 
     void WriteAxROM(uint16_t address, uint8_t value);
 
+    void WriteMMC2(uint16_t address, uint8_t value);
+    void UpdateChrMapMMC2();
+
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 

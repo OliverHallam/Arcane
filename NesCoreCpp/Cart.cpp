@@ -38,6 +38,13 @@ void Cart::SetMapper(MapperType mapper)
         state_.CpuBanks[6] = &prgData_[0x4000];
         state_.CpuBanks[7] = &prgData_[0x6000];
     }
+    else if (mapper_ == MapperType::MMC2)
+    {
+        state_.CpuBanks[4] = &prgData_[0];
+        state_.CpuBanks[5] = &prgData_[prgData_.size() - 0x6000];
+        state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
+        state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
+    }
 }
 
 void Cart::SetPrgRom(std::vector<uint8_t> prgData)
@@ -219,6 +226,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteAxROM(address, value);
         break;
 
+    case MapperType::MMC2:
+        WriteMMC2(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -298,6 +309,11 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteAxROM(address, secondValue);
         break;
 
+    case MapperType::MMC2:
+        bus_->TickCpuWrite();
+        WriteMMC2(address, secondValue);
+        break;
+
     case MapperType::BF9093:
         bus_->TickCpuWrite();
         if (address >= 0xc000)
@@ -362,11 +378,44 @@ uint8_t Cart::PpuRead(uint16_t address)
 
         return bank[address & 0x03ff];
     }
-    else
+    else if (mapper_ == MapperType::MMC2)
     {
-        auto bank = state_.PpuBanks[bankIndex];
-        return bank[address & 0x03ff];
+        if (address == 0x0fd8)
+        {
+            if (state_.UseSecondaryChr0)
+            {
+                state_.UseSecondaryChr0 = false;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if (address == 0x0fe8)
+        {
+            if (!state_.UseSecondaryChr0)
+            {
+                state_.UseSecondaryChr0 = true;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if ((address & 0xfff8) == 0x1fd8)
+        {
+            if (state_.UseSecondaryChr1)
+            {
+                state_.UseSecondaryChr1 = false;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if ((address & 0xfff8) == 0x1fe8)
+        {
+            if (!state_.UseSecondaryChr1)
+            {
+                state_.UseSecondaryChr1 = true;
+                UpdateChrMapMMC2();
+            }
+        }
     }
+
+    auto bank = state_.PpuBanks[bankIndex];
+    return bank[address & 0x03ff];
 }
 
 uint16_t Cart::PpuReadChr16(uint16_t address)
@@ -403,12 +452,45 @@ uint16_t Cart::PpuReadChr16(uint16_t address)
         auto bankAddress = address & 0x03ff;
         return (bank[bankAddress | 8] << 8) | bank[bankAddress];
     }
-    else
+    else if (mapper_ == MapperType::MMC2)
     {
-        auto bank = state_.PpuBanks[bankIndex];
-        auto bankAddress = address & 0x03ff;
-        return (bank[bankAddress | 8] << 8) | bank[bankAddress];
+        if (address == 0x0fd0)
+        {
+            if (state_.UseSecondaryChr0)
+            {
+                state_.UseSecondaryChr0 = false;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if (address == 0x0fe0)
+        {
+            if (!state_.UseSecondaryChr0)
+            {
+                state_.UseSecondaryChr0 = true;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if ((address & 0xfff8) == 0x1fd0)
+        {
+            if (state_.UseSecondaryChr1)
+            {
+                state_.UseSecondaryChr1 = false;
+                UpdateChrMapMMC2();
+            }
+        }
+        else if ((address & 0xfff8) == 0x1fe0)
+        {
+            if (!state_.UseSecondaryChr1)
+            {
+                state_.UseSecondaryChr1 = true;
+                UpdateChrMapMMC2();
+            }
+        }
     }
+
+    auto bank = state_.PpuBanks[bankIndex];
+    auto bankAddress = address & 0x03ff;
+    return (bank[bankAddress | 8] << 8) | bank[bankAddress];
 }
 
 void Cart::PpuDummyTileFetch()
@@ -1699,6 +1781,67 @@ void Cart::WriteAxROM(uint16_t address, uint8_t value)
     state_.CpuBanks[7] = prgBank + 0x6000;
 }
 
+void Cart::WriteMMC2(uint16_t address, uint8_t value)
+{
+    switch (address >> 12)
+    {
+    case 0xA:
+    {
+        auto prgBank = value & 0x0f;
+        state_.CpuBanks[4] = &prgData_[(prgBank << 13) & prgMask_];
+        break;
+    }
+
+    case 0xB:
+        bus_->SyncPpu();
+        state_.ChrBank0 = value & 0x1f;
+        UpdateChrMapMMC2();
+        break;
+
+    case 0xC:
+        bus_->SyncPpu();
+        state_.SecondaryChrBank0 = value & 0x1f;
+        UpdateChrMapMMC2();
+        break;
+
+    case 0xD:
+        bus_->SyncPpu();
+        state_.ChrBank1 = value & 0x1f;
+        UpdateChrMapMMC2();
+        break;
+
+    case 0xE:
+        bus_->SyncPpu();
+        state_.SecondaryChrBank1 = value & 0x1f;
+        UpdateChrMapMMC2();
+        break;
+
+    case 0xF:
+        bus_->SyncPpu();
+        SetMirrorMode((value & 0x01) ? MirrorMode::Horizontal : MirrorMode::Vertical);
+        break;
+    }
+}
+
+void Cart::UpdateChrMapMMC2()
+{
+    auto bank0 = state_.UseSecondaryChr0 ? state_.SecondaryChrBank0 : state_.ChrBank0;
+    auto bank1 = state_.UseSecondaryChr1 ? state_.SecondaryChrBank1 : state_.ChrBank1;
+
+    auto base0 = &chrData_[(bank0 << 12) & chrMask_];
+    auto base1 = &chrData_[(bank1 << 12) & chrMask_];
+
+    state_.PpuBanks[0] = base0;
+    state_.PpuBanks[1] = base0 + 0x0400;
+    state_.PpuBanks[2] = base0 + 0x0800;
+    state_.PpuBanks[3] = base0 + 0x0c00;
+
+    state_.PpuBanks[4] = base1;
+    state_.PpuBanks[5] = base1 + 0x0400;
+    state_.PpuBanks[6] = base1 + 0x0800;
+    state_.PpuBanks[7] = base1 + 0x0c00;
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -1886,6 +2029,10 @@ std::unique_ptr<Cart> TryCreateCart(
         default:
             return nullptr;
         }
+        break;
+
+    case 9:
+        mapper = MapperType::MMC2;
         break;
 
     case 71:
