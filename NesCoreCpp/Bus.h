@@ -43,8 +43,9 @@ public:
     void ChrA12Falling();
 
     bool HasScanlineCounter() const;
-    void ScanlineCounterBeginScanline();
-    void TileSplitBeginScanline(bool firstTileIsAttribute);
+    void TileSplitBeginScanline();
+    void TileSplitBeginSprites();
+    void TileSplitEndSprites();
 
     void CpuDummyRead(uint16_t address);
     uint8_t CpuReadData(uint16_t address);
@@ -60,6 +61,8 @@ public:
     uint8_t PpuReadAttributes(uint16_t address) const;
     uint8_t PpuReadPatternLow(uint16_t address) const;
     uint8_t PpuReadPatternHigh(uint16_t address) const;
+    uint8_t PpuReadSpritePatternLow(uint16_t address) const;
+    uint8_t PpuReadSpritePatternHigh(uint16_t address) const;
     uint16_t PpuReadPattern16(uint16_t address) const;
     void PpuDummyTileFetch() const;
     void PpuDummyNametableFetch() const;
@@ -67,6 +70,7 @@ public:
 
     void InterceptPpuCtrl(bool largeSprites);
     void InterceptPpuMask(bool renderingEnabled);
+    bool PpuIsRendering();
 
     void WriteMMC5Audio(uint16_t address, uint8_t value);
 

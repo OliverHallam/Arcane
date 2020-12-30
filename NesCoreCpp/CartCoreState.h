@@ -74,7 +74,7 @@ struct CartCoreState
 
     bool LargeSprites{};
     bool RenderingEnabled{};
-    bool ChrMapNeedsUpdate{};
+    bool MMC5InSync{};
     int32_t ScanlinePpuReadCount{};
 
     uint8_t MulitplierArg0{};

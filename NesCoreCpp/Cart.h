@@ -34,11 +34,13 @@ public:
     void CpuWrite(uint16_t address, uint8_t value);
     void CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
-    uint8_t PpuRead(uint16_t address);
+    uint8_t PpuReadData(uint16_t address);
     uint8_t PpuReadNametable(uint16_t address);
     uint8_t PpuReadAttributes(uint16_t address);
     uint8_t PpuReadPatternLow(uint16_t address);
     uint8_t PpuReadPatternHigh(uint16_t address);
+    uint8_t PpuReadSpritePatternLow(uint16_t address);
+    uint8_t PpuReadSpritePatternHigh(uint16_t address);
     uint16_t PpuReadPattern16(uint16_t address);
     void PpuDummyTileFetch();
     void PpuSpriteNametableFetch();
@@ -52,7 +54,9 @@ public:
     bool HasScanlineCounter() const;
     void ScanlineCounterBeginScanline();
     void ScanlineCounterEndFrame();
-    void TileSplitBeginScanline(bool firstTileIsAttribute);
+    void TileSplitBeginScanline();
+    void TileSplitBeginSprites();
+    void TileSplitEndSprites();
 
     void InterceptWritePpuCtrl(bool largeSprites);
     void InterceptWritePpuMask(bool renderingEnabled);
@@ -89,6 +93,7 @@ private:
     void WriteAxROM(uint16_t address, uint8_t value);
 
     void WriteMMC2(uint16_t address, uint8_t value);
+    void PpuReadMMC2(uint16_t address);
     void UpdateChrMapMMC2();
 
     void SetChrBank1k(uint32_t bank, uint32_t value);

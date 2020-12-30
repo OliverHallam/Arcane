@@ -29,6 +29,8 @@ public:
     void DmaWrite(uint8_t value);
     void DmaCompleted();
 
+    bool IsRenderingEnabled() const;
+
     void CaptureState(PpuState* state) const;
     void RestoreState(const PpuState& state);
 

@@ -111,7 +111,7 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
                 state_.spriteOverflow_ = true;
 
                 // no more ovserverble side effects
-                state_.oamAddress_ == 256;
+                state_.oamAddress_ = 256;
                 return;
             }
             else
@@ -326,13 +326,6 @@ bool PpuSprites::IsHighTable(int32_t spriteIndex) const
 
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
-    // TODO: should be 321?
-    if (scanlineCycle == 256 && targetCycle == 320)
-    {
-        RunLoad(currentScanline);
-        return;
-    }
-
     // the OAM address is forced to 0 during the whole load phase.
     state_.oamAddress_ = 0;
 
@@ -431,7 +424,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                             (tileId << 4) | tileFineY);
                 }
 
-                sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadPatternLow(patternAddress_);
+                sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadSpritePatternLow(patternAddress_);
             }
 
 
@@ -446,7 +439,7 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     case 7:
             // address is 000PTTTTTTTT1YYY
-            sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadPatternHigh((uint16_t)(patternAddress_ | 8));
+            sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadSpritePatternHigh((uint16_t)(patternAddress_ | 8));
             spriteIndex_++;
 
             if (spriteIndex_ >= scanlineSpriteCount_)
@@ -510,11 +503,11 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
 
         bus_.PpuDummyNametableFetch();
 
-        // TODO: PpuReadPattern16?
-        sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadPatternLow(patternAddress_);
+        // TODO: PpuReadSpritePattern16?
+        sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadSpritePatternLow(patternAddress_);
 
         // address is 000PTTTTTTTT1YYY
-        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadPatternHigh((uint16_t)(patternAddress_ | 8));
+        sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadSpritePatternHigh((uint16_t)(patternAddress_ | 8));
         spriteIndex_++;
     }
 

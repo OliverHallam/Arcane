@@ -315,6 +315,11 @@ void Ppu::DmaCompleted()
     sprites_.OamDmaCompleted();
 }
 
+bool Ppu::IsRenderingEnabled() const
+{
+    return state_.EnableRendering;
+}
+
 void Ppu::CaptureState(PpuState* state) const
 {
     state->Core = state_;
@@ -574,7 +579,7 @@ void Ppu::SyncScanline()
                     }
 
                     // and then start the split counter for our lazy timeline
-                    bus_.TileSplitBeginScanline(nextTileIsAttribute);
+                    bus_.TileSplitBeginScanline();
                 }
 
                 ScheduleA12Sync(0, false);
@@ -755,6 +760,7 @@ void Ppu::RenderScanline(int32_t targetCycle)
         if (targetCycle >= 320)
         {
             sprites_.RunLoad(state_.CurrentScanline, state_.SyncCycle, 320);
+            bus_.TileSplitEndSprites();
             goto LoadBackground;
         }
         else
@@ -794,9 +800,11 @@ RenderVisible:
         goto EndRender;
 
 LoadSprites:
+    bus_.TileSplitBeginSprites();
     if (targetCycle >= 320)
     {
-        sprites_.RunLoad(state_.CurrentScanline, 256, 320);
+        sprites_.RunLoad(state_.CurrentScanline);
+        bus_.TileSplitEndSprites();
     }
     else
     {
@@ -853,7 +861,9 @@ void Ppu::RenderScanline()
 
     if (state_.EnableRendering)
     {
+        bus_.TileSplitBeginSprites();
         sprites_.RunLoad(state_.CurrentScanline);
+        bus_.TileSplitEndSprites();
 
         background_.RunLoad(320, 336);
     }

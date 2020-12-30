@@ -126,14 +126,19 @@ bool Bus::HasScanlineCounter() const
     return cart_->HasScanlineCounter();
 }
 
-void Bus::ScanlineCounterBeginScanline()
+void Bus::TileSplitBeginScanline()
 {
-    cart_->ScanlineCounterBeginScanline();
+    cart_->TileSplitBeginScanline();
 }
 
-void Bus::TileSplitBeginScanline(bool firstTileIsAttribute)
+void Bus::TileSplitBeginSprites()
 {
-    cart_->TileSplitBeginScanline(firstTileIsAttribute);
+    cart_->TileSplitBeginSprites();
+}
+
+void Bus::TileSplitEndSprites()
+{
+    cart_->TileSplitEndSprites();
 }
 
 void Bus::CpuDummyRead(uint16_t address)
@@ -265,7 +270,7 @@ uint8_t* Bus::GetPpuRamBase()
 
 uint8_t Bus::PpuRead(uint16_t address) const
 {
-    return cart_->PpuRead(address);
+    return cart_->PpuReadData(address);
 }
 
 uint8_t Bus::PpuReadNametable(uint16_t address) const
@@ -287,6 +292,17 @@ uint8_t Bus::PpuReadPatternHigh(uint16_t address) const
 {
     return cart_->PpuReadPatternHigh(address);
 }
+
+uint8_t Bus::PpuReadSpritePatternLow(uint16_t address) const
+{
+    return cart_->PpuReadSpritePatternLow(address);
+}
+
+uint8_t Bus::PpuReadSpritePatternHigh(uint16_t address) const
+{
+    return cart_->PpuReadSpritePatternHigh(address);
+}
+
 
 uint16_t Bus::PpuReadPattern16(uint16_t address) const
 {
@@ -316,6 +332,11 @@ void Bus::InterceptPpuCtrl(bool largeSprites)
 void Bus::InterceptPpuMask(bool renderingEnabled)
 {
     cart_->InterceptWritePpuMask(renderingEnabled);
+}
+
+bool Bus::PpuIsRendering()
+{
+    return ppu_->IsRenderingEnabled();
 }
 
 void Bus::WriteMMC5Audio(uint16_t address, uint8_t value)
