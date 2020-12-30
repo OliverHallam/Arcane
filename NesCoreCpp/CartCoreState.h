@@ -77,6 +77,15 @@ struct CartCoreState
     bool RenderingEnabled{};
     bool MMC5InSync{};
     int32_t ScanlinePpuReadCount{};
+    
+    bool SplitEnabled{};
+    bool RightSplit{};
+    bool InSprites{};
+    uint32_t CurrentTile{};
+    uint32_t SplitTile{};
+    uint32_t SplitScroll{};
+    uint32_t SplitY{};
+    uint32_t SplitBank{};
 
     uint8_t MulitplierArg0{};
     uint8_t MulitplierArg1{};

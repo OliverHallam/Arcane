@@ -131,6 +131,11 @@ void Bus::TileSplitBeginScanline()
     cart_->TileSplitBeginScanline();
 }
 
+void Bus::TileSplitBeginTile(uint32_t index)
+{
+    cart_->TileSplitBeginTile(index);
+}
+
 void Bus::TileSplitBeginSprites()
 {
     cart_->TileSplitBeginSprites();

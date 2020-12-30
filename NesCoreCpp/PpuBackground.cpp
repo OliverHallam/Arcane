@@ -286,6 +286,7 @@ void PpuBackground::RunLoad(int32_t startCycle, int32_t endCycle)
 
     case 1:
             {
+                bus_.TileSplitBeginTile(loadingIndex_);
                 auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
                 nextTileId_ = bus_.PpuReadNametable(tileAddress);
             }
@@ -375,6 +376,8 @@ void PpuBackground::RunLoad()
 {
     while (true)
     {
+        bus_.TileSplitBeginTile(loadingIndex_);
+
         auto tileAddress = (uint16_t)(0x2000 | state_.CurrentAddress & 0x0fff);
         nextTileId_ = bus_.PpuReadNametable(tileAddress);
 

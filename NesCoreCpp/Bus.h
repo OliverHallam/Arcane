@@ -44,6 +44,7 @@ public:
 
     bool HasScanlineCounter() const;
     void TileSplitBeginScanline();
+    void TileSplitBeginTile(uint32_t index);
     void TileSplitBeginSprites();
     void TileSplitEndSprites();
 

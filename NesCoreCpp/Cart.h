@@ -55,6 +55,7 @@ public:
     void ScanlineCounterBeginScanline();
     void ScanlineCounterEndFrame();
     void TileSplitBeginScanline();
+    void TileSplitBeginTile(uint32_t tile);
     void TileSplitBeginSprites();
     void TileSplitEndSprites();
 

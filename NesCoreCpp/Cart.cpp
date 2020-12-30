@@ -135,15 +135,20 @@ void Cart::Attach(Bus* bus)
 
 uint8_t Cart::CpuRead(uint16_t address)
 {
-    if (state_.IrqPending && (address & 0xfffe) == 0xffffa)
+    if (mapper_ == MapperType::MMC5)
     {
-        state_.InFrame = false;
-        state_.IrqPending = false;
-        bus_->SetCartIrq(false);
+        if (state_.IrqPending && (address & 0xfffe) == 0xffffa)
+        {
+            state_.InFrame = false;
+            state_.IrqPending = false;
+            bus_->SetCartIrq(false);
 
-        bus_->SyncPpu();
-        state_.PpuInFrame = false;
-        state_.ScanlinePpuReadCount = 0;
+            bus_->SyncPpu();
+            state_.PpuInFrame = false;
+            state_.ScanlinePpuReadCount = 0;
+
+            UpdateChrMapMMC5();
+        }
     }
 
     auto bank = state_.CpuBanks[address >> 13];
@@ -335,26 +340,57 @@ uint8_t Cart::PpuReadData(uint16_t address)
         if (!bus_->PpuIsRendering())
             state_.ScanlinePpuReadCount++;
 
-        if (state_.ExtendedRamMode == 1 && state_.PpuInFrame && (state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount > 160))
+        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame && !state_.InSprites)
         {
-            if (address < 0x2000)
+            if (state_.SplitEnabled)
             {
-                // pattern byte
-                auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-                return chrData_[chrAddress & (chrData_.size() - 1)];
+                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+                if (isSplit)
+                {
+                    // TODO: is the scanline counter the right thing to use here?
+                    if (address >= 0x2000)
+                    {
+                        if ((address & 0x03ff) >= 0x3c0)
+                        {
+                            // attribute byte
+                            auto attributeAddress = 0x03c0 + ((state_.SplitY & 0xe0) >> 2) | ((state_.CurrentTile & 0x1f) >> 2);
+                            return state_.ExtendedRam[attributeAddress];
+                        }
+                        else
+                        {
+                            // nametable byte
+                            auto tileAddress = ((state_.SplitY & 0xf8) << 2) | (state_.CurrentTile & 0x1f);
+                            return state_.ExtendedRam[tileAddress];
+                        }
+                    }
+                    else
+                    {
+                        return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
+                    }
+                }
             }
-            else if ((address & 0x03ff) >= 0x03c0)
-            {
-                return state_.ExtendedAttribute;
-            }
-            else
-            {
-                auto exData = state_.ExtendedRam[address & 0x03ff];
-                state_.ExtendedAttribute = exData & 0xc0;
-                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 2;
-                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 4;
 
-                state_.ExtendedPatternAddress = state_.ChrBankHighBits | ((exData & 0x3f) << 12);
+            if (state_.ExtendedRamMode == 1)
+            {
+                if (address < 0x2000)
+                {
+                    // pattern byte
+                    auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+                    return chrData_[chrAddress & (chrData_.size() - 1)];
+                }
+                else if ((address & 0x03ff) >= 0x03c0)
+                {
+                    return state_.ExtendedAttribute;
+                }
+                else
+                {
+                    auto exData = state_.ExtendedRam[address & 0x03ff];
+                    state_.ExtendedAttribute = exData & 0xc0;
+                    state_.ExtendedAttribute |= state_.ExtendedAttribute >> 2;
+                    state_.ExtendedAttribute |= state_.ExtendedAttribute >> 4;
+
+                    state_.ExtendedPatternAddress = state_.ChrBankHighBits | ((exData & 0x3f) << 12);
+                }
             }
         }
 
@@ -385,24 +421,47 @@ uint8_t Cart::PpuReadNametable(uint16_t address)
     {
         state_.ScanlinePpuReadCount++;
 
-        if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
+        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
         {
-            // it's possible for a nametable read to hit an attribute byte.
-            if ((address & 0x03ff) >= 0x03c0)
+            if (state_.SplitEnabled)
             {
-                return state_.ExtendedAttribute;
+                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+                if (isSplit)
+                {
+                    // it's possible for a nametable read to hit an attribute byte.
+                    if ((address & 0x03ff) >= 0x3c0)
+                    {
+                        // attribute byte
+                        auto attributeAddress = 0x03c0 | ((state_.SplitY & 0xe0) >> 2) | ((state_.CurrentTile & 0x1f) >> 2);
+                        return state_.ExtendedRam[attributeAddress];
+                    }
+                    else
+                    {
+                        // nametable byte
+                        auto tileAddress = ((state_.SplitY & 0xf8) << 2) | (state_.CurrentTile & 0x1f);
+                        return state_.ExtendedRam[tileAddress];
+                    }
+                }
             }
-            else
-            {
-                auto exData = state_.ExtendedRam[address & 0x03ff];
-                state_.ExtendedAttribute = exData & 0xc0;
-                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 2;
-                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 4;
 
-                state_.ExtendedPatternAddress = state_.ChrBankHighBits | ((exData & 0x3f) << 12);
+            if (state_.ExtendedRamMode == 1)
+            {
+                // it's possible for a nametable read to hit an attribute byte.
+                if ((address & 0x03ff) >= 0x03c0)
+                {
+                    return state_.ExtendedAttribute;
+                }
+                else
+                {
+                    auto exData = state_.ExtendedRam[address & 0x03ff];
+                    state_.ExtendedAttribute = exData & 0xc0;
+                    state_.ExtendedAttribute |= state_.ExtendedAttribute >> 2;
+                    state_.ExtendedAttribute |= state_.ExtendedAttribute >> 4;
+
+                    state_.ExtendedPatternAddress = state_.ChrBankHighBits | ((exData & 0x3f) << 12);
+                }
             }
         }
-
         auto bank = state_.PpuBanks[bankIndex];
         if (bank == nullptr)
         {
@@ -427,9 +486,22 @@ uint8_t Cart::PpuReadAttributes(uint16_t address)
         // Check if we need to switch to or from the sprite nametable.
         state_.ScanlinePpuReadCount++;
 
-        if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
-            return state_.ExtendedAttribute;
+        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
+        {
+            if (state_.SplitEnabled)
+            {
+                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+                if (isSplit)
+                {
+                    // attribute byte
+                    auto attributeAddress = 0x03c0 | ((state_.SplitY & 0xe0) >> 2) | ((state_.CurrentTile & 0x1f) >> 2);
+                    return state_.ExtendedRam[attributeAddress];
+                }
+            }
 
+            if (state_.ExtendedRamMode == 1)
+                return state_.ExtendedAttribute;
+        }
         auto bank = state_.PpuBanks[bankIndex];
         if (bank == nullptr)
             return state_.PPuBankAttributeBytes[bankIndex & 0x03];
@@ -449,11 +521,23 @@ uint8_t Cart::PpuReadPatternLow(uint16_t address)
     {
         state_.ScanlinePpuReadCount++;
 
-        if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
+        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
         {
-            // pattern byte
-            auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-            return chrData_[chrAddress & (chrData_.size() - 1)];
+            if (state_.SplitEnabled)
+            {
+                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+                if (isSplit)
+                {
+                    return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
+                }
+            }
+
+            if (state_.ExtendedRamMode == 1)
+            {
+                // pattern byte
+                auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+                return chrData_[chrAddress & (chrData_.size() - 1)];
+            }
         }
     }
 
@@ -469,10 +553,22 @@ uint8_t Cart::PpuReadPatternHigh(uint16_t address)
     {
         state_.ScanlinePpuReadCount++;
 
-        if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
+        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
         {
-            auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-            return chrData_[chrAddress & (chrData_.size() - 1)];
+            if (state_.SplitEnabled)
+            {
+                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+                if (isSplit)
+                {
+                    return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
+                }
+            }
+
+            if (state_.ExtendedRamMode == 1)
+            {
+                auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+                return chrData_[chrAddress & (chrData_.size() - 1)];
+            }
         }
     }
     else if (mapper_ == MapperType::MMC2)
@@ -517,14 +613,27 @@ uint16_t Cart::PpuReadPattern16(uint16_t address)
     {
         state_.ScanlinePpuReadCount += 2;
 
-        if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
+        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
         {
-            assert(address < 0x2000);
+            if (state_.SplitEnabled)
+            {
+                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+                if (isSplit)
+                {
+                    auto romAddress = state_.SplitBank + (address & 0xfff);
+                    return (chrData_[romAddress | 8] << 8) | chrData_[romAddress];
+                }
+            }
 
-            // pattern byte
-            auto chrRamAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-            chrRamAddress &= (chrData_.size() - 1);
-            return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
+            if (state_.ExtendedRamMode == 1)
+            {
+                assert(address < 0x2000);
+
+                // pattern byte
+                auto chrRamAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+                chrRamAddress &= (chrData_.size() - 1);
+                return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
+            }
         }
     }
     else if (mapper_ == MapperType::MMC2)
@@ -544,16 +653,7 @@ void Cart::PpuDummyTileFetch()
 
 void Cart::PpuSpriteNametableFetch()
 {
-    if (mapper_ == MapperType::MMC5)
-    {
-        // Check if we need to switch to or from the sprite nametable.
-        if ((state_.ScanlinePpuReadCount == 127 || state_.ScanlinePpuReadCount == 128) && state_.RenderingEnabled && state_.LargeSprites)
-        {
-            UpdateChrMapMMC5();
-        }
-
-        state_.ScanlinePpuReadCount += 2;
-    }
+    state_.ScanlinePpuReadCount += 2;
 }
 
 void Cart::PpuWrite(uint16_t address, uint8_t value)
@@ -680,6 +780,8 @@ void Cart::ScanlineCounterEndFrame()
     }
     state_.ScanlinePpuReadCount = 0;
 
+    state_.SplitY = state_.SplitScroll;
+
     bus_->SetCartIrq(false);
 }
 
@@ -687,25 +789,41 @@ void Cart::TileSplitBeginScanline()
 {
     state_.PpuInFrame = true;
 
-    // If the first tile is in attribute space, it's possible for this to trip one cycle laye.
+    // If the first tile is in attribute space, it's possible for this to trip one cycle late.
     // However, that would still switch during nametable fetches and has no observable impact.
     state_.ScanlinePpuReadCount = 0;
 
-    UpdateChrMapMMC5();
+    if (mapper_ == MapperType::MMC5)
+        UpdateChrMapMMC5();
+}
+
+void Cart::TileSplitBeginTile(uint32_t tileIndex)
+{
+    state_.CurrentTile = tileIndex;
 }
 
 void Cart::TileSplitBeginSprites()
 {
     assert(!state_.PpuInFrame || state_.ScanlinePpuReadCount == 128);
-    if (mapper_ == MapperType::MMC5)
+    state_.InSprites = true;
+    if (mapper_ == MapperType::MMC5 && state_.PpuInFrame)
         UpdateChrMapMMC5();
 }
 
 void Cart::TileSplitEndSprites()
 {
     assert(!state_.PpuInFrame || state_.ScanlinePpuReadCount == 160);
-    if (mapper_ == MapperType::MMC5)
+    state_.InSprites = false;
+    if (mapper_ == MapperType::MMC5 && state_.PpuInFrame)
+    {
         UpdateChrMapMMC5();
+
+        state_.SplitY++;
+        if (state_.SplitY == 240)
+        {
+            state_.SplitY = 0;
+        }
+    }
 }
 
 void Cart::InterceptWritePpuCtrl(bool largeSprites)
@@ -716,6 +834,8 @@ void Cart::InterceptWritePpuCtrl(bool largeSprites)
 void Cart::InterceptWritePpuMask(bool renderingEnabled)
 {
     state_.RenderingEnabled = renderingEnabled;
+    if (mapper_ == MapperType::MMC5)
+        UpdateChrMapMMC5();
 }
 
 bool Cart::UsesMMC5Audio() const
@@ -1247,6 +1367,9 @@ uint8_t Cart::ReadMMC5(uint16_t address)
 
         switch (address)
         {
+        case 0x5015:
+            return 0;
+
         case 0x5204:
         {
             uint8_t data = 0;
@@ -1480,29 +1603,38 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
         break;
 
     case 0x5130:
+        bus_->SyncPpu();
         state_.ChrBankHighBits = (value & 3) << 14;
         break;
 
     case 0x5200:
-    {
-        auto enabled = (value & 0x80) != 0;
-        assert(!enabled);
+        bus_->SyncPpu();
+        state_.SplitEnabled = (value & 0x80) != 0;
+        state_.RightSplit = (value & 0x40) != 0;
+        state_.SplitTile = value & 0x1f;
+        UpdateNametableMapMMC5();
         break;
-    }
+
+    case 0x5201:
+        bus_->SyncPpu();
+        state_.SplitScroll = value;
+        break;
+
+    case 0x5202:
+        bus_->SyncPpu();
+        state_.SplitBank = (value << 12) & chrMask_;
+        UpdateChrMapMMC5();
+        break;
 
     case 0x5203:
-    {
         state_.InterruptScanline = value;
         break;
-    }
 
     case 0x5204:
-    {
         state_.IrqEnabled = (value & 0x80) != 0;
         if (state_.IrqPending)
             bus_->SetCartIrq(state_.IrqEnabled);
         break;
-    }
 
     case 0x5205:
         state_.MulitplierArg0 = value;
@@ -1661,18 +1793,17 @@ void Cart::MapPrgBankMMC5(bool isRam, int32_t index, uint8_t** bank, bool* writa
 
 void Cart::UpdateChrMapMMC5()
 {
-    bool useSecondary;
+    bool useSecondary = false;
     if (state_.LargeSprites)
     {
         if (state_.RenderingEnabled && state_.PpuInFrame)
-            useSecondary = state_.ScanlinePpuReadCount < 128 || state_.ScanlinePpuReadCount >= 160;
+        {
+            useSecondary = !state_.InSprites;
+        }
         else
             useSecondary = state_.UseSecondaryChrForData;
     }
-    else
-        useSecondary = false;
 
-    // TODO: Secondary map for sprites
     switch (state_.ChrMode)
     {
     case 0:
@@ -1691,7 +1822,6 @@ void Cart::UpdateChrMapMMC5()
         state_.PpuBanks[5] = base + 0x1400;
         state_.PpuBanks[6] = base + 0x1800;
         state_.PpuBanks[7] = base + 0x1c00;
-
         break;
     }
 
