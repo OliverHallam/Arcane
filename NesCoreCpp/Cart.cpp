@@ -31,7 +31,7 @@ void Cart::SetMapper(MapperType mapper)
     {
         state_.ChrA12PulseCounter = 1;
     }
-    else if (mapper_ == MapperType::AxROM)
+    else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams)
     {
         state_.CpuBanks[4] = &prgData_[0];
         state_.CpuBanks[5] = &prgData_[0x2000];
@@ -234,6 +234,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteMMC2(address, value);
         break;
 
+    case MapperType::ColorDreams:
+        WriteColorDreams(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -309,13 +313,21 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         break;
 
     case MapperType::AxROM:
+        WriteAxROM(address, firstValue);
         bus_->TickCpuWrite();
         WriteAxROM(address, secondValue);
         break;
 
     case MapperType::MMC2:
+        WriteMMC2(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC2(address, secondValue);
+        break;
+
+    case MapperType::ColorDreams:
+        WriteColorDreams(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteColorDreams(address, secondValue);
         break;
 
     case MapperType::BF9093:
@@ -2030,6 +2042,33 @@ void Cart::UpdateChrMapMMC2()
     state_.PpuBanks[7] = base1 + 0x0c00;
 }
 
+void Cart::WriteColorDreams(uint16_t address, uint8_t value)
+{
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    bus_->SyncPpu();
+
+    auto cpuBase = &prgData_[((value & 0x03) << 15) & prgMask_];
+    state_.CpuBanks[4] = cpuBase;
+    state_.CpuBanks[5] = cpuBase + 0x2000;
+    state_.CpuBanks[6] = cpuBase + 0x4000;
+    state_.CpuBanks[7] = cpuBase + 0x6000;
+
+    auto ppuBase = &chrData_[((value & 0xf0) << 9) & chrMask_];
+    state_.PpuBanks[0] = ppuBase;
+    state_.PpuBanks[1] = ppuBase + 0x0400;
+    state_.PpuBanks[2] = ppuBase + 0x0800;
+    state_.PpuBanks[3] = ppuBase + 0x0c00;
+    state_.PpuBanks[4] = ppuBase + 0x1000;
+    state_.PpuBanks[5] = ppuBase + 0x1400;
+    state_.PpuBanks[6] = ppuBase + 0x1800;
+    state_.PpuBanks[7] = ppuBase + 0x1c00;
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -2221,6 +2260,10 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 9:
         mapper = MapperType::MMC2;
+        break;
+
+    case 11:
+        mapper = MapperType::ColorDreams;
         break;
 
     case 71:

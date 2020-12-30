@@ -95,6 +95,8 @@ private:
     void PpuReadMMC2(uint16_t address);
     void UpdateChrMapMMC2();
 
+    void WriteColorDreams(uint16_t address, uint8_t value);
+
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 
