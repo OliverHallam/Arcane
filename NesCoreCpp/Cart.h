@@ -24,7 +24,7 @@ public:
     void AddPrgRam(uint32_t size);
     void AddPrgRam(uint8_t* data, uint32_t size);
     void SetChrRom(std::vector<uint8_t> chrData);
-    void SetChrRam();
+    void SetChrRam(uint32_t size);
     void SetMirrorMode(MirrorMode mirrorMode);
     void EnableBusConflicts(bool conflicts);
 
@@ -96,6 +96,8 @@ private:
     void UpdateChrMapMMC2();
 
     void WriteColorDreams(uint16_t address, uint8_t value);
+
+    void WriteCPROM(uint16_t address, uint8_t value);
 
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);

@@ -97,9 +97,9 @@ void Cart::SetChrRom(std::vector<uint8_t> chrData)
     chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
 }
 
-void Cart::SetChrRam()
+void Cart::SetChrRam(uint32_t size)
 {
-    chrData_.resize(0x2000);
+    chrData_.resize(size);
 
     state_.PpuBanks[0] = &chrData_[0];
     state_.PpuBanks[1] = &chrData_[0x0400];
@@ -111,6 +111,8 @@ void Cart::SetChrRam()
     state_.PpuBanks[7] = &chrData_[0x1c00];
 
     chrWriteable_ = true;
+    assert((size & (size - 1)) == 0);
+    chrMask_ = size - 1;
 }
 
 void Cart::SetMirrorMode(MirrorMode mirrorMode)
@@ -238,6 +240,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteColorDreams(address, value);
         break;
 
+    case MapperType::CPROM:
+        WriteCPROM(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -328,6 +334,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteColorDreams(address, firstValue);
         bus_->TickCpuWrite();
         WriteColorDreams(address, secondValue);
+        break;
+
+    case MapperType::CPROM:
+        WriteCPROM(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteCPROM(address, secondValue);
         break;
 
     case MapperType::BF9093:
@@ -2069,6 +2081,23 @@ void Cart::WriteColorDreams(uint16_t address, uint8_t value)
     state_.PpuBanks[7] = ppuBase + 0x1c00;
 }
 
+void Cart::WriteCPROM(uint16_t address, uint8_t value)
+{
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    bus_->SyncPpu();
+
+    auto ppuBase = &chrData_[((value & 0x03) << 12) & chrMask_];
+    state_.PpuBanks[4] = ppuBase;
+    state_.PpuBanks[5] = ppuBase + 0x0400;
+    state_.PpuBanks[6] = ppuBase + 0x0800;
+    state_.PpuBanks[7] = ppuBase + 0x0c00;
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -2264,6 +2293,12 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 11:
         mapper = MapperType::ColorDreams;
+        cart->EnableBusConflicts(true);
+        break;
+
+    case 13:
+        mapper = MapperType::CPROM;
+        cart->EnableBusConflicts(true);
         break;
 
     case 71:
@@ -2295,11 +2330,11 @@ std::unique_ptr<Cart> TryCreateCart(
     if (desc.PrgRamSize != 0)
         cart->AddPrgRam(desc.PrgRamSize);
 
-    if (desc.ChrRamSize != 0 && desc.ChrRamSize != 0x2000)
+    if (desc.ChrRamSize != 0 && chrData.size() != 0)
         return nullptr;
 
     if (desc.ChrRamSize != 0)
-        cart->SetChrRam();
+        cart->SetChrRam(desc.ChrRamSize);
 
     return std::move(cart);
 }
