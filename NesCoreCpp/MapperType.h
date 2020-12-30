@@ -15,5 +15,6 @@ enum class MapperType
     ColorDreams,
     CPROM,
     NINA001,
+    BNROM,
     BF9093, // Codemasters UNROM clone
 };

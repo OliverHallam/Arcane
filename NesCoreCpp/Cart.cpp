@@ -248,6 +248,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteCPROM(address, value);
         break;
 
+    case MapperType::BNROM:
+        WriteBNROM(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -354,6 +358,11 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteCPROM(address, firstValue);
         bus_->TickCpuWrite();
         WriteCPROM(address, secondValue);
+        break;
+
+    case MapperType::BNROM:
+        bus_->TickCpuWrite();
+        WriteBNROM(address, secondValue);
         break;
 
     case MapperType::BF9093:
@@ -2150,6 +2159,21 @@ void Cart::WriteNINA001(uint16_t address, uint8_t value)
     }
 }
 
+void Cart::WriteBNROM(uint16_t address, uint8_t value)
+{
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    auto base = &prgData_[((value & 0x03) << 15) & prgMask_];
+    state_.CpuBanks[4] = base;
+    state_.CpuBanks[5] = base + 0x2000;
+    state_.CpuBanks[6] = base + 0x4000;
+    state_.CpuBanks[7] = base + 0x6000;
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -2364,8 +2388,9 @@ std::unique_ptr<Cart> TryCreateCart(
             }
             else
             {
-                // BNROM
-                return nullptr;
+                mapper = MapperType::BNROM;
+                cart->EnableBusConflicts(true);
+                break;
             }
 
         case 1:
@@ -2373,9 +2398,14 @@ std::unique_ptr<Cart> TryCreateCart(
             break;
 
         case 2:
-            // BNROM
+            mapper = MapperType::BNROM;
+            cart->EnableBusConflicts(true);
+            break;
+
+        default:
             return nullptr;
         }
+
     case 71:
         switch (desc.SubMapper)
         {
