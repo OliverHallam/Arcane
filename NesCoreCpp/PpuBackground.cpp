@@ -409,7 +409,6 @@ void PpuBackground::RunLoad()
 
         if (loadingIndex_ == 32)
         {
-            bus_.PpuDummyTileFetch();
             return;
         }
 

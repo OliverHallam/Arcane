@@ -66,12 +66,6 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
     if (state_.oamAddress_ >= 256)
         return;
 
-    if (scanlineCycle < 64)
-    {
-        if (64 >= targetCycle)
-            return;
-    }
-
     if ((scanlineCycle & 1) == 0)
     {
         // setting up the read/write
@@ -110,7 +104,7 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
             {
                 state_.spriteOverflow_ = true;
 
-                // no more ovserverble side effects
+                // no more observerble side effects
                 state_.oamAddress_ = 256;
                 return;
             }
@@ -126,6 +120,9 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
 
             // TODO: overflow bug
         }
+
+        if (state_.oamAddress_ >= 256)
+            return;
 
         scanlineCycle += 2;
     }
@@ -331,13 +328,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
-        while (spriteIndex_ < 8)
-        {
-            // no harm in this getting ahead since it only affects the PPU
-            bus_.PpuDummyTileFetch();
-            spriteIndex_++;
-        }
-
         return;
     }
 
@@ -351,9 +341,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
                 break;
 
     case 1:
-            if (spriteIndex_ < scanlineSpriteCount_)
-                bus_.PpuDummyNametableFetch();
-
             scanlineCycle++;
             if (scanlineCycle >= targetCycle)
                 break;
@@ -377,13 +364,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
             {
                 if (spriteIndex_ >= scanlineSpriteCount_)
                 {
-                    while (spriteIndex_ < 8)
-                    {
-                        // no harm in this getting ahead since it only affects the PPU
-                        bus_.PpuDummyTileFetch();
-                        spriteIndex_++;
-                    }
-
                     return;
                 }
 
@@ -501,23 +481,12 @@ void PpuSprites::RunLoad(uint32_t currentScanline)
                     (tileId << 4) | tileFineY);
         }
 
-        bus_.PpuDummyNametableFetch();
-
         // TODO: PpuReadSpritePattern16?
         sprites_[spriteIndex_].patternShiftLow = bus_.PpuReadSpritePatternLow(patternAddress_);
 
         // address is 000PTTTTTTTT1YYY
         sprites_[spriteIndex_].patternShiftHigh = bus_.PpuReadSpritePatternHigh((uint16_t)(patternAddress_ | 8));
         spriteIndex_++;
-    }
-
-    if (scanlineSpriteCount_ < 8)
-    {
-        while (spriteIndex_ < 8)
-        {
-            bus_.PpuDummyTileFetch();
-            spriteIndex_++;
-        }
     }
 }
 

@@ -65,8 +65,6 @@ public:
     uint8_t PpuReadSpritePatternLow(uint16_t address) const;
     uint8_t PpuReadSpritePatternHigh(uint16_t address) const;
     uint16_t PpuReadPattern16(uint16_t address) const;
-    void PpuDummyTileFetch() const;
-    void PpuDummyNametableFetch() const;
     void PpuWrite(uint16_t address, uint8_t value);
 
     void InterceptPpuCtrl(bool largeSprites);

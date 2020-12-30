@@ -841,7 +841,8 @@ void Ppu::RenderScanlineVisible(int32_t targetCycle)
             sprites_.RunRender(state_.SyncCycle, maxIndex, background_.ScanlinePixels());
         }
 
-        sprites_.RunEvaluation(state_.CurrentScanline, state_.SyncCycle, maxIndex);
+        if (maxIndex > 64)
+            sprites_.RunEvaluation(state_.CurrentScanline, std::max(state_.SyncCycle, 64), maxIndex);
     }
     else
     {

@@ -76,8 +76,7 @@ struct CartCoreState
     bool LargeSprites{};
     bool RenderingEnabled{};
     bool MMC5InSync{};
-    int32_t ScanlinePpuReadCount{};
-    
+
     bool SplitEnabled{};
     bool RightSplit{};
     bool InSprites{};

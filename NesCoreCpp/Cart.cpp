@@ -145,7 +145,6 @@ uint8_t Cart::CpuRead(uint16_t address)
 
             bus_->SyncPpu();
             state_.PpuInFrame = false;
-            state_.ScanlinePpuReadCount = 0;
 
             UpdateChrMapMMC5();
         }
@@ -337,9 +336,6 @@ uint8_t Cart::PpuReadData(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
-        if (!bus_->PpuIsRendering())
-            state_.ScanlinePpuReadCount++;
-
         if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame && !state_.InSprites)
         {
             if (state_.SplitEnabled)
@@ -419,8 +415,6 @@ uint8_t Cart::PpuReadNametable(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
-        state_.ScanlinePpuReadCount++;
-
         if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
         {
             if (state_.SplitEnabled)
@@ -483,9 +477,6 @@ uint8_t Cart::PpuReadAttributes(uint16_t address)
 
     if (mapper_ == MapperType::MMC5)
     {
-        // Check if we need to switch to or from the sprite nametable.
-        state_.ScanlinePpuReadCount++;
-
         if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
         {
             if (state_.SplitEnabled)
@@ -517,27 +508,23 @@ uint8_t Cart::PpuReadPatternLow(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
-    if (mapper_ == MapperType::MMC5)
+//  if (mapper_ == MapperType::MMC5)
+    if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
     {
-        state_.ScanlinePpuReadCount++;
-
-        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
+        if (state_.SplitEnabled)
         {
-            if (state_.SplitEnabled)
+            auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+            if (isSplit)
             {
-                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
-                if (isSplit)
-                {
-                    return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
-                }
+                return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
             }
+        }
 
-            if (state_.ExtendedRamMode == 1)
-            {
-                // pattern byte
-                auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-                return chrData_[chrAddress & (chrData_.size() - 1)];
-            }
+        if (state_.ExtendedRamMode == 1)
+        {
+            // pattern byte
+            auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+            return chrData_[chrAddress & (chrData_.size() - 1)];
         }
     }
 
@@ -549,26 +536,22 @@ uint8_t Cart::PpuReadPatternHigh(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
-    if (mapper_ == MapperType::MMC5)
+//  if (mapper_ == MapperType::MMC5)
+    if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
     {
-        state_.ScanlinePpuReadCount++;
-
-        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
+        if (state_.SplitEnabled)
         {
-            if (state_.SplitEnabled)
+            auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+            if (isSplit)
             {
-                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
-                if (isSplit)
-                {
-                    return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
-                }
+                return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
             }
+        }
 
-            if (state_.ExtendedRamMode == 1)
-            {
-                auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-                return chrData_[chrAddress & (chrData_.size() - 1)];
-            }
+        if (state_.ExtendedRamMode == 1)
+        {
+            auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+            return chrData_[chrAddress & (chrData_.size() - 1)];
         }
     }
     else if (mapper_ == MapperType::MMC2)
@@ -584,8 +567,6 @@ uint8_t Cart::PpuReadSpritePatternLow(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
-    state_.ScanlinePpuReadCount++;
-
     auto bank = state_.PpuBanks[bankIndex];
     return bank[address & 0x03ff];
 }
@@ -593,8 +574,6 @@ uint8_t Cart::PpuReadSpritePatternLow(uint16_t address)
 uint8_t Cart::PpuReadSpritePatternHigh(uint16_t address)
 {
     auto bankIndex = address >> 10;
-
-    state_.ScanlinePpuReadCount++;
 
     if (mapper_ == MapperType::MMC2)
     {
@@ -609,31 +588,27 @@ uint16_t Cart::PpuReadPattern16(uint16_t address)
 {
     auto bankIndex = address >> 10;
 
-    if (mapper_ == MapperType::MMC5)
+    //if (mapper_ == MapperType::MMC5)
+    if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
     {
-        state_.ScanlinePpuReadCount += 2;
-
-        if (state_.ExtendedRamMode <= 1 && state_.PpuInFrame)
+        if (state_.SplitEnabled)
         {
-            if (state_.SplitEnabled)
+            auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
+            if (isSplit)
             {
-                auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
-                if (isSplit)
-                {
-                    auto romAddress = state_.SplitBank + (address & 0xfff);
-                    return (chrData_[romAddress | 8] << 8) | chrData_[romAddress];
-                }
+                auto romAddress = state_.SplitBank + (address & 0xfff);
+                return (chrData_[romAddress | 8] << 8) | chrData_[romAddress];
             }
+        }
 
-            if (state_.ExtendedRamMode == 1)
-            {
-                assert(address < 0x2000);
+        if (state_.ExtendedRamMode == 1)
+        {
+            assert(address < 0x2000);
 
-                // pattern byte
-                auto chrRamAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-                chrRamAddress &= (chrData_.size() - 1);
-                return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
-            }
+            // pattern byte
+            auto chrRamAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
+            chrRamAddress &= (chrData_.size() - 1);
+            return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
         }
     }
     else if (mapper_ == MapperType::MMC2)
@@ -644,16 +619,6 @@ uint16_t Cart::PpuReadPattern16(uint16_t address)
     auto bank = state_.PpuBanks[bankIndex];
     auto bankAddress = address & 0x03ff;
     return (bank[bankAddress | 8] << 8) | bank[bankAddress];
-}
-
-void Cart::PpuDummyTileFetch()
-{
-    state_.ScanlinePpuReadCount += 4;
-}
-
-void Cart::PpuSpriteNametableFetch()
-{
-    state_.ScanlinePpuReadCount += 2;
 }
 
 void Cart::PpuWrite(uint16_t address, uint8_t value)
@@ -778,7 +743,6 @@ void Cart::ScanlineCounterEndFrame()
     {
         state_.PpuInFrame = false;
     }
-    state_.ScanlinePpuReadCount = 0;
 
     state_.SplitY = state_.SplitScroll;
 
@@ -789,22 +753,20 @@ void Cart::TileSplitBeginScanline()
 {
     state_.PpuInFrame = true;
 
-    // If the first tile is in attribute space, it's possible for this to trip one cycle late.
-    // However, that would still switch during nametable fetches and has no observable impact.
-    state_.ScanlinePpuReadCount = 0;
-
     if (mapper_ == MapperType::MMC5)
         UpdateChrMapMMC5();
 }
 
 void Cart::TileSplitBeginTile(uint32_t tileIndex)
 {
+    // If the first tile in a scanline is in attribute space, it's possible for the MMC5 scanline counter to get one cycle out of sync.
+    // However, I don't think this has any observable impact, so we can trust that it matches the PPU counter.
+    // TODO: check this is actually true.
     state_.CurrentTile = tileIndex;
 }
 
 void Cart::TileSplitBeginSprites()
 {
-    assert(!state_.PpuInFrame || state_.ScanlinePpuReadCount == 128);
     state_.InSprites = true;
     if (mapper_ == MapperType::MMC5 && state_.PpuInFrame)
         UpdateChrMapMMC5();
@@ -812,7 +774,6 @@ void Cart::TileSplitBeginSprites()
 
 void Cart::TileSplitEndSprites()
 {
-    assert(!state_.PpuInFrame || state_.ScanlinePpuReadCount == 160);
     state_.InSprites = false;
     if (mapper_ == MapperType::MMC5 && state_.PpuInFrame)
     {

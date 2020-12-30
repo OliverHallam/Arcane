@@ -42,8 +42,6 @@ public:
     uint8_t PpuReadSpritePatternLow(uint16_t address);
     uint8_t PpuReadSpritePatternHigh(uint16_t address);
     uint16_t PpuReadPattern16(uint16_t address);
-    void PpuDummyTileFetch();
-    void PpuSpriteNametableFetch();
     void PpuWrite(uint16_t address, uint8_t value);
 
     ChrA12Sensitivity ChrA12Sensitivity() const;

@@ -314,16 +314,6 @@ uint16_t Bus::PpuReadPattern16(uint16_t address) const
     return cart_->PpuReadPattern16(address);
 }
 
-void Bus::PpuDummyTileFetch() const
-{
-    cart_->PpuDummyTileFetch();
-}
-
-void Bus::PpuDummyNametableFetch() const
-{
-    cart_->PpuSpriteNametableFetch();
-}
-
 void Bus::PpuWrite(uint16_t address, uint8_t value)
 {
     cart_->PpuWrite(address, value);
