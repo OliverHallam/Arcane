@@ -340,25 +340,21 @@ uint8_t Cart::PpuReadData(uint16_t address)
             if (address < 0x2000)
             {
                 // pattern byte
-                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-                auto plane = exData & 0x3f;
-                auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+                auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
                 return chrData_[chrAddress & (chrData_.size() - 1)];
             }
             else if ((address & 0x03ff) >= 0x03c0)
             {
-                // attribute byte
-                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-                // map the top two bits to the whole attribute byte
-                exData &= 0xc0;
-                exData |= exData >> 2;
-                exData |= exData >> 4;
-                return exData;
+                return state_.ExtendedAttribute;
             }
             else
             {
-                // nametable byte - latch the address for exram.
-                state_.ExtendedRamFetchAddress = address & 0x03ff;
+                auto exData = state_.ExtendedRam[address & 0x03ff];
+                state_.ExtendedAttribute = exData & 0xc0;
+                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 2;
+                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 4;
+
+                state_.ExtendedPatternAddress = state_.ChrBankHighBits | ((exData & 0x3f) << 12);
             }
         }
 
@@ -394,18 +390,16 @@ uint8_t Cart::PpuReadNametable(uint16_t address)
             // it's possible for a nametable read to hit an attribute byte.
             if ((address & 0x03ff) >= 0x03c0)
             {
-                // attribute byte
-                auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-                // map the top two bits to the whole attribute byte
-                exData &= 0xc0;
-                exData |= exData >> 2;
-                exData |= exData >> 4;
-                return exData;
+                return state_.ExtendedAttribute;
             }
             else
             {
-                // nametable byte - latch the address for exram.
-                state_.ExtendedRamFetchAddress = address & 0x03ff;
+                auto exData = state_.ExtendedRam[address & 0x03ff];
+                state_.ExtendedAttribute = exData & 0xc0;
+                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 2;
+                state_.ExtendedAttribute |= state_.ExtendedAttribute >> 4;
+
+                state_.ExtendedPatternAddress = state_.ChrBankHighBits | ((exData & 0x3f) << 12);
             }
         }
 
@@ -434,23 +428,11 @@ uint8_t Cart::PpuReadAttributes(uint16_t address)
         state_.ScanlinePpuReadCount++;
 
         if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
-        {
-            // attribute byte
-            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-            // map the top two bits to the whole attribute byte
-            exData &= 0xc0;
-            exData |= exData >> 2;
-            exData |= exData >> 4;
-            return exData;
-        }
+            return state_.ExtendedAttribute;
 
         auto bank = state_.PpuBanks[bankIndex];
         if (bank == nullptr)
-        {
-            return (address & 0x03ff) >= 0x03c0 ?
-                state_.PPuBankAttributeBytes[bankIndex & 0x03] :
-                state_.PpuBankFillBytes[bankIndex & 0x03];
-        }
+            return state_.PPuBankAttributeBytes[bankIndex & 0x03];
 
         return bank[address & 0x03ff];
     }
@@ -470,9 +452,7 @@ uint8_t Cart::PpuReadPatternLow(uint16_t address)
         if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
         {
             // pattern byte
-            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-            auto plane = exData & 0x3f;
-            auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+            auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
             return chrData_[chrAddress & (chrData_.size() - 1)];
         }
     }
@@ -491,10 +471,7 @@ uint8_t Cart::PpuReadPatternHigh(uint16_t address)
 
         if (state_.ExtendedRamMode == 1 && state_.PpuInFrame)
         {
-            // pattern byte
-            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-            auto plane = exData & 0x3f;
-            auto chrAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+            auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
             return chrData_[chrAddress & (chrData_.size() - 1)];
         }
     }
@@ -545,24 +522,10 @@ uint16_t Cart::PpuReadPattern16(uint16_t address)
             assert(address < 0x2000);
 
             // pattern byte
-            auto exData = state_.ExtendedRam[state_.ExtendedRamFetchAddress];
-            auto plane = exData & 0x3f;
-            auto chrRamAddress = state_.ChrBankHighBits | (plane << 12) | (address & 0x0fff);
+            auto chrRamAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
             chrRamAddress &= (chrData_.size() - 1);
             return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
         }
-
-        auto bank = state_.PpuBanks[bankIndex];
-        if (bank == nullptr)
-        {
-            // this is never going to read attribute data
-            assert((address & 0x03ff) < 0x03c0);
-            auto data = static_cast<uint16_t>(state_.PpuBankFillBytes[bankIndex & 0x03]);
-            return (data << 8) | data;
-        }
-
-        auto bankAddress = address & 0x03ff;
-        return (bank[bankAddress | 8] << 8) | bank[bankAddress];
     }
     else if (mapper_ == MapperType::MMC2)
     {

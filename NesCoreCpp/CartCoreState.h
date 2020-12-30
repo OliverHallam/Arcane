@@ -55,7 +55,8 @@ struct CartCoreState
     uint32_t PrgRamProtect1{};
 
     uint32_t ExtendedRamMode{};
-    uint16_t ExtendedRamFetchAddress{};
+    uint8_t ExtendedAttribute{};
+    uint32_t ExtendedPatternAddress{};
 
     ChrA12Sensitivity ChrA12Sensitivity{};
     bool ChrA12{};
