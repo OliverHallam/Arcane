@@ -14,5 +14,6 @@ enum class MapperType
     MMC2, // PxROM
     ColorDreams,
     CPROM,
+    NINA001,
     BF9093, // Codemasters UNROM clone
 };

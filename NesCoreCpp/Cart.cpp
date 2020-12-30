@@ -191,11 +191,15 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
                 prgRamBanks_[0][address & 0x3ff] = value;
             return;
         }
-        else
+
+        if (mapper_ == MapperType::NINA001)
         {
-            if (state_.PrgRamProtect0)
-                return;
+            WriteNINA001(address, value);
+            // continue to alse write to RAM
         }
+
+        if (state_.PrgRamProtect0)
+            return;
 
         auto bank = state_.CpuBanks[address >> 13];
         if (bank)
@@ -263,8 +267,18 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             return;
         }
 
-        // TODO: it's possible a bank switch happens underneath us
-        bus_->TickCpuWrite();
+        if (mapper_ == MapperType::NINA001)
+        {
+            WriteNINA001(address, firstValue);
+            bus_->TickCpuWrite();
+            WriteNINA001(address, secondValue);
+            // continue to also write to RAM
+        }
+        else
+        {
+            // TODO: it's possible a bank switch happens underneath us
+            bus_->TickCpuWrite();
+        }
 
         if (mapper_ == MapperType::MMC6)
         {
@@ -2098,6 +2112,44 @@ void Cart::WriteCPROM(uint16_t address, uint8_t value)
     state_.PpuBanks[7] = ppuBase + 0x0c00;
 }
 
+void Cart::WriteNINA001(uint16_t address, uint8_t value)
+{
+    switch (address)
+    {
+    case 0x7ffd:
+    {
+        auto base = &prgData_[((value & 0x01) << 15) & prgMask_];
+        state_.CpuBanks[4] = base;
+        state_.CpuBanks[5] = base + 0x2000;
+        state_.CpuBanks[6] = base + 0x4000;
+        state_.CpuBanks[7] = base + 0x6000;
+        break;
+    }
+
+    case 0x7ffe:
+    {
+        bus_->SyncPpu();
+        auto base = &chrData_[((value & 0x0f) << 12) & chrMask_];
+        state_.PpuBanks[0] = base;
+        state_.PpuBanks[1] = base + 0x0400;
+        state_.PpuBanks[2] = base + 0x0800;
+        state_.PpuBanks[3] = base + 0x0c00;
+        break;
+    }
+
+    case 0x7fff:
+    {
+        bus_->SyncPpu();
+        auto base = &chrData_[((value & 0x0f) << 12) & chrMask_];
+        state_.PpuBanks[4] = base;
+        state_.PpuBanks[5] = base + 0x0400;
+        state_.PpuBanks[6] = base + 0x0800;
+        state_.PpuBanks[7] = base + 0x0c00;
+        break;
+    }
+    }
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -2301,6 +2353,29 @@ std::unique_ptr<Cart> TryCreateCart(
         cart->EnableBusConflicts(true);
         break;
 
+    case 34:
+        switch (desc.SubMapper)
+        {
+        case 0:
+            if (chrData.size() > 0x2000)
+            {
+                mapper = MapperType::NINA001;
+                break;
+            }
+            else
+            {
+                // BNROM
+                return nullptr;
+            }
+
+        case 1:
+            mapper = MapperType::NINA001;
+            break;
+
+        case 2:
+            // BNROM
+            return nullptr;
+        }
     case 71:
         switch (desc.SubMapper)
         {
