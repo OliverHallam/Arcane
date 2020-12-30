@@ -95,50 +95,60 @@ void Host::SetSamplesPerFrame(uint32_t samples)
 
 void Host::Snapshot()
 {
-    system_->CaptureState(&state_);
+    if (system_)
+        system_->CaptureState(&state_);
 }
 
 void Host::Restore()
 {
-    system_->RestoreState(state_);
+    if (system_)
+        system_->RestoreState(state_);
 }
 
 void Host::Up(bool pressed)
 {
-    system_->Controller().Up(pressed);
+    if (system_)
+        system_->Controller().Up(pressed);
 }
 
 void Host::Down(bool pressed)
 {
-    system_->Controller().Down(pressed);
+    if (system_)
+        system_->Controller().Down(pressed);
 }
 
 void Host::Left(bool pressed)
 {
-    system_->Controller().Left(pressed);
+    if (system_)
+        system_->Controller().Left(pressed);
 }
 
 void Host::Right(bool pressed)
 {
-    system_->Controller().Right(pressed);
+    if (system_)
+        system_->Controller().Right(pressed);
 }
 
 void Host::A(bool pressed)
 {
-    system_->Controller().A(pressed);
+    if (system_)
+        system_->Controller().A(pressed);
 }
 
 void Host::B(bool pressed)
 {
-    system_->Controller().B(pressed);
+    if (system_)
+        system_->Controller().B(pressed);
 }
 
 void Host::Select(bool pressed)
 {
-    system_->Controller().Select(pressed);
+    if (system_)
+        system_->Controller().Select(pressed);
 }
 
 void Host::Start(bool pressed)
 {
-    system_->Controller().Start(pressed);
+    if (system_)
+        system_->Controller().Start(pressed);
 }
