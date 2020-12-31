@@ -19,6 +19,7 @@ struct CartCoreState
     uint32_t PrgBank1{};
     uint32_t PrgBank2{};
     uint32_t PrgBank3{};
+    uint32_t PrgBankHighBits{};
     bool PrgBank0Ram{};
     bool PrgBank1Ram{};
     bool PrgBank2Ram{};

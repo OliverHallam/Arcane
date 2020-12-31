@@ -202,6 +202,11 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
             WriteCaltron6in1Low(address);
             return;
         }
+        else if (mapper_ == MapperType::RumbleStation)
+        {
+            WriteRumbleStationLow(address, value);
+            return;
+        }
 
         if (state_.PrgRamProtect0)
             return;
@@ -261,6 +266,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteCaltron6in1High(address, value);
         break;
 
+    case MapperType::RumbleStation:
+        WriteRumbleStationHigh(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -291,6 +300,13 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         {
             WriteCaltron6in1Low(address);
             bus_->TickCpuWrite();
+            return;
+        }
+        else if (mapper_ == MapperType::RumbleStation)
+        {
+            WriteRumbleStationLow(address, firstValue);
+            bus_->TickCpuWrite();
+            WriteRumbleStationLow(address, firstValue);
             return;
         }
         else
@@ -384,6 +400,13 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteCaltron6in1High(address, firstValue);
         bus_->TickCpuWrite();
         WriteCaltron6in1High(address, secondValue);
+        break;
+
+    case MapperType::RumbleStation:
+        WriteRumbleStationHigh(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteRumbleStationHigh(address, secondValue);
+        break;
 
     case MapperType::BF9093:
         bus_->TickCpuWrite();
@@ -1148,23 +1171,24 @@ void Cart::WriteCNROM(uint16_t address, uint8_t value)
         value &= bank[address & 0x1fff];
     }
 
-    // the actual board only takes 2 bits from the value for bank switching
-    auto bankAddress = (value << 13) & chrMask_;
+    state_.ChrBank0 = ((value & 3) << 13);
 
-    auto base = &chrData_[bankAddress];
+    bus_->SyncPpu();
 
-    if (base != state_.PpuBanks[0])
-    {
-        bus_->SyncPpu();
-        state_.PpuBanks[0] = base;
-        state_.PpuBanks[1] = base + 0x0400;
-        state_.PpuBanks[2] = base + 0x0800;
-        state_.PpuBanks[3] = base + 0x0c00;
-        state_.PpuBanks[4] = base + 0x1000;
-        state_.PpuBanks[5] = base + 0x1400;
-        state_.PpuBanks[6] = base + 0x1800;
-        state_.PpuBanks[7] = base + 0x1c00;
-    }
+    UpdateChrMapCNROM();
+}
+
+void Cart::UpdateChrMapCNROM()
+{
+    auto base = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
+    state_.PpuBanks[0] = base;
+    state_.PpuBanks[1] = base + 0x0400;
+    state_.PpuBanks[2] = base + 0x0800;
+    state_.PpuBanks[3] = base + 0x0c00;
+    state_.PpuBanks[4] = base + 0x1000;
+    state_.PpuBanks[5] = base + 0x1400;
+    state_.PpuBanks[6] = base + 0x1800;
+    state_.PpuBanks[7] = base + 0x1c00;
 }
 
 void Cart::WriteMMC3(uint16_t address, uint8_t value)
@@ -2107,13 +2131,25 @@ void Cart::WriteColorDreams(uint16_t address, uint8_t value)
 
     bus_->SyncPpu();
 
-    auto cpuBase = &prgData_[((value & 0x03) << 15) & prgMask_];
+    state_.PrgBank0 = (value & 0x03) << 15;
+    state_.ChrBank0 = (value & 0xf0) << 9;
+
+    UpdatePrgMapColorDreams();
+    UpdateChrMapColorDreams();
+}
+
+void Cart::UpdatePrgMapColorDreams()
+{
+    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
     state_.CpuBanks[4] = cpuBase;
     state_.CpuBanks[5] = cpuBase + 0x2000;
     state_.CpuBanks[6] = cpuBase + 0x4000;
     state_.CpuBanks[7] = cpuBase + 0x6000;
+}
 
-    auto ppuBase = &chrData_[((value & 0xf0) << 9) & chrMask_];
+void Cart::UpdateChrMapColorDreams()
+{
+    auto ppuBase = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
     state_.PpuBanks[0] = ppuBase;
     state_.PpuBanks[1] = ppuBase + 0x0400;
     state_.PpuBanks[2] = ppuBase + 0x0800;
@@ -2202,14 +2238,11 @@ void Cart::WriteCaltron6in1Low(uint16_t address)
     bus_->SyncPpu();
 
     SetMirrorMode(address & 0020 ? MirrorMode::Horizontal : MirrorMode::Vertical);
-    state_.ChrBank0 = (address & 0x0018) << 12;
-    state_.PrgBank0 = address & 0x0007;
+    state_.ChrBankHighBits = (address & 0x0018) << 12;
+    state_.PrgBankHighBits = address & 0x0007 << 15;
 
-    auto base = &prgData_[(state_.PrgBank0 << 15) & prgMask_];
-    state_.CpuBanks[4] = base;
-    state_.CpuBanks[5] = base + 0x2000;
-    state_.CpuBanks[6] = base + 0x4000;
-    state_.CpuBanks[7] = base + 0x6000;
+    UpdatePrgMapCaltron6in1();
+    UpdateChrMapCNROM();
 }
 
 void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
@@ -2225,15 +2258,48 @@ void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
 
     bus_->SyncPpu();
 
-    auto base = &chrData_[state_.ChrBank0 | ((value & 0x03) << 13)];
-    state_.PpuBanks[0] = base;
-    state_.PpuBanks[1] = base + 0x0400;
-    state_.PpuBanks[2] = base + 0x0800;
-    state_.PpuBanks[3] = base + 0x0c00;
-    state_.PpuBanks[4] = base + 0x1000;
-    state_.PpuBanks[5] = base + 0x1400;
-    state_.PpuBanks[6] = base + 0x1800;
-    state_.PpuBanks[7] = base + 0x1c00;
+    state_.ChrBank0 = ((value & 0x03) << 13);
+
+    UpdateChrMapCNROM();
+}
+
+void Cart::UpdatePrgMapCaltron6in1()
+{
+    auto base = &prgData_[state_.PrgBankHighBits & prgMask_];
+    state_.CpuBanks[4] = base;
+    state_.CpuBanks[5] = base + 0x2000;
+    state_.CpuBanks[6] = base + 0x4000;
+    state_.CpuBanks[7] = base + 0x6000;
+}
+
+
+void Cart::WriteRumbleStationLow(uint16_t address, uint8_t value)
+{
+    if (address < 0x6000)
+        return;
+
+    state_.ChrBankHighBits = ((value & 0xf0) << 12);
+    state_.PrgBankHighBits = ((value & 0x0f) << 16);
+
+    bus_->SyncPpu();
+    UpdatePrgMapColorDreams();
+    UpdateChrMapColorDreams();
+}
+
+void Cart::WriteRumbleStationHigh(uint16_t address, uint8_t value)
+{
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    state_.ChrBank0 = ((value & 0x70) << 9);
+    state_.PrgBank0= ((value & 0x01) << 15);
+
+    bus_->SyncPpu();
+    UpdatePrgMapColorDreams();
+    UpdateChrMapColorDreams();
 }
 
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
@@ -2467,10 +2533,16 @@ std::unique_ptr<Cart> TryCreateCart(
         default:
             return nullptr;
         }
+        break;
 
     case 41:
         mapper = MapperType::Caltron6in1;
         cart->EnableBusConflicts(true);
+        break;
+
+    case 46:
+        mapper = MapperType::RumbleStation;
+        cart->EnableBusConflicts(true); // TODO: check this
         break;
 
     case 71:
