@@ -76,6 +76,9 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
 
     while (scanlineCycle < targetCycle)
     {
+        if (state_.oamAddress_ >= 256)
+            return;
+
         auto oamData = state_.oam_[state_.oamAddress_];
         if (oamCopyIndex_ < 32)
         {
@@ -120,9 +123,6 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
 
             // TODO: overflow bug
         }
-
-        if (state_.oamAddress_ >= 256)
-            return;
 
         scanlineCycle += 2;
     }
