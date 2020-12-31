@@ -12,7 +12,9 @@ Cart::Cart() :
     chrMask_{},
     prgMask_{},
     busConflicts_{},
-    prgRamMask_{}
+    prgRamMask_{},
+    chrBlockSize_{},
+    prgBlockSize_{}
 {
 }
 
@@ -30,6 +32,12 @@ void Cart::SetMapper(MapperType mapper)
     else if (mapper_ == MapperType::MCACC)
     {
         state_.ChrA12PulseCounter = 1;
+    }
+    else if (mapper_ == MapperType::QJ)
+    {
+        prgBlockSize_ = 0x20000;
+        chrBlockSize_ = 0x20000;
+        UpdatePrgMapMMC3();
     }
     else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams || mapper_ == MapperType::Caltron6in1)
     {
@@ -58,6 +66,7 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
 
     prgMask_ = static_cast<uint32_t>(prgData_.size()) - 1;
+    prgBlockSize_ = static_cast<uint32_t>(prgData_.size());
 
     // initial state for mapper 5
     state_.PrgBank3 = prgMask_ & 0x01fe000;
@@ -94,6 +103,7 @@ void Cart::SetChrRom(std::vector<uint8_t> chrData)
     state_.PpuBanks[7] = &chrData_[0x1c00];
 
     assert((chrData_.size() & (chrData_.size() - 1)) == 0);
+    chrBlockSize_ = static_cast<uint32_t>(chrData_.size());
     chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
 }
 
@@ -112,6 +122,7 @@ void Cart::SetChrRam(uint32_t size)
 
     chrWriteable_ = true;
     assert((size & (size - 1)) == 0);
+    chrBlockSize_ = size;
     chrMask_ = size - 1;
 }
 
@@ -211,6 +222,12 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         if (state_.PrgRamProtect0)
             return;
 
+        if (mapper_ == MapperType::QJ)
+        {
+            WriteQJLow(address, value);
+            return;
+        }
+
         auto bank = state_.CpuBanks[address >> 13];
         if (bank)
             bank[address & 0x1fff] = value;
@@ -234,6 +251,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     case MapperType::MMC3:
     case MapperType::MMC6:
     case MapperType::MCACC:
+    case MapperType::QJ:
         WriteMMC3(address, value);
         break;
 
@@ -294,7 +312,11 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             WriteNINA001(address, firstValue);
             bus_->TickCpuWrite();
             WriteNINA001(address, secondValue);
-            // continue to also write to RAM
+
+            auto bank = state_.CpuBanks[address >> 13];
+            if (bank)
+                bank[address & 0x1fff] = secondValue;
+            return;
         }
         else if (mapper_ == MapperType::Caltron6in1)
         {
@@ -309,24 +331,28 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             WriteRumbleStationLow(address, firstValue);
             return;
         }
-        else
-        {
-            // TODO: it's possible a bank switch happens underneath us
-            bus_->TickCpuWrite();
-        }
 
         if (mapper_ == MapperType::MMC6)
         {
+            bus_->TickCpuWrite();
             auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
             if ((protect & 5) != 0)
                 prgRamBanks_[0][address & 0x3ff] = secondValue;
             return;
         }
-        else
+
+        if (state_.PrgRamProtect0)
+            return;
+
+        if (mapper_ == MapperType::QJ)
         {
-            if (state_.PrgRamProtect0)
-                return;
+            WriteQJLow(address, firstValue);
+            bus_->TickCpuWrite();
+            WriteQJLow(address, secondValue);
+            return;
         }
+
+        bus_->TickCpuWrite();
 
         auto bank = state_.CpuBanks[address >> 13];
         if (bank)
@@ -356,6 +382,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     case MapperType::MMC3:
     case MapperType::MMC6:
     case MapperType::MCACC:
+    case MapperType::QJ:
         WriteMMC3(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC3(address, secondValue);
@@ -747,7 +774,7 @@ void Cart::ChrA12Rising()
         if (state_.ChrA12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed)
         {
             // MMC3 takes a smoothed signal, and clocks on the rising edge of A12
-            ClockScanlineCounter();
+            ClockMMC3ScanlineCounter();
         }
     }
 }
@@ -776,7 +803,7 @@ void Cart::ChrA12Falling()
                 bus_->MarkDiagnostic(0xff0000ff);
 #endif 
 
-                ClockScanlineCounter();
+                ClockMMC3ScanlineCounter();
                 state_.ChrA12PulseCounter = 8;
             }
         }
@@ -1197,9 +1224,12 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
     {
         if ((address & 1) == 0)
         {
-            state_.PrgBank0 = value & 0x07;
-            SetPrgModeMMC3((value >> 6) & 1);
-            SetChrModeMMC3((value >> 7) & 1);
+            bus_->SyncPpu();
+            state_.BankSelect = value & 0x07;
+            state_.PrgMode = (value >> 6) & 1;
+            state_.ChrMode = (value >> 7) & 1;
+            UpdatePrgMapMMC3();
+            UpdateChrMapMMC3();
 
             if (mapper_ == MapperType::MMC6)
             {
@@ -1312,74 +1342,115 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
     }
 }
 
-void Cart::SetPrgModeMMC3(uint8_t mode)
-{
-    if (mode != state_.PrgMode)
-    {
-        std::swap(state_.CpuBanks[4], state_.CpuBanks[6]);
-
-        state_.PrgMode = mode;
-    }
-}
-
-void Cart::SetChrModeMMC3(uint8_t mode)
-{
-    if (mode != state_.ChrMode)
-    {
-        std::swap(state_.PpuBanks[0], state_.PpuBanks[4]);
-        std::swap(state_.PpuBanks[1], state_.PpuBanks[5]);
-        std::swap(state_.PpuBanks[2], state_.PpuBanks[6]);
-        std::swap(state_.PpuBanks[3], state_.PpuBanks[7]);
-
-        state_.ChrMode = mode;
-    }
-}
-
 void Cart::SetBankMMC3(uint32_t bank)
 {
-    switch (state_.PrgBank0)
+    switch (state_.BankSelect)
     {
     case 0:
         bus_->SyncPpu();
-        SetChrBank2k(state_.ChrMode ? 4 : 0, bank);
+        state_.ChrBank0 = bank << 10;
+        UpdateChrMapMMC3();
         break;
 
     case 1:
         bus_->SyncPpu();
-        SetChrBank2k(state_.ChrMode ? 6 : 2, bank);
+        state_.ChrBank1 = bank << 10;
+        UpdateChrMapMMC3();
         break;
 
     case 2:
         bus_->SyncPpu();
-        SetChrBank1k(state_.ChrMode ? 0 : 4, bank);
+        state_.ChrBank2 = bank << 10;
+        UpdateChrMapMMC3();
         break;
 
     case 3:
         bus_->SyncPpu();
-        SetChrBank1k(state_.ChrMode ? 1 : 5, bank);
+        state_.ChrBank3 = bank << 10;
+        UpdateChrMapMMC3();
         break;
 
     case 4:
         bus_->SyncPpu();
-        SetChrBank1k(state_.ChrMode ? 2 : 6, bank);
+        state_.ChrBank4 = bank << 10;
+        UpdateChrMapMMC3();
         break;
 
     case 5:
         bus_->SyncPpu();
-        SetChrBank1k(state_.ChrMode ? 3 : 7, bank);
+        state_.ChrBank5 = bank << 10;
+        UpdateChrMapMMC3();
         break;
 
     case 6:
-        state_.CpuBanks[state_.PrgMode ? 6 : 4] = &prgData_[(bank << 13) & prgMask_];
+        state_.PrgBank0 = bank << 13;
+        UpdatePrgMapMMC3();
         break;
 
     case 7:
-        state_.CpuBanks[5] = &prgData_[(bank << 13) & prgMask_];
+        state_.PrgBank1 = bank << 13;
+        UpdatePrgMapMMC3();
         break;
     }
 }
 
-void Cart::ClockScanlineCounter()
+void Cart::UpdatePrgMapMMC3()
+{
+    auto block = &prgData_[state_.PrgBankHighBits & prgMask_];
+
+    if (state_.PrgMode == 0)
+    {
+        state_.CpuBanks[4] = &block[state_.PrgBank0 & prgMask_];
+        state_.CpuBanks[5] = &block[state_.PrgBank1 & prgMask_];
+        state_.CpuBanks[6] = &block[prgBlockSize_ - 0x4000];
+        state_.CpuBanks[7] = &block[prgBlockSize_ - 0x2000];
+    }
+    else
+    {
+        state_.CpuBanks[4] = &block[prgBlockSize_ - 0x4000];
+        state_.CpuBanks[5] = &block[state_.PrgBank1 & prgMask_];
+        state_.CpuBanks[6] = &block[state_.PrgBank0 & prgMask_];
+        state_.CpuBanks[7] = &block[prgBlockSize_- 0x2000];
+    }
+}
+
+void Cart::UpdateChrMapMMC3()
+{
+    auto block = &chrData_[state_.ChrBankHighBits & chrMask_];
+
+    if (state_.ChrMode == 0)
+    {
+        auto base0 = &block[state_.ChrBank0 & chrMask_ & 0xfffff800];
+        state_.PpuBanks[0] = base0;
+        state_.PpuBanks[1] = base0 + 0x400;
+
+        auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
+        state_.PpuBanks[2] = base1;
+        state_.PpuBanks[3] = base1 + 0x400;
+
+        state_.PpuBanks[4] = &block[state_.ChrBank2 & chrMask_];
+        state_.PpuBanks[5] = &block[state_.ChrBank3 & chrMask_];
+        state_.PpuBanks[6] = &block[state_.ChrBank4 & chrMask_];
+        state_.PpuBanks[7] = &block[state_.ChrBank5 & chrMask_];
+    } 
+    else
+    {
+        state_.PpuBanks[0] = &block[state_.ChrBank2 & chrMask_];
+        state_.PpuBanks[1] = &block[state_.ChrBank3 & chrMask_];
+        state_.PpuBanks[2] = &block[state_.ChrBank4 & chrMask_];
+        state_.PpuBanks[3] = &block[state_.ChrBank5 & chrMask_];
+
+        auto base0 = &block[state_.ChrBank0 & chrMask_ & 0xfffff800];
+        state_.PpuBanks[4] = base0;
+        state_.PpuBanks[5] = base0 + 0x400;
+
+        auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
+        state_.PpuBanks[6] = base1;
+        state_.PpuBanks[7] = base1 + 0x400;
+    }
+}
+
+void Cart::ClockMMC3ScanlineCounter()
 {
     if (state_.ScanlineCounter == 0 || state_.ReloadCounter)
     {
@@ -2302,19 +2373,16 @@ void Cart::WriteRumbleStationHigh(uint16_t address, uint8_t value)
     UpdateChrMapColorDreams();
 }
 
-void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
+void Cart::WriteQJLow(uint16_t address, uint8_t value)
 {
-    auto bankAddress = (value << 10) & chrMask_;
-    auto base = &chrData_[bankAddress];
-    state_.PpuBanks[bank] = base;
-}
+    if (address < 0x6000)
+        return;
 
-void Cart::SetChrBank2k(uint32_t bank, uint32_t value)
-{
-    auto bankAddress = (value << 10) & chrMask_ & 0xfffff800;
-    auto base = &chrData_[bankAddress];
-    state_.PpuBanks[bank] = base;
-    state_.PpuBanks[static_cast<size_t>(bank) + 1] = base + 0x0400;
+    state_.ChrBankHighBits = state_.PrgBankHighBits = ((value & 0x01) << 17);
+
+    bus_->SyncPpu();
+    UpdatePrgMapMMC3();
+    UpdateChrMapMMC3();
 }
 
 void Cart::UpdatePpuRamMap()
@@ -2543,6 +2611,10 @@ std::unique_ptr<Cart> TryCreateCart(
     case 46:
         mapper = MapperType::RumbleStation;
         cart->EnableBusConflicts(true); // TODO: check this
+        break;
+
+    case 47:
+        mapper = MapperType::QJ;
         break;
 
     case 71:

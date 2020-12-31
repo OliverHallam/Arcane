@@ -9,6 +9,7 @@ enum class MapperType
     MMC3, // TxROM
     MMC6, // HxROM
     MCACC,
+    QJ, // Super Spike Volleyball + Nintendo World Cup multicart
     MMC5, // ExROM
     AxROM,
     MMC2, // PxROM

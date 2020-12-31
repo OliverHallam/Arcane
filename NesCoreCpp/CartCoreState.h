@@ -14,6 +14,8 @@ struct CartCoreState
     uint32_t MapperShiftCount{};
     uint32_t MapperShift{};
 
+    uint32_t BankSelect{};
+
     uint32_t PrgMode{};
     uint32_t PrgBank0{};
     uint32_t PrgBank1{};

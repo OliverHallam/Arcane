@@ -77,10 +77,10 @@ private:
     void UpdateChrMapCNROM();
 
     void WriteMMC3(uint16_t address, uint8_t value);
-    void SetPrgModeMMC3(uint8_t mode);
-    void SetChrModeMMC3(uint8_t mode);
     void SetBankMMC3(uint32_t bank);
-    void ClockScanlineCounter();
+    void UpdatePrgMapMMC3();
+    void UpdateChrMapMMC3();
+    void ClockMMC3ScanlineCounter();
 
     uint8_t ReadMMC5(uint16_t address);
     void WriteMMC5(uint16_t address, uint8_t value);
@@ -109,13 +109,11 @@ private:
     void WriteCaltron6in1Low(uint16_t address);
     void WriteCaltron6in1High(uint16_t address, uint8_t value);
     void UpdatePrgMapCaltron6in1();
-    void UpdateChrMapCaltron6in1();
 
     void WriteRumbleStationLow(uint16_t address, uint8_t value);
     void WriteRumbleStationHigh(uint16_t address, uint8_t value);
 
-    void SetChrBank1k(uint32_t bank, uint32_t value);
-    void SetChrBank2k(uint32_t bank, uint32_t value);
+    void WriteQJLow(uint16_t address, uint8_t value);
 
     void UpdatePpuRamMap();
 
@@ -127,8 +125,10 @@ private:
     std::vector<uint8_t> chrData_;
 
     uint32_t prgMask_;
+    uint32_t prgBlockSize_;
 
     uint32_t chrMask_;
+    uint32_t chrBlockSize_;
 
     CartCoreState state_;
 
