@@ -103,6 +103,9 @@ private:
 
     void WriteBNROM(uint16_t address, uint8_t value);
 
+    void WriteCaltron6in1Low(uint16_t address);
+    void WriteCaltron6in1High(uint16_t address, uint8_t value);
+
     void SetChrBank1k(uint32_t bank, uint32_t value);
     void SetChrBank2k(uint32_t bank, uint32_t value);
 

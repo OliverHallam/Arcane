@@ -16,5 +16,6 @@ enum class MapperType
     CPROM,
     NINA001,
     BNROM,
+    Caltron6in1,
     BF9093, // Codemasters UNROM clone
 };

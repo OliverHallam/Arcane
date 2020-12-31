@@ -31,7 +31,7 @@ void Cart::SetMapper(MapperType mapper)
     {
         state_.ChrA12PulseCounter = 1;
     }
-    else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams)
+    else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams || mapper_ == MapperType::Caltron6in1)
     {
         state_.CpuBanks[4] = &prgData_[0];
         state_.CpuBanks[5] = &prgData_[0x2000];
@@ -197,6 +197,11 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
             WriteNINA001(address, value);
             // continue to alse write to RAM
         }
+        else if (mapper_ == MapperType::Caltron6in1)
+        {
+            WriteCaltron6in1Low(address);
+            return;
+        }
 
         if (state_.PrgRamProtect0)
             return;
@@ -252,6 +257,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteBNROM(address, value);
         break;
 
+    case MapperType::Caltron6in1:
+        WriteCaltron6in1High(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -277,6 +286,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             bus_->TickCpuWrite();
             WriteNINA001(address, secondValue);
             // continue to also write to RAM
+        }
+        else if (mapper_ == MapperType::Caltron6in1)
+        {
+            WriteCaltron6in1Low(address);
+            bus_->TickCpuWrite();
+            return;
         }
         else
         {
@@ -364,6 +379,11 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         bus_->TickCpuWrite();
         WriteBNROM(address, secondValue);
         break;
+
+    case MapperType::Caltron6in1:
+        WriteCaltron6in1High(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteCaltron6in1High(address, secondValue);
 
     case MapperType::BF9093:
         bus_->TickCpuWrite();
@@ -2174,6 +2194,48 @@ void Cart::WriteBNROM(uint16_t address, uint8_t value)
     state_.CpuBanks[7] = base + 0x6000;
 }
 
+void Cart::WriteCaltron6in1Low(uint16_t address)
+{
+    if ((address & 0xf800) != 0x6000)
+        return;
+
+    bus_->SyncPpu();
+
+    SetMirrorMode(address & 0020 ? MirrorMode::Horizontal : MirrorMode::Vertical);
+    state_.ChrBank0 = (address & 0x0018) << 12;
+    state_.PrgBank0 = address & 0x0007;
+
+    auto base = &prgData_[(state_.PrgBank0 << 15) & prgMask_];
+    state_.CpuBanks[4] = base;
+    state_.CpuBanks[5] = base + 0x2000;
+    state_.CpuBanks[6] = base + 0x4000;
+    state_.CpuBanks[7] = base + 0x6000;
+}
+
+void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
+{
+    if (state_.PrgBank0 < 4)
+        return;
+
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    bus_->SyncPpu();
+
+    auto base = &chrData_[state_.ChrBank0 | ((value & 0x03) << 13)];
+    state_.PpuBanks[0] = base;
+    state_.PpuBanks[1] = base + 0x0400;
+    state_.PpuBanks[2] = base + 0x0800;
+    state_.PpuBanks[3] = base + 0x0c00;
+    state_.PpuBanks[4] = base + 0x1000;
+    state_.PpuBanks[5] = base + 0x1400;
+    state_.PpuBanks[6] = base + 0x1800;
+    state_.PpuBanks[7] = base + 0x1c00;
+}
+
 void Cart::SetChrBank1k(uint32_t bank, uint32_t value)
 {
     auto bankAddress = (value << 10) & chrMask_;
@@ -2405,6 +2467,11 @@ std::unique_ptr<Cart> TryCreateCart(
         default:
             return nullptr;
         }
+
+    case 41:
+        mapper = MapperType::Caltron6in1;
+        cart->EnableBusConflicts(true);
+        break;
 
     case 71:
         switch (desc.SubMapper)
