@@ -46,6 +46,7 @@ void PpuSprites::WriteOam(uint8_t value)
 
 uint8_t PpuSprites::ReadOam() const
 {
+    // TODO: if loading, return oam_[0]
     return state_.oam_[state_.oamAddress_];
 }
 
@@ -63,9 +64,6 @@ void PpuSprites::OamDmaCompleted()
 
 void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
-    if (state_.oamAddress_ >= 256)
-        return;
-
     if ((scanlineCycle & 1) == 0)
     {
         // setting up the read/write
@@ -76,17 +74,17 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
 
     while (scanlineCycle < targetCycle)
     {
-        if (state_.oamAddress_ >= 256)
+        if (state_.spriteEvaluationOamAddress_ >= 256)
             return;
 
-        auto oamData = state_.oam_[state_.oamAddress_];
+        auto oamData = state_.oam_[state_.spriteEvaluationOamAddress_];
         if (oamCopyIndex_ < 32)
         {
             oamCopy_[oamCopyIndex_] = oamData;
 
-            if ((state_.oamAddress_ & 0x03) != 0)
+            if ((state_.spriteEvaluationOamAddress_ & 0x03) != 0)
             {
-                state_.oamAddress_++;
+                state_.spriteEvaluationOamAddress_++;
                 oamCopyIndex_++;
                 scanlineCycle += 2;
                 continue;
@@ -96,7 +94,7 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
         auto spriteRow = (uint32_t)(scanline - oamData);
         bool visible = spriteRow < spriteSize;
 
-        if (state_.oamAddress_ == 0)
+        if (state_.spriteEvaluationOamAddress_ == 0)
         {
             sprite0Selected_ = visible;
         }
@@ -106,25 +104,22 @@ void PpuSprites::RunEvaluation(uint32_t scanline, uint32_t scanlineCycle, uint32
             if (oamCopyIndex_ >= 32)
             {
                 state_.spriteOverflow_ = true;
-
                 // no more observerble side effects
-                state_.oamAddress_ = 256;
+                state_.spriteEvaluationOamAddress_ = 256;
                 return;
             }
             else
             {
-                state_.oamAddress_++;
+                state_.spriteEvaluationOamAddress_++;
                 oamCopyIndex_++;
             }
         }
         else
         {
-            state_.oamAddress_ += 4;
+            state_.spriteEvaluationOamAddress_ += 4;
 
             // TODO: overflow bug
         }
-
-        scanlineCycle += 2;
     }
 }
 
@@ -132,10 +127,10 @@ void PpuSprites::RunEvaluation(uint32_t scanline)
 {
     auto spriteSize = state_.largeSprites_ ? 16u : 8u;
 
-    auto oamAddress = 0;
     auto oamCopyIndex = 0;
+    auto oamAddress = 0;
 
-    while (oamAddress < 256)
+    for (auto i = 0; i < 64; i++)
     {
         auto oamData = state_.oam_[oamAddress];
         auto spriteRow = (uint32_t)(scanline - oamData);
@@ -151,7 +146,7 @@ void PpuSprites::RunEvaluation(uint32_t scanline)
             if (oamCopyIndex >= 32)
             {
                 state_.spriteOverflow_ = true;
-                return;
+                break;
             }
             else
             {
@@ -248,6 +243,8 @@ void PpuSprites::HReset()
     spriteIndex_ = 0;
     spritesRendered_ = false;
 
+    state_.spriteEvaluationOamAddress_ = 0;
+
     if (scanlineSpriteCount_ > 0)
     {
         scanlineData_.fill(0);
@@ -324,8 +321,6 @@ bool PpuSprites::IsHighTable(int32_t spriteIndex) const
 void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint32_t targetCycle)
 {
     // the OAM address is forced to 0 during the whole load phase.
-    state_.oamAddress_ = 0;
-
     if (spriteIndex_ >= scanlineSpriteCount_)
     {
         return;
@@ -441,8 +436,6 @@ void PpuSprites::RunLoad(uint32_t currentScanline, uint32_t scanlineCycle, uint3
 void PpuSprites::RunLoad(uint32_t currentScanline)
 {
     // the OAM address is forced to 0 during the whole load phase.
-    state_.oamAddress_ = 0;
-
     while (spriteIndex_ < scanlineSpriteCount_)
     {
         auto oamAddress = static_cast<size_t>(spriteIndex_) << 2;
