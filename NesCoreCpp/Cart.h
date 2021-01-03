@@ -99,8 +99,6 @@ private:
     void UpdateChrMapMMC2();
 
     void WriteColorDreams(uint16_t address, uint8_t value);
-    void UpdatePrgMapColorDreams();
-    void UpdateChrMapColorDreams();
 
     void WriteCPROM(uint16_t address, uint8_t value);
 
@@ -118,6 +116,10 @@ private:
     void WriteQJLow(uint16_t address, uint8_t value);
 
     void WriteRambo1(uint16_t address, uint8_t value);
+
+    void WriteGxROM(uint8_t value);
+    void UpdatePrgMapGxROM();
+    void UpdateChrMapGxROM();
 
     void UpdatePpuRamMap();
 

@@ -66,6 +66,12 @@ void Cart::SetMapper(MapperType mapper)
         // TODO: we could do this without scheduling all A12 events.
         state_.ChrA12Sensitivity = ChrA12Sensitivity::RisingEdgeSmoothed;
     }
+    else if (mapper_ == MapperType::ColorDreams || mapper_ == MapperType::GxROM)
+    {
+        state_.PrgBank0 = 3;
+        state_.ChrBank0 = 3;
+        UpdatePrgMapGxROM();
+    }
 }
 
 void Cart::SetPrgRom(std::vector<uint8_t> prgData)
@@ -305,6 +311,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteRambo1(address, value);
         break;
 
+    case MapperType::GxROM:
+        WriteGxROM(value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -462,6 +472,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         bus_->TickCpuWrite();
         if (address >= 0xc000)
             WriteUxROM(address, secondValue);
+        break;
+
+    case MapperType::GxROM:
+        WriteGxROM(firstValue);
+        bus_->TickCpuWrite();
+        WriteGxROM(secondValue);
         break;
 
     default:
@@ -2291,30 +2307,8 @@ void Cart::WriteColorDreams(uint16_t address, uint8_t value)
     state_.PrgBank0 = (value & 0x03) << 15;
     state_.ChrBank0 = (value & 0xf0) << 9;
 
-    UpdatePrgMapColorDreams();
-    UpdateChrMapColorDreams();
-}
-
-void Cart::UpdatePrgMapColorDreams()
-{
-    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
-    state_.CpuBanks[4] = cpuBase;
-    state_.CpuBanks[5] = cpuBase + 0x2000;
-    state_.CpuBanks[6] = cpuBase + 0x4000;
-    state_.CpuBanks[7] = cpuBase + 0x6000;
-}
-
-void Cart::UpdateChrMapColorDreams()
-{
-    auto ppuBase = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
-    state_.PpuBanks[0] = ppuBase;
-    state_.PpuBanks[1] = ppuBase + 0x0400;
-    state_.PpuBanks[2] = ppuBase + 0x0800;
-    state_.PpuBanks[3] = ppuBase + 0x0c00;
-    state_.PpuBanks[4] = ppuBase + 0x1000;
-    state_.PpuBanks[5] = ppuBase + 0x1400;
-    state_.PpuBanks[6] = ppuBase + 0x1800;
-    state_.PpuBanks[7] = ppuBase + 0x1c00;
+    UpdatePrgMapGxROM();
+    UpdateChrMapGxROM();
 }
 
 void Cart::WriteCPROM(uint16_t address, uint8_t value)
@@ -2439,8 +2433,8 @@ void Cart::WriteRumbleStationLow(uint16_t address, uint8_t value)
     state_.PrgBankHighBits = ((value & 0x0f) << 16);
 
     bus_->SyncPpu();
-    UpdatePrgMapColorDreams();
-    UpdateChrMapColorDreams();
+    UpdatePrgMapGxROM();
+    UpdateChrMapGxROM();
 }
 
 void Cart::WriteRumbleStationHigh(uint16_t address, uint8_t value)
@@ -2455,8 +2449,8 @@ void Cart::WriteRumbleStationHigh(uint16_t address, uint8_t value)
     state_.PrgBank0= ((value & 0x01) << 15);
 
     bus_->SyncPpu();
-    UpdatePrgMapColorDreams();
-    UpdateChrMapColorDreams();
+    UpdatePrgMapGxROM();
+    UpdateChrMapGxROM();
 }
 
 void Cart::WriteQJLow(uint16_t address, uint8_t value)
@@ -2563,6 +2557,38 @@ void Cart::WriteRambo1(uint16_t address, uint8_t value)
         }
         bus_->SetCartIrq(false);
     }
+}
+
+void Cart::WriteGxROM(uint8_t value)
+{
+    bus_->SyncPpu();
+    state_.PrgBank0 = (value & 0x30) << 11;
+    state_.ChrBank0 = (value & 0x03) << 13;
+
+    UpdatePrgMapGxROM();
+    UpdateChrMapGxROM();
+}
+
+void Cart::UpdatePrgMapGxROM()
+{
+    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
+    state_.CpuBanks[4] = cpuBase;
+    state_.CpuBanks[5] = cpuBase + 0x2000;
+    state_.CpuBanks[6] = cpuBase + 0x4000;
+    state_.CpuBanks[7] = cpuBase + 0x6000;
+}
+
+void Cart::UpdateChrMapGxROM()
+{
+    auto ppuBase = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
+    state_.PpuBanks[0] = ppuBase;
+    state_.PpuBanks[1] = ppuBase + 0x0400;
+    state_.PpuBanks[2] = ppuBase + 0x0800;
+    state_.PpuBanks[3] = ppuBase + 0x0c00;
+    state_.PpuBanks[4] = ppuBase + 0x1000;
+    state_.PpuBanks[5] = ppuBase + 0x1400;
+    state_.PpuBanks[6] = ppuBase + 0x1800;
+    state_.PpuBanks[7] = ppuBase + 0x1c00;
 }
 
 void Cart::UpdatePpuRamMap()
@@ -2799,6 +2825,10 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 64:
         mapper = MapperType::Rambo1;
+        break;
+
+    case 66:
+        mapper = MapperType::GxROM;
         break;
 
     case 71:
