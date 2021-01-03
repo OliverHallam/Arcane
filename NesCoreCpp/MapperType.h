@@ -21,5 +21,6 @@ enum class MapperType
     RumbleStation,
     Rambo1,
     GxROM,
+    Sunsoft4,
     BF9093, // Codemasters UNROM clone
 };

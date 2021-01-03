@@ -52,6 +52,7 @@ struct CartCoreState
 
     uint32_t PrgPlane0{};
     uint32_t PrgPlane1{};
+    uint32_t PrgRamEnabled{};
     uint32_t PrgRamBank0{};
     uint32_t PrgRamBank1{};
     uint32_t PrgRamProtect0{};

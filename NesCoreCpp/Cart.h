@@ -117,9 +117,14 @@ private:
 
     void WriteRambo1(uint16_t address, uint8_t value);
 
-    void WriteGxROM(uint8_t value);
+    void WriteGxROM(uint16_t address, uint8_t value);
     void UpdatePrgMapGxROM();
     void UpdateChrMapGxROM();
+
+    void WriteSunsoft4(uint16_t address, uint8_t value);
+    void UpdatePrgMapSunsoft4();
+    void UpdateChrMapSunsoft4();
+    void UpdateNametableMapSunsoft4();
 
     void UpdatePpuRamMap();
 
