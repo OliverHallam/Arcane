@@ -65,8 +65,12 @@ struct CartCoreState
     bool ChrA12{};
 
     bool IrqEnabled{};
-    uint32_t ScanlineCounter{};
+    uint32_t IrqMode{};
+    uint32_t IrqCounter{};
     uint32_t ChrA12PulseCounter{};
+    uint32_t LastA12Cycle{};
+    uint32_t PrescalerResetCycle{};
+    bool BumpIrqCounter{};
 
     bool ReloadCounter{};
     uint8_t ReloadValue{};

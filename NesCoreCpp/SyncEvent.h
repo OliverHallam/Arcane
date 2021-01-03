@@ -15,6 +15,8 @@ enum class SyncEvent : uint32_t
     ScanlineCounterScanline,
     ScanlineCounterEndFrame,
     CpuNmi,
+    CartCpuIrqCounter,
+    CartSetIrq,
     CpuSetIrq,
     CpuClearIrq
 };

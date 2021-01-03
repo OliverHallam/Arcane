@@ -17,6 +17,7 @@ public:
     Ppu(Bus& bus, Display& display);
 
     uint32_t FrameCount();
+    int32_t ScanlineCycle() const;
 
     void Sync();
     void SyncA12();
@@ -35,14 +36,13 @@ public:
     void RestoreState(const PpuState& state);
 
     void UpdateA12Sensitivity(bool isLow);
+    int32_t GetA12FallingEdgeCycleSmoothed() const;
 
 #ifdef DIAGNOSTIC
     void MarkDiagnostic(uint32_t color);
 #endif
 
 private:
-    int32_t ScanlineCycle() const;
-
     void Sync(int32_t targetCycle);
     void SyncComposite(int32_t targetCycle);
 

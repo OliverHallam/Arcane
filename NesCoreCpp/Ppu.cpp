@@ -344,6 +344,12 @@ void Ppu::UpdateA12Sensitivity(bool isLow)
     }
 }
 
+int32_t Ppu::GetA12FallingEdgeCycleSmoothed() const
+{
+    auto scanlineCycle = ScanlineCycle();
+    return state_.ScanlineStartCycle + chrA12_.GetTrailingEdgeCycleFiltered(scanlineCycle);
+}
+
 #ifdef DIAGNOSTIC
 void Ppu::MarkDiagnostic(uint32_t color)
 {

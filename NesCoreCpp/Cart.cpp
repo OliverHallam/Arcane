@@ -29,12 +29,19 @@ void Cart::SetMapper(MapperType mapper)
         state_.PrgMode = 3;
         state_.PrgRamProtect0 = 3; // two protect flags
     }
+    else if (mapper_ == MapperType::MMC3 || mapper_ == MapperType::MMC6)
+    {
+        // RAMBO-1 extends MMC3 to support a third PRG register - we fix this for the other variants.
+        state_.PrgBank2 = prgBlockSize_ - 0x4000;
+    }
     else if (mapper_ == MapperType::MCACC)
     {
+        state_.PrgBank2 = prgBlockSize_ - 0x4000;
         state_.ChrA12PulseCounter = 1;
     }
     else if (mapper_ == MapperType::QJ)
     {
+        state_.PrgBank2 = prgBlockSize_ - 0x4000;
         prgBlockSize_ = 0x20000;
         chrBlockSize_ = 0x20000;
         UpdatePrgMapMMC3();
@@ -52,6 +59,12 @@ void Cart::SetMapper(MapperType mapper)
         state_.CpuBanks[5] = &prgData_[prgData_.size() - 0x6000];
         state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
         state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
+    }
+    else if (mapper_ == MapperType::Rambo1)
+    {
+        // we always care about A12, since we need to know the last time it dropped, in order to correctly set the reset flag when we switch on interrupts.
+        // TODO: we could do this without scheduling all A12 events.
+        state_.ChrA12Sensitivity = ChrA12Sensitivity::RisingEdgeSmoothed;
     }
 }
 
@@ -288,6 +301,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteRumbleStationHigh(address, value);
         break;
 
+    case MapperType::Rambo1:
+        WriteRambo1(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -433,6 +450,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteRumbleStationHigh(address, firstValue);
         bus_->TickCpuWrite();
         WriteRumbleStationHigh(address, secondValue);
+        break;
+
+    case MapperType::Rambo1:
+        WriteRambo1(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteRambo1(address, secondValue);
         break;
 
     case MapperType::BF9093:
@@ -769,12 +792,19 @@ void Cart::ChrA12Rising()
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
         }
     }
-    else // MMC3, MMC6
+    else // MMC3, MMC6, QJ, RAMBO-1
     {
         if (state_.ChrA12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed)
         {
+            if (mapper_ == MapperType::Rambo1)
+            {
+                state_.LastA12Cycle = bus_->GetA12FallingEdgeCycleSmoothed();
+                if (state_.IrqMode != 0)
+                    return;
+            }
+
             // MMC3 takes a smoothed signal, and clocks on the rising edge of A12
-            ClockMMC3ScanlineCounter();
+            ClockMMC3IrqCounter();
         }
     }
 }
@@ -803,7 +833,7 @@ void Cart::ChrA12Falling()
                 bus_->MarkDiagnostic(0xff0000ff);
 #endif 
 
-                ClockMMC3ScanlineCounter();
+                ClockMMC3IrqCounter();
                 state_.ChrA12PulseCounter = 8;
             }
         }
@@ -828,8 +858,8 @@ void Cart::ScanlineCounterBeginScanline()
 
     if (state_.InFrame)
     {
-        state_.ScanlineCounter++;
-        if (state_.ScanlineCounter == state_.InterruptScanline)
+        state_.IrqCounter++;
+        if (state_.IrqCounter == state_.InterruptScanline)
         {
             state_.IrqPending = true;
             if (state_.IrqEnabled)
@@ -839,7 +869,7 @@ void Cart::ScanlineCounterBeginScanline()
     else
     {
         state_.InFrame = true;
-        state_.ScanlineCounter = 0;
+        state_.IrqCounter = 0;
         state_.IrqPending = false;
         bus_->SetCartIrq(false);
     }
@@ -920,6 +950,17 @@ bool Cart::UsesMMC5Audio() const
 {
     //return mapper_ == 5;
     return false; // only available on Famicom.
+}
+
+void Cart::ClockCpuIrqCounter()
+{
+    // TODO: we can absorb this into the scheduler.
+    ClockMMC3IrqCounter();
+
+    if (state_.IrqMode == 1 && (state_.IrqCounter > 0 || state_.ReloadValue > 0 || state_.IrqEnabled))
+    {
+        bus_->Schedule(4, SyncEvent::CartCpuIrqCounter);
+    }
 }
 
 void Cart::CaptureState(CartState* state) const
@@ -1256,15 +1297,7 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
     {
         if ((address & 1) == 0)
         {
-            if (state_.MirrorMode != MirrorMode::FourScreen)
-            {
-                auto newMirrorMode = value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical;
-                if (state_.MirrorMode != newMirrorMode)
-                {
-                    state_.MirrorMode = newMirrorMode;
-                    UpdatePpuRamMap();
-                }
-            }
+            SetMirrorMode(value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical);
         }
         else
         {
@@ -1304,7 +1337,7 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
         }
 
         auto sensitivityBefore = state_.ChrA12Sensitivity;
-        if (state_.ScanlineCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
+        if (state_.IrqCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
             state_.ChrA12Sensitivity =
                 mapper_ == MapperType::MCACC
                     ? ChrA12Sensitivity::FallingEdgeDivided
@@ -1329,7 +1362,7 @@ void Cart::WriteMMC3(uint16_t address, uint8_t value)
         }
 
         auto sensitivityBefore = state_.ChrA12Sensitivity;
-        if (state_.ScanlineCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
+        if (state_.IrqCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
             state_.ChrA12Sensitivity =
             mapper_ == MapperType::MCACC
             ? ChrA12Sensitivity::FallingEdgeDivided
@@ -1391,6 +1424,24 @@ void Cart::SetBankMMC3(uint32_t bank)
         state_.PrgBank1 = bank << 13;
         UpdatePrgMapMMC3();
         break;
+
+    // RAMBO-1 extensions:
+    case 8:
+        bus_->SyncPpu();
+        state_.ChrBank6 = bank << 10;
+        UpdateChrMapMMC3();
+        break;
+
+    case 9:
+        bus_->SyncPpu();
+        state_.ChrBank7 = bank << 10;
+        UpdateChrMapMMC3();
+        break;
+
+    case 15:
+        state_.PrgBank2 = bank << 13;
+        UpdatePrgMapMMC3();
+        break;
     }
 }
 
@@ -1402,12 +1453,12 @@ void Cart::UpdatePrgMapMMC3()
     {
         state_.CpuBanks[4] = &block[state_.PrgBank0 & prgMask_];
         state_.CpuBanks[5] = &block[state_.PrgBank1 & prgMask_];
-        state_.CpuBanks[6] = &block[prgBlockSize_ - 0x4000];
+        state_.CpuBanks[6] = &block[state_.PrgBank2 & prgMask_];
         state_.CpuBanks[7] = &block[prgBlockSize_ - 0x2000];
     }
     else
     {
-        state_.CpuBanks[4] = &block[prgBlockSize_ - 0x4000];
+        state_.CpuBanks[4] = &block[state_.PrgBank2 & prgMask_];
         state_.CpuBanks[5] = &block[state_.PrgBank1 & prgMask_];
         state_.CpuBanks[6] = &block[state_.PrgBank0 & prgMask_];
         state_.CpuBanks[7] = &block[prgBlockSize_- 0x2000];
@@ -1418,15 +1469,26 @@ void Cart::UpdateChrMapMMC3()
 {
     auto block = &chrData_[state_.ChrBankHighBits & chrMask_];
 
-    if (state_.ChrMode == 0)
+    if ((state_.ChrMode & 1) == 0)
     {
-        auto base0 = &block[state_.ChrBank0 & chrMask_ & 0xfffff800];
-        state_.PpuBanks[0] = base0;
-        state_.PpuBanks[1] = base0 + 0x400;
+        if ((state_.ChrMode & 2) != 0)
+        {
+            // RAMBO-1 full 1kb mode
+            state_.PpuBanks[0] = &block[state_.ChrBank0 & chrMask_];
+            state_.PpuBanks[1] = &block[state_.ChrBank6 & chrMask_];
+            state_.PpuBanks[2] = &block[state_.ChrBank1 & chrMask_];
+            state_.PpuBanks[3] = &block[state_.ChrBank7 & chrMask_];
+        }
+        else
+        {
+            auto base0 = &block[state_.ChrBank0 & chrMask_ & 0xfffff800];
+            state_.PpuBanks[0] = base0;
+            state_.PpuBanks[1] = base0 + 0x400;
 
-        auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
-        state_.PpuBanks[2] = base1;
-        state_.PpuBanks[3] = base1 + 0x400;
+            auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
+            state_.PpuBanks[2] = base1;
+            state_.PpuBanks[3] = base1 + 0x400;
+        }
 
         state_.PpuBanks[4] = &block[state_.ChrBank2 & chrMask_];
         state_.PpuBanks[5] = &block[state_.ChrBank3 & chrMask_];
@@ -1440,24 +1502,41 @@ void Cart::UpdateChrMapMMC3()
         state_.PpuBanks[2] = &block[state_.ChrBank4 & chrMask_];
         state_.PpuBanks[3] = &block[state_.ChrBank5 & chrMask_];
 
-        auto base0 = &block[state_.ChrBank0 & chrMask_ & 0xfffff800];
-        state_.PpuBanks[4] = base0;
-        state_.PpuBanks[5] = base0 + 0x400;
+        if ((state_.ChrMode & 2) != 0)
+        {
+            // RAMBO-1 full 1kb mode
+            state_.PpuBanks[4] = &block[state_.ChrBank0 & chrMask_];
+            state_.PpuBanks[5] = &block[state_.ChrBank6 & chrMask_];
+            state_.PpuBanks[6] = &block[state_.ChrBank1 & chrMask_];
+            state_.PpuBanks[7] = &block[state_.ChrBank7 & chrMask_];
+        }
+        else
+        {
+            auto base0 = &block[state_.ChrBank0 & chrMask_ & 0xfffff800];
+            state_.PpuBanks[4] = base0;
+            state_.PpuBanks[5] = base0 + 0x400;
 
-        auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
-        state_.PpuBanks[6] = base1;
-        state_.PpuBanks[7] = base1 + 0x400;
+            auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
+            state_.PpuBanks[6] = base1;
+            state_.PpuBanks[7] = base1 + 0x400;
+        }
     }
 }
 
-void Cart::ClockMMC3ScanlineCounter()
+void Cart::ClockMMC3IrqCounter()
 {
-    if (state_.ScanlineCounter == 0 || state_.ReloadCounter)
+    if (state_.IrqCounter == 0 || state_.ReloadCounter)
     {
-        state_.ScanlineCounter = state_.ReloadValue;
+        state_.IrqCounter = state_.ReloadValue;
+
+        // RAMBO-1 often skips a scanline before resetting - we'll emulate this by resetting earlier, but bumping the count.
+        if (state_.BumpIrqCounter)
+            state_.IrqCounter += 1;
+
+        state_.BumpIrqCounter = false;
         state_.ReloadCounter = false;
 
-        if (state_.ScanlineCounter == 0 && !state_.IrqEnabled)
+        if (mapper_ != MapperType::Rambo1 && state_.IrqCounter == 0 && !state_.IrqEnabled)
         {
             state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
             bus_->UpdateA12Sensitivity();
@@ -1465,12 +1544,19 @@ void Cart::ClockMMC3ScanlineCounter()
     }
     else
     {
-        state_.ScanlineCounter--;
+        state_.IrqCounter--;
     }
 
-    if (state_.ScanlineCounter == 0 && state_.IrqEnabled)
+    if (state_.IrqCounter == 0 && state_.IrqEnabled)
     {
-        bus_->SetCartIrq(true);
+        if (mapper_ == MapperType::Rambo1)
+        {
+            bus_->Schedule(3, SyncEvent::CartSetIrq);
+        }
+        else
+        {
+            bus_->SetCartIrq(true);
+        }
     }
 }
 
@@ -2385,6 +2471,100 @@ void Cart::WriteQJLow(uint16_t address, uint8_t value)
     UpdateChrMapMMC3();
 }
 
+void Cart::WriteRambo1(uint16_t address, uint8_t value)
+{
+    // very similar to WriteMMC3
+    if (address < 0xa000)
+    {
+        if ((address & 1) == 0)
+        {
+            bus_->SyncPpu();
+            state_.BankSelect = value & 0x0f;
+            state_.PrgMode = (value >> 6) & 1;
+            state_.ChrMode = (value >> 7) & 1;
+            state_.ChrMode |= (value & 0x20) >> 4;
+            UpdatePrgMapMMC3();
+            UpdateChrMapMMC3();
+        }
+        else
+        {
+            SetBankMMC3(value);
+        }
+    }
+    else if (address < 0xc000)
+    {
+        if ((address & 1) == 0)
+        {
+            SetMirrorMode(value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical);
+        }
+    }
+    else if (address < 0xe000)
+    {
+        if ((address & 1) == 0)
+        {
+            state_.ReloadValue = value;
+
+            if (state_.IrqMode == 1)
+            {
+                auto cyclesSinceReset = bus_->PpuCycleCount() - state_.PrescalerResetCycle;
+                cyclesSinceReset %= 12;
+
+                bus_->Deschedule(SyncEvent::CartCpuIrqCounter);
+                if (state_.IrqMode == 1 && (state_.IrqCounter > 0 || state_.ReloadValue > 0 || state_.IrqEnabled))
+                {
+                    bus_->SchedulePpu(12 - cyclesSinceReset, SyncEvent::CartCpuIrqCounter);
+                }
+            }
+        }
+        else
+        {
+            state_.IrqMode = value & 1;
+            state_.ReloadCounter = true;
+
+            if (mapper_ == MapperType::Rambo1)
+            {
+                bus_->Deschedule(SyncEvent::CartCpuIrqCounter);
+
+                if (state_.IrqMode == 0)
+                {
+                    // this won't trip in the current scanline, if it was not within 16 CPU cycles of the clock going low.
+                    // We'll emulate this by bumping the count by one when we reset it.
+                    // an exception to this rule is if the count is zero, and we are resetting it to zero, then this happening a scanline late isn't observable
+                    if (state_.ReloadValue == 0)
+                    {
+                        state_.BumpIrqCounter = false;
+                    }
+                    else
+                    {
+                        state_.BumpIrqCounter = bus_->PpuCycleCount() >= state_.LastA12Cycle + 48;
+                    }
+                }
+                else
+                {
+                    state_.PrescalerResetCycle = bus_->PpuCycleCount();
+
+                    if (state_.IrqMode == 1 && (state_.IrqCounter > 0 || state_.ReloadValue > 0 || state_.IrqEnabled))
+                    {
+                        bus_->Schedule(4, SyncEvent::CartCpuIrqCounter);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        if ((address & 1) == 0)
+        {
+            state_.IrqEnabled = false;
+        }
+        else
+        {
+            state_.IrqEnabled = true;
+        }
+        bus_->SetCartIrq(false);
+    }
+}
+
 void Cart::UpdatePpuRamMap()
 {
     auto base = bus_->GetPpuRamBase();
@@ -2615,6 +2795,10 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 47:
         mapper = MapperType::QJ;
+        break;
+
+    case 64:
+        mapper = MapperType::Rambo1;
         break;
 
     case 71:

@@ -34,6 +34,8 @@ public:
     uint32_t CpuCycleCount() const;
     uint32_t PpuCycleCount() const;
 
+    int32_t PpuScanlineCycle() const;
+
     void SyncPpu();
 
     ChrA12Sensitivity ChrA12Sensitivity() const;
@@ -41,6 +43,7 @@ public:
     uint32_t GetChrA12PulsesRequiredForSync() const;
     void ChrA12Rising();
     void ChrA12Falling();
+    uint32_t GetA12FallingEdgeCycleSmoothed() const;
 
     bool HasScanlineCounter() const;
     void TileSplitBeginScanline();

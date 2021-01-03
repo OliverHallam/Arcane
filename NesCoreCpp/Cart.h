@@ -62,6 +62,8 @@ public:
 
     bool UsesMMC5Audio() const;
 
+    void ClockCpuIrqCounter();
+
     void CaptureState(CartState* state) const;
     void RestoreState(const CartState& state);
 
@@ -80,7 +82,7 @@ private:
     void SetBankMMC3(uint32_t bank);
     void UpdatePrgMapMMC3();
     void UpdateChrMapMMC3();
-    void ClockMMC3ScanlineCounter();
+    void ClockMMC3IrqCounter();
 
     uint8_t ReadMMC5(uint16_t address);
     void WriteMMC5(uint16_t address, uint8_t value);
@@ -114,6 +116,8 @@ private:
     void WriteRumbleStationHigh(uint16_t address, uint8_t value);
 
     void WriteQJLow(uint16_t address, uint8_t value);
+
+    void WriteRambo1(uint16_t address, uint8_t value);
 
     void UpdatePpuRamMap();
 

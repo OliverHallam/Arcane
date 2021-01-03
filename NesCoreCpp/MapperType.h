@@ -19,5 +19,6 @@ enum class MapperType
     BNROM,
     Caltron6in1,
     RumbleStation,
+    Rambo1,
     BF9093, // Codemasters UNROM clone
 };

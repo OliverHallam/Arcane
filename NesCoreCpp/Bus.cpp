@@ -44,6 +44,8 @@ void Bus::Attach(Cart* cart)
 
         if (cart_->UsesMMC5Audio())
             apu_->EnableMMC5(true);
+
+        UpdateA12Sensitivity();
     }
 }
 
@@ -86,6 +88,11 @@ uint32_t Bus::PpuCycleCount() const
     return state_.CycleCount;
 }
 
+int32_t Bus::PpuScanlineCycle() const
+{
+    return ppu_->ScanlineCycle();
+}
+
 void Bus::SyncPpu()
 {
     ppu_->Sync();
@@ -119,6 +126,11 @@ void Bus::ChrA12Falling()
     ppu_->MarkDiagnostic(0XFF00FFFF);
 #endif
     cart_->ChrA12Falling();
+}
+
+uint32_t Bus::GetA12FallingEdgeCycleSmoothed() const
+{
+    return ppu_->GetA12FallingEdgeCycleSmoothed();
 }
 
 bool Bus::HasScanlineCounter() const
@@ -517,6 +529,14 @@ void Bus::RunEvent()
 
     case SyncEvent::CpuNmi:
         cpu_->Nmi();
+        break;
+
+    case SyncEvent::CartCpuIrqCounter:
+        cart_->ClockCpuIrqCounter();
+        break;
+
+    case SyncEvent::CartSetIrq:
+        SetCartIrq(true);
         break;
 
     case SyncEvent::CpuSetIrq:

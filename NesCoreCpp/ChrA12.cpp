@@ -11,7 +11,7 @@ ChrA12::ChrA12(const PpuBackground& background, const PpuSprites& sprites)
 {
 }
 
-int32_t ChrA12::NextEdgeCycle(int32_t cycle)
+int32_t ChrA12::NextEdgeCycle(int32_t cycle) const
 {
     if (cycle < 256)
     {
@@ -61,7 +61,7 @@ int32_t ChrA12::NextEdgeCycle(int32_t cycle)
     return -1;
 }
 
-int32_t ChrA12::NextRaisingEdgeCycleFiltered(int32_t cycle, bool isLow)
+int32_t ChrA12::NextRaisingEdgeCycleFiltered(int32_t cycle, bool isLow) const
 {
     auto backgroundHigh = (background_.GetBasePatternAddress() & 0x1000) != 0;
     auto spritesHigh = (sprites_.BasePatternAddress() & 0x1000) != 0;
@@ -150,7 +150,7 @@ int32_t ChrA12::NextRaisingEdgeCycleFiltered(int32_t cycle, bool isLow)
     return -1;
 }
 
-int32_t ChrA12::NextTrailingEdgeCycle(int32_t cycle)
+int32_t ChrA12::NextTrailingEdgeCycle(int32_t cycle) const
 {
     if (cycle < 256)
     {
@@ -200,7 +200,7 @@ int32_t ChrA12::NextTrailingEdgeCycle(int32_t cycle)
     return -1;
 }
 
-SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed)
+SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed) const
 {
     assert((cycle & 0x2) == 0);
 
@@ -254,4 +254,32 @@ SignalEdge ChrA12::GetEdge(int32_t& cycle, bool smoothed)
             return edge;
         }
     }
+}
+
+int32_t ChrA12::GetTrailingEdgeCycleFiltered(int32_t cycle) const
+{
+    // assuming this was at a rising edge.
+
+    if (cycle < 256)
+        return 256;
+
+    if (cycle > 320)
+        return 340;
+
+    // we were triggered by a sprite
+    if (!sprites_.LargeSprites() || sprites_.AllLargeSpritesHighTable())
+        return 320;
+
+    int currentSprite = (cycle - 256) / 8;
+
+    int lastSpriteCycle = cycle;
+    do
+    {
+        ++currentSprite;
+        cycle += 8;
+        if (sprites_.IsHighTable(currentSprite))
+            lastSpriteCycle = cycle;
+    } while (currentSprite < 8);
+
+    return lastSpriteCycle;
 }
