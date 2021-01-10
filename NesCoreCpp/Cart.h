@@ -76,7 +76,6 @@ private:
     void WriteUxROM(uint16_t address, uint8_t value);
 
     void WriteCNROM(uint16_t address, uint8_t value);
-    void UpdateChrMapCNROM();
 
     void WriteMMC3(uint16_t address, uint8_t value);
     void SetBankMMC3(uint32_t bank);
@@ -125,6 +124,10 @@ private:
     void UpdatePrgMapSunsoft4();
     void UpdateChrMapSunsoft4();
     void UpdateNametableMapSunsoft4();
+
+    void WriteSunsoftFME7(uint16_t address, uint8_t value);
+    void UpdatePrgMapSunsoftFME7();
+    void UpdateChrMapSunsoftFME7();
 
     void UpdatePpuRamMap();
 

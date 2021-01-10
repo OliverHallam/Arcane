@@ -15,6 +15,7 @@ struct CartCoreState
     uint32_t MapperShift{};
 
     uint32_t BankSelect{};
+    uint32_t CommandNumber{};
 
     uint32_t PrgMode{};
     uint32_t PrgBank0{};
@@ -72,6 +73,9 @@ struct CartCoreState
     uint32_t LastA12Cycle{};
     uint32_t PrescalerResetCycle{};
     bool BumpIrqCounter{};
+
+    bool CpuCounterEnabled{};
+    uint32_t CpuCounterSyncCycle{};
 
     bool ReloadCounter{};
     uint8_t ReloadValue{};

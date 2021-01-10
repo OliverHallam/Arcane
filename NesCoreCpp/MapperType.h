@@ -22,5 +22,6 @@ enum class MapperType
     Rambo1,
     GxROM,
     Sunsoft4,
+    SunsoftFME7, // also Sunsoft 5A and Sunsoft 5B
     BF9093, // Codemasters UNROM clone
 };

@@ -72,6 +72,12 @@ void Cart::SetMapper(MapperType mapper)
         state_.ChrBank0 = 3;
         UpdatePrgMapGxROM();
     }
+    else if (mapper_ == MapperType::SunsoftFME7)
+    {
+        state_.CpuBanks[4] = &prgData_[0];
+        state_.CpuBanks[5] = &prgData_[0];
+        state_.CpuBanks[6] = &prgData_[0];
+    }
 }
 
 void Cart::SetPrgRom(std::vector<uint8_t> prgData)
@@ -319,6 +325,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteSunsoft4(address, value);
         break;
 
+    case MapperType::SunsoftFME7:
+        WriteSunsoftFME7(address, value);
+        break;
+
     case MapperType::BF9093:
         if (address >= 0xc000)
             WriteUxROM(address, value);
@@ -488,6 +498,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteSunsoft4(address, firstValue);
         bus_->TickCpuWrite();
         WriteSunsoft4(address, secondValue);
+        break;
+
+    case MapperType::SunsoftFME7:
+        WriteSunsoftFME7(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteSunsoftFME7(address, secondValue);
         break;
 
     default:
@@ -1270,20 +1286,7 @@ void Cart::WriteCNROM(uint16_t address, uint8_t value)
 
     bus_->SyncPpu();
 
-    UpdateChrMapCNROM();
-}
-
-void Cart::UpdateChrMapCNROM()
-{
-    auto base = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
-    state_.PpuBanks[0] = base;
-    state_.PpuBanks[1] = base + 0x0400;
-    state_.PpuBanks[2] = base + 0x0800;
-    state_.PpuBanks[3] = base + 0x0c00;
-    state_.PpuBanks[4] = base + 0x1000;
-    state_.PpuBanks[5] = base + 0x1400;
-    state_.PpuBanks[6] = base + 0x1800;
-    state_.PpuBanks[7] = base + 0x1c00;
+    UpdateChrMapGxROM();
 }
 
 void Cart::WriteMMC3(uint16_t address, uint8_t value)
@@ -2409,7 +2412,7 @@ void Cart::WriteCaltron6in1Low(uint16_t address)
     state_.PrgBankHighBits = address & 0x0007 << 15;
 
     UpdatePrgMapCaltron6in1();
-    UpdateChrMapCNROM();
+    UpdateChrMapGxROM();
 }
 
 void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
@@ -2427,7 +2430,7 @@ void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
 
     state_.ChrBank0 = ((value & 0x03) << 13);
 
-    UpdateChrMapCNROM();
+    UpdateChrMapGxROM();
 }
 
 void Cart::UpdatePrgMapCaltron6in1()
@@ -2588,6 +2591,8 @@ void Cart::WriteGxROM(uint16_t address, uint8_t value)
     state_.ChrBank0 = (value & 0x03) << 13;
 
     UpdatePrgMapGxROM();
+    
+    // behaves the same as CNROM
     UpdateChrMapGxROM();
 }
 
@@ -2602,15 +2607,15 @@ void Cart::UpdatePrgMapGxROM()
 
 void Cart::UpdateChrMapGxROM()
 {
-    auto ppuBase = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
-    state_.PpuBanks[0] = ppuBase;
-    state_.PpuBanks[1] = ppuBase + 0x0400;
-    state_.PpuBanks[2] = ppuBase + 0x0800;
-    state_.PpuBanks[3] = ppuBase + 0x0c00;
-    state_.PpuBanks[4] = ppuBase + 0x1000;
-    state_.PpuBanks[5] = ppuBase + 0x1400;
-    state_.PpuBanks[6] = ppuBase + 0x1800;
-    state_.PpuBanks[7] = ppuBase + 0x1c00;
+    auto base = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
+    state_.PpuBanks[0] = base;
+    state_.PpuBanks[1] = base + 0x0400;
+    state_.PpuBanks[2] = base + 0x0800;
+    state_.PpuBanks[3] = base + 0x0c00;
+    state_.PpuBanks[4] = base + 0x1000;
+    state_.PpuBanks[5] = base + 0x1400;
+    state_.PpuBanks[6] = base + 0x1800;
+    state_.PpuBanks[7] = base + 0x1c00;
 }
 
 void Cart::WriteSunsoft4(uint16_t address, uint8_t value)
@@ -2654,29 +2659,13 @@ void Cart::WriteSunsoft4(uint16_t address, uint8_t value)
         break;
 
     case 0xe000:
+    {
         bus_->SyncPpu();
-        switch (value & 0x03)
-        {
-        case 0:
-            state_.MirrorMode = MirrorMode::Vertical;
-            break;
-
-        case 1:
-            state_.MirrorMode = MirrorMode::Horizontal;
-            break;
-
-        case 2:
-            state_.MirrorMode = MirrorMode::SingleScreenLow;
-            break;
-
-        case 3:
-            state_.MirrorMode = MirrorMode::SingleScreenHigh;
-            break;
-        }
-
+        auto mirrorMode = static_cast<MirrorMode>((value & 0x03) ^ 0x02);
         state_.NametableMode0 = (value & 0x10) >> 4;
         UpdateNametableMapSunsoft4();
         break;
+    }
 
     case 0xf000:
         state_.PrgRamEnabled = (value & 0x40) != 0;
@@ -2752,6 +2741,198 @@ void Cart::UpdateNametableMapSunsoft4()
         state_.PpuBanks[11] = state_.PpuBanks[15] = base1;
         break;
     }
+}
+
+void Cart::WriteSunsoftFME7(uint16_t address, uint8_t value)
+{
+    if (address < 0xa000)
+    {
+        state_.CommandNumber = value & 0x0f;
+    }
+    else if (address < 0xc0000)
+    {
+        switch (state_.CommandNumber)
+        {
+        case 0x0:
+            bus_->SyncPpu();
+            state_.ChrBank0 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x1:
+            bus_->SyncPpu();
+            state_.ChrBank1 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x2:
+            bus_->SyncPpu();
+            state_.ChrBank2 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x3:
+            bus_->SyncPpu();
+            state_.ChrBank3 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x4:
+            bus_->SyncPpu();
+            state_.ChrBank4 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x5:
+            bus_->SyncPpu();
+            state_.ChrBank5 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x6:
+            bus_->SyncPpu();
+            state_.ChrBank6 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x7:
+            bus_->SyncPpu();
+            state_.ChrBank7 = (value << 10) & chrMask_;
+            UpdateChrMapSunsoftFME7();
+            break;
+
+        case 0x8:
+            state_.PrgRamEnabled = (value & 0x80) != 0;
+            state_.PrgBank0Ram = (value & 0x40) != 0;
+            state_.PrgBank0 = ((value & 0x1f) << 13) & prgMask_;
+            UpdatePrgMapSunsoftFME7();
+            break;
+
+        case 0x9:
+            state_.PrgBank1 = ((value & 0x1f) << 13) & prgMask_;
+            UpdatePrgMapSunsoftFME7();
+            break;
+
+        case 0xa:
+            state_.PrgBank2 = ((value & 0x1f) << 13) & prgMask_;
+            UpdatePrgMapSunsoftFME7();
+            break;
+
+        case 0xb:
+            state_.PrgBank3 = ((value & 0x1f) << 13) & prgMask_;
+            UpdatePrgMapSunsoftFME7();
+            break;
+
+        case 0xc:
+        {
+            bus_->SyncPpu();
+            auto mirrorMode = static_cast<MirrorMode>((value & 3) ^ 0x02);
+            SetMirrorMode(mirrorMode);
+            break;
+        }
+
+        case 0xd:
+        {
+            bus_->SetCartIrq(false);
+
+            auto enableCounter = (value & 0x80) != 0;
+            auto enableIrq = (value & 0x01) != 0;
+            auto scheduleIrq = enableCounter & enableIrq;
+
+            if (enableCounter)
+            {
+                if (!state_.CpuCounterEnabled)
+                {
+                    state_.CpuCounterSyncCycle = bus_->CpuCycleCount();
+                }
+            }
+            else
+            {
+                if (state_.CpuCounterEnabled)
+                {
+                    auto cyclesElapsed = bus_->CpuCycleCount() - state_.CpuCounterSyncCycle;
+                    state_.IrqCounter -= cyclesElapsed;
+                    state_.IrqCounter &= 0xffff;
+                }
+            }
+
+            auto irqScheduled = state_.CpuCounterEnabled && state_.IrqEnabled;
+            if (scheduleIrq)
+            {
+                if (!irqScheduled)
+                {
+                    bus_->Schedule(state_.IrqCounter + 1, SyncEvent::CartSetIrq);
+                }
+                else
+                {
+                    bus_->Deschedule(SyncEvent::CartSetIrq);
+                }
+            }
+
+            state_.CpuCounterEnabled = enableCounter;
+            state_.IrqEnabled = enableIrq;
+            break;
+        }
+
+        case 0x0e:
+            if (state_.CpuCounterEnabled)
+            {
+                auto cycleCount = bus_->CpuCycleCount();
+                state_.IrqCounter -= cycleCount - state_.CpuCounterSyncCycle;
+                state_.CpuCounterSyncCycle = cycleCount;
+            }
+
+            state_.IrqCounter &= 0xff00;
+            state_.IrqCounter |= value;
+            break;
+
+        case 0x0f:
+            if (state_.CpuCounterEnabled)
+            {
+                auto cycleCount = bus_->CpuCycleCount();
+                state_.IrqCounter -= cycleCount - state_.CpuCounterSyncCycle;
+                state_.CpuCounterSyncCycle = cycleCount;
+            }
+
+            state_.IrqCounter &= 0x00ff;
+            state_.IrqCounter |= (value << 8);
+            break;
+        }
+    }
+    else
+    {
+        assert(false); // AUDIO
+    }
+}
+
+void Cart::UpdatePrgMapSunsoftFME7()
+{
+    uint8_t* bank0;
+    if (state_.PrgBank0Ram)
+    {
+        // TODO: theoretically this can switch betweeen RAM banks
+        state_.CpuBanks[3] = state_.PrgRamEnabled ? prgRamBanks_[0] : nullptr;
+    }
+    else
+    {
+        state_.CpuBanks[3] = &prgData_[state_.PrgBank0];
+    }
+
+    state_.CpuBanks[4] = &prgData_[state_.PrgBank1];
+    state_.CpuBanks[5] = &prgData_[state_.PrgBank2];
+    state_.CpuBanks[6] = &prgData_[state_.PrgBank3];
+}
+
+void Cart::UpdateChrMapSunsoftFME7()
+{
+    state_.PpuBanks[0] = &chrData_[state_.ChrBank0];
+    state_.PpuBanks[1] = &chrData_[state_.ChrBank1];
+    state_.PpuBanks[2] = &chrData_[state_.ChrBank2];
+    state_.PpuBanks[3] = &chrData_[state_.ChrBank3];
+    state_.PpuBanks[4] = &chrData_[state_.ChrBank4];
+    state_.PpuBanks[5] = &chrData_[state_.ChrBank5];
+    state_.PpuBanks[6] = &chrData_[state_.ChrBank6];
+    state_.PpuBanks[7] = &chrData_[state_.ChrBank7];
 }
 
 void Cart::UpdatePpuRamMap()
@@ -2997,6 +3178,11 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 68:
         mapper = MapperType::Sunsoft4;
+        cart->EnableBusConflicts(true);
+        break;
+
+    case 69:
+        mapper = MapperType::SunsoftFME7;
         cart->EnableBusConflicts(true);
         break;
 
