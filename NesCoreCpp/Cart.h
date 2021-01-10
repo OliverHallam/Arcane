@@ -107,7 +107,6 @@ private:
 
     void WriteCaltron6in1Low(uint16_t address);
     void WriteCaltron6in1High(uint16_t address, uint8_t value);
-    void UpdatePrgMapCaltron6in1();
 
     void WriteRumbleStationLow(uint16_t address, uint8_t value);
     void WriteRumbleStationHigh(uint16_t address, uint8_t value);
@@ -117,8 +116,6 @@ private:
     void WriteRambo1(uint16_t address, uint8_t value);
 
     void WriteGxROM(uint16_t address, uint8_t value);
-    void UpdatePrgMapGxROM();
-    void UpdateChrMapGxROM();
 
     void WriteSunsoft4(uint16_t address, uint8_t value);
     void UpdatePrgMapSunsoft4();
@@ -128,6 +125,11 @@ private:
     void WriteSunsoftFME7(uint16_t address, uint8_t value);
     void UpdatePrgMapSunsoftFME7();
     void UpdateChrMapSunsoftFME7();
+
+    void WriteNINA03(uint16_t address, uint8_t value);
+
+    void UpdatePrgMap32k();
+    void UpdateChrMap8k();
 
     void UpdatePpuRamMap();
 

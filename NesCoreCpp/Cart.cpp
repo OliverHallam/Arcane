@@ -70,7 +70,7 @@ void Cart::SetMapper(MapperType mapper)
     {
         state_.PrgBank0 = 3;
         state_.ChrBank0 = 3;
-        UpdatePrgMapGxROM();
+        UpdatePrgMap32k();
     }
     else if (mapper_ == MapperType::SunsoftFME7)
     {
@@ -219,16 +219,14 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
             WriteMMC5(address, value);
             return;
         }
-
-        if (mapper_ == MapperType::MMC6)
+        else if (mapper_ == MapperType::MMC6)
         {
             auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
             if ((protect & 5) != 0)
                 prgRamBanks_[0][address & 0x3ff] = value;
             return;
         }
-
-        if (mapper_ == MapperType::NINA001)
+        else if (mapper_ == MapperType::NINA001)
         {
             WriteNINA001(address, value);
             // continue to alse write to RAM
@@ -241,6 +239,11 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         else if (mapper_ == MapperType::RumbleStation)
         {
             WriteRumbleStationLow(address, value);
+            return;
+        }
+        else if (mapper_ == MapperType::NINA03)
+        {
+            WriteNINA03(address, value);
             return;
         }
 
@@ -347,8 +350,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             WriteMMC5(address, firstValue);
             return;
         }
-
-        if (mapper_ == MapperType::NINA001)
+        else if (mapper_ == MapperType::NINA001)
         {
             WriteNINA001(address, firstValue);
             bus_->TickCpuWrite();
@@ -372,13 +374,19 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             WriteRumbleStationLow(address, firstValue);
             return;
         }
-
-        if (mapper_ == MapperType::MMC6)
+        else if (mapper_ == MapperType::MMC6)
         {
             bus_->TickCpuWrite();
             auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
             if ((protect & 5) != 0)
                 prgRamBanks_[0][address & 0x3ff] = secondValue;
+            return;
+        }
+        else if (mapper_ == MapperType::NINA03)
+        {
+            WriteNINA03(address, firstValue);
+            bus_->TickCpuWrite();
+            WriteNINA03(address, secondValue);
             return;
         }
 
@@ -1286,7 +1294,7 @@ void Cart::WriteCNROM(uint16_t address, uint8_t value)
 
     bus_->SyncPpu();
 
-    UpdateChrMapGxROM();
+    UpdateChrMap8k();
 }
 
 void Cart::WriteMMC3(uint16_t address, uint8_t value)
@@ -2326,8 +2334,8 @@ void Cart::WriteColorDreams(uint16_t address, uint8_t value)
     state_.PrgBank0 = (value & 0x03) << 15;
     state_.ChrBank0 = (value & 0xf0) << 9;
 
-    UpdatePrgMapGxROM();
-    UpdateChrMapGxROM();
+    UpdatePrgMap32k();
+    UpdateChrMap8k();
 }
 
 void Cart::WriteCPROM(uint16_t address, uint8_t value)
@@ -2411,8 +2419,8 @@ void Cart::WriteCaltron6in1Low(uint16_t address)
     state_.ChrBankHighBits = (address & 0x0018) << 12;
     state_.PrgBankHighBits = address & 0x0007 << 15;
 
-    UpdatePrgMapCaltron6in1();
-    UpdateChrMapGxROM();
+    UpdatePrgMap32k();
+    UpdateChrMap8k();
 }
 
 void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
@@ -2430,18 +2438,8 @@ void Cart::WriteCaltron6in1High(uint16_t address, uint8_t value)
 
     state_.ChrBank0 = ((value & 0x03) << 13);
 
-    UpdateChrMapGxROM();
+    UpdateChrMap8k();
 }
-
-void Cart::UpdatePrgMapCaltron6in1()
-{
-    auto base = &prgData_[state_.PrgBankHighBits & prgMask_];
-    state_.CpuBanks[4] = base;
-    state_.CpuBanks[5] = base + 0x2000;
-    state_.CpuBanks[6] = base + 0x4000;
-    state_.CpuBanks[7] = base + 0x6000;
-}
-
 
 void Cart::WriteRumbleStationLow(uint16_t address, uint8_t value)
 {
@@ -2452,8 +2450,8 @@ void Cart::WriteRumbleStationLow(uint16_t address, uint8_t value)
     state_.PrgBankHighBits = ((value & 0x0f) << 16);
 
     bus_->SyncPpu();
-    UpdatePrgMapGxROM();
-    UpdateChrMapGxROM();
+    UpdatePrgMap32k();
+    UpdateChrMap8k();
 }
 
 void Cart::WriteRumbleStationHigh(uint16_t address, uint8_t value)
@@ -2468,8 +2466,8 @@ void Cart::WriteRumbleStationHigh(uint16_t address, uint8_t value)
     state_.PrgBank0= ((value & 0x01) << 15);
 
     bus_->SyncPpu();
-    UpdatePrgMapGxROM();
-    UpdateChrMapGxROM();
+    UpdatePrgMap32k();
+    UpdateChrMap8k();
 }
 
 void Cart::WriteQJLow(uint16_t address, uint8_t value)
@@ -2586,37 +2584,14 @@ void Cart::WriteGxROM(uint16_t address, uint8_t value)
         value &= bank[address & 0x1fff];
     }
 
-    bus_->SyncPpu();
     state_.PrgBank0 = (value & 0x30) << 11;
     state_.ChrBank0 = (value & 0x03) << 13;
 
-    UpdatePrgMapGxROM();
-    
-    // behaves the same as CNROM
-    UpdateChrMapGxROM();
+    bus_->SyncPpu();
+    UpdatePrgMap32k();
+    UpdateChrMap8k();
 }
 
-void Cart::UpdatePrgMapGxROM()
-{
-    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
-    state_.CpuBanks[4] = cpuBase;
-    state_.CpuBanks[5] = cpuBase + 0x2000;
-    state_.CpuBanks[6] = cpuBase + 0x4000;
-    state_.CpuBanks[7] = cpuBase + 0x6000;
-}
-
-void Cart::UpdateChrMapGxROM()
-{
-    auto base = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
-    state_.PpuBanks[0] = base;
-    state_.PpuBanks[1] = base + 0x0400;
-    state_.PpuBanks[2] = base + 0x0800;
-    state_.PpuBanks[3] = base + 0x0c00;
-    state_.PpuBanks[4] = base + 0x1000;
-    state_.PpuBanks[5] = base + 0x1400;
-    state_.PpuBanks[6] = base + 0x1800;
-    state_.PpuBanks[7] = base + 0x1c00;
-}
 
 void Cart::WriteSunsoft4(uint16_t address, uint8_t value)
 {
@@ -2935,6 +2910,41 @@ void Cart::UpdateChrMapSunsoftFME7()
     state_.PpuBanks[7] = &chrData_[state_.ChrBank7];
 }
 
+void Cart::WriteNINA03(uint16_t address, uint8_t value)
+{
+    if ((address & 0x7100) == 0x4100)
+    {
+        state_.PrgBank0 = ((value & 0x08) << 12);
+        state_.ChrBank0 = ((value & 0x07) << 13);
+
+        bus_->SyncPpu();
+        UpdatePrgMap32k();
+        UpdateChrMap8k();
+    }
+}
+
+void Cart::UpdatePrgMap32k()
+{
+    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
+    state_.CpuBanks[4] = cpuBase;
+    state_.CpuBanks[5] = cpuBase + 0x2000;
+    state_.CpuBanks[6] = cpuBase + 0x4000;
+    state_.CpuBanks[7] = cpuBase + 0x6000;
+}
+
+void Cart::UpdateChrMap8k()
+{
+    auto base = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
+    state_.PpuBanks[0] = base;
+    state_.PpuBanks[1] = base + 0x0400;
+    state_.PpuBanks[2] = base + 0x0800;
+    state_.PpuBanks[3] = base + 0x0c00;
+    state_.PpuBanks[4] = base + 0x1000;
+    state_.PpuBanks[5] = base + 0x1400;
+    state_.PpuBanks[6] = base + 0x1800;
+    state_.PpuBanks[7] = base + 0x1c00;
+}
+
 void Cart::UpdatePpuRamMap()
 {
     auto base = bus_->GetPpuRamBase();
@@ -3193,6 +3203,11 @@ std::unique_ptr<Cart> TryCreateCart(
             mapper = MapperType::BF9093;
             break;
         }
+        break;
+
+    case 79:
+    case 146: // Sachen 3015 - functionally identical.
+        mapper = MapperType::NINA03;
         break;
 
     default:
