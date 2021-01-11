@@ -18,6 +18,7 @@ struct CartCoreState
     uint32_t CommandNumber{};
 
     uint32_t PrgMode{};
+    uint32_t PrgMode2{};
     uint32_t PrgBank0{};
     uint32_t PrgBank1{};
     uint32_t PrgBank2{};
@@ -100,6 +101,8 @@ struct CartCoreState
 
     uint8_t MulitplierArg0{};
     uint8_t MulitplierArg1{};
+
+    int InitializationState{};
 
     // TODO: we should reconstruct these on restore, so we can share/save the state
     // The CPU address space in 8k banks

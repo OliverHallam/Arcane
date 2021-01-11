@@ -128,6 +128,10 @@ private:
 
     void WriteNINA03(uint16_t address, uint8_t value);
 
+    void WriteNesEvent(uint16_t address, uint8_t value);
+    void WriteNesEventRegister(uint16_t address, uint8_t value);
+    void UpdatePrgMapNesEvent();
+
     void UpdatePrgMap32k();
     void UpdateChrMap8k();
 

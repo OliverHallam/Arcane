@@ -46,12 +46,21 @@ void Cart::SetMapper(MapperType mapper)
         chrBlockSize_ = 0x20000;
         UpdatePrgMapMMC3();
     }
-    else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams || mapper_ == MapperType::Caltron6in1)
+    else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams || mapper_ == MapperType::Caltron6in1 || mapper_ == MapperType::NesEvent)
     {
         state_.CpuBanks[4] = &prgData_[0];
         state_.CpuBanks[5] = &prgData_[0x2000];
         state_.CpuBanks[6] = &prgData_[0x4000];
         state_.CpuBanks[7] = &prgData_[0x6000];
+
+        if (mapper_ == MapperType::NesEvent)
+        {
+            state_.PrgMode = 3;
+            state_.InitializationState = 2;
+
+            // hack to force the second memory chip once we are initialized.
+            state_.PrgPlane0 = 0x00020000;
+        }
     }
     else if (mapper_ == MapperType::MMC2)
     {
@@ -336,6 +345,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         if (address >= 0xc000)
             WriteUxROM(address, value);
         break;
+
+    case MapperType::NesEvent:
+        WriteNesEvent(address, value);
+        break;
     }
 }
 
@@ -512,6 +525,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteSunsoftFME7(address, firstValue);
         bus_->TickCpuWrite();
         WriteSunsoftFME7(address, secondValue);
+        break;
+
+    case MapperType::NesEvent:
+        // The MMC1 takes the first value and ignores the second.
+        WriteNesEvent(address, firstValue);
+        bus_->TickCpuWrite();
         break;
 
     default:
@@ -1179,7 +1198,7 @@ void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
         // PRG bank
 
         // enable/disable PRG RAM
-        state_.PrgRamEnabled = (value & 0x10) != 0;
+        state_.PrgRamEnabled = (value & 0x10) == 0;
         state_.PrgBank0 = ((value & 0x0f) << 14 & prgMask_);
         UpdatePrgMapMMC1();
         break;
@@ -1227,7 +1246,7 @@ void Cart::UpdateChrMapMMC1()
 
 void Cart::UpdatePrgMapMMC1()
 {
-    if (state_.PrgRamEnabled || prgRamBanks_.size() == 0)
+    if (!state_.PrgRamEnabled || prgRamBanks_.size() == 0)
         state_.CpuBanks[3] = nullptr;
     else
         state_.CpuBanks[3] = state_.ChrA12 ? prgRamBanks_[state_.PrgRamBank1] : prgRamBanks_[state_.PrgRamBank0];
@@ -2923,6 +2942,111 @@ void Cart::WriteNINA03(uint16_t address, uint8_t value)
     }
 }
 
+void Cart::WriteNesEvent(uint16_t address, uint8_t value)
+{
+    if ((value & 0x80) == 0x80)
+    {
+        state_.MapperShiftCount = 0;
+        state_.MapperShift = 0;
+
+        // when the shift register is reset, the control bit is or'd with 0x0C
+        state_.PrgMode = 3;
+        UpdatePrgMapNesEvent();
+        return;
+    }
+
+    state_.MapperShift |= (value & 1) << state_.MapperShiftCount;
+    state_.MapperShiftCount++;
+
+    if (state_.MapperShiftCount == 5)
+    {
+        WriteNesEventRegister(address, state_.MapperShift);
+
+        state_.MapperShiftCount = 0;
+        state_.MapperShift = 0;
+    }
+}
+
+void Cart::WriteNesEventRegister(uint16_t address, uint8_t value)
+{
+    // TODO: technically CHR addressing is all here, and maps to the IRQ counte, but this isn't implemented.
+    // we can rewrite this in terms of MMC1, and read off the CHR bits.
+    switch (address >> 13)
+    {
+    case 4:
+        state_.PrgMode = (value >> 2) & 0x03;
+        UpdatePrgMapNesEvent();
+
+        state_.MirrorMode = static_cast<MirrorMode>(value & 0x03);
+        UpdatePpuRamMap();
+        break;
+
+    case 5:
+    {
+        auto irq = (value & 0x10) == 0;
+
+        if (irq != state_.IrqEnabled)
+        {
+            state_.IrqEnabled = irq;
+
+            if (state_.InitializationState > 0)
+                state_.InitializationState--;
+
+            if (irq)
+            {
+                // TODO: allow dip switches to be set.
+                bus_->Schedule(0x2800000, SyncEvent::CartSetIrq);
+            }
+            else
+            {
+                bus_->Deschedule(SyncEvent::CartSetIrq);
+            }
+        }
+
+        state_.PrgMode2 = (value & 0x40) >> 6;
+        state_.PrgBank1 = (value & 0x06) << 14;
+        UpdatePrgMapNesEvent();
+        break;
+    }
+
+    case 6:
+        assert(false);
+        break;
+
+    case 7:
+        // PRG bank
+
+        // enable/disable PRG RAM
+        state_.PrgRamEnabled = (value & 0x10) == 0;
+        state_.PrgBank0 = ((value & 0x0f) << 14 & prgMask_);
+        UpdatePrgMapNesEvent();
+        break;
+    }
+}
+
+void Cart::UpdatePrgMapNesEvent()
+{
+    if (state_.InitializationState != 0)
+        return;
+
+    if (state_.PrgMode2 == 0)
+    {
+        if (!state_.PrgRamEnabled || prgRamBanks_.size() == 0)
+            state_.CpuBanks[3] = nullptr;
+        else
+            state_.CpuBanks[3] = prgRamBanks_[0];
+
+        auto cpuBase = &prgData_[state_.PrgBank1];
+        state_.CpuBanks[4] = cpuBase;
+        state_.CpuBanks[5] = cpuBase + 0x2000;
+        state_.CpuBanks[6] = cpuBase + 0x4000;
+        state_.CpuBanks[7] = cpuBase + 0x6000;
+        return;
+    }
+
+    UpdatePrgMapMMC1();
+}
+
 void Cart::UpdatePrgMap32k()
 {
     auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
@@ -3208,6 +3332,10 @@ std::unique_ptr<Cart> TryCreateCart(
     case 79:
     case 146: // Sachen 3015 - functionally identical.
         mapper = MapperType::NINA03;
+        break;
+
+    case 105:
+        mapper = MapperType::NesEvent;
         break;
 
     default:

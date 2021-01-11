@@ -24,5 +24,6 @@ enum class MapperType
     Sunsoft4,
     SunsoftFME7, // also Sunsoft 5A and Sunsoft 5B
     BF9093, // Codemasters UNROM clone
-    NINA03 // and NINA-006
+    NINA03, // and NINA-006
+    NesEvent, // Nintendo World Championships 1990
 };
