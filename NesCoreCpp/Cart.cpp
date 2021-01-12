@@ -29,7 +29,7 @@ void Cart::SetMapper(MapperType mapper)
         state_.PrgMode = 3;
         state_.PrgRamProtect0 = 3; // two protect flags
     }
-    else if (mapper_ == MapperType::MMC3 || mapper_ == MapperType::MMC6)
+    else if (mapper_ == MapperType::MMC3 || mapper_ == MapperType::MMC6 || mapper_ == MapperType::TxSROM)
     {
         // RAMBO-1 extends MMC3 to support a third PRG register - we fix this for the other variants.
         state_.PrgBank2 = prgBlockSize_ - 0x4000;
@@ -289,6 +289,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     case MapperType::MMC6:
     case MapperType::MCACC:
     case MapperType::QJ:
+    case MapperType::TxSROM:
         WriteMMC3(address, value);
         break;
 
@@ -445,6 +446,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
     case MapperType::MMC6:
     case MapperType::MCACC:
     case MapperType::QJ:
+    case MapperType::TxSROM:
         WriteMMC3(address, firstValue);
         bus_->TickCpuWrite();
         WriteMMC3(address, secondValue);
@@ -861,7 +863,7 @@ void Cart::ChrA12Rising()
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
         }
     }
-    else // MMC3, MMC6, QJ, RAMBO-1
+    else // MMC3, MMC6, QJ, RAMBO-1, TxSROM
     {
         if (state_.ChrA12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed)
         {
@@ -1556,6 +1558,16 @@ void Cart::UpdateChrMapMMC3()
         state_.PpuBanks[5] = &block[state_.ChrBank3 & chrMask_];
         state_.PpuBanks[6] = &block[state_.ChrBank4 & chrMask_];
         state_.PpuBanks[7] = &block[state_.ChrBank5 & chrMask_];
+
+
+        if (mapper_ == MapperType::TxSROM)
+        {
+            auto base = bus_->GetPpuRamBase();
+            state_.PpuBanks[8]  = state_.PpuBanks[12] = &base[(state_.ChrBank2 >> 7) & 0x00400];
+            state_.PpuBanks[9]  = state_.PpuBanks[13] = &base[(state_.ChrBank3 >> 7) & 0x00400];
+            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank4 >> 7) & 0x00400];
+            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank5 >> 7) & 0x00400];
+        }
     } 
     else
     {
@@ -1581,6 +1593,15 @@ void Cart::UpdateChrMapMMC3()
             auto base1 = &block[state_.ChrBank1 & chrMask_ & 0xfffff800];
             state_.PpuBanks[6] = base1;
             state_.PpuBanks[7] = base1 + 0x400;
+        }
+
+        if (mapper_ == MapperType::TxSROM)
+        {
+            auto base = bus_->GetPpuRamBase();
+            state_.PpuBanks[8]  = state_.PpuBanks[12] = &base[(state_.ChrBank0 >> 7) & 0x00400];
+            state_.PpuBanks[9]  = state_.PpuBanks[13] = &base[(state_.ChrBank0 >> 7) & 0x00400];
+            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank1 >> 7) & 0x00400];
+            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank1 >> 7) & 0x00400];
         }
     }
 }
@@ -3336,6 +3357,10 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 105:
         mapper = MapperType::NesEvent;
+        break;
+
+    case 118:
+        mapper = MapperType::TxSROM;
         break;
 
     default:
