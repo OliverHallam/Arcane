@@ -863,7 +863,7 @@ void Cart::ChrA12Rising()
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
         }
     }
-    else // MMC3, MMC6, QJ, RAMBO-1, TxSROM
+    else if (mapper_ != MapperType::MCACC) // MMC3, MMC6, QJ, RAMBO-1, TxSROM
     {
         if (state_.ChrA12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed)
         {
@@ -892,7 +892,7 @@ void Cart::ChrA12Falling()
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank0];
         }
     }
-    else // if (mapper_ == MapperType::MCACC)
+    else if (mapper_ == MapperType::MCACC)
     {
         if (state_.ChrA12Sensitivity == ChrA12Sensitivity::FallingEdgeDivided)
         {
@@ -1563,10 +1563,11 @@ void Cart::UpdateChrMapMMC3()
         if (mapper_ == MapperType::TxSROM)
         {
             auto base = bus_->GetPpuRamBase();
-            state_.PpuBanks[8]  = state_.PpuBanks[12] = &base[(state_.ChrBank2 >> 7) & 0x00400];
-            state_.PpuBanks[9]  = state_.PpuBanks[13] = &base[(state_.ChrBank3 >> 7) & 0x00400];
-            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank4 >> 7) & 0x00400];
-            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank5 >> 7) & 0x00400];
+            state_.PpuBanks[8] = state_.PpuBanks[12] = &base[(state_.ChrBank0 >> 7) & 0x00400];
+            state_.PpuBanks[9] = state_.PpuBanks[13] = &base[(state_.ChrBank0 >> 7) & 0x00400];
+            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank1 >> 7) & 0x00400];
+            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank1 >> 7) & 0x00400];
+
         }
     } 
     else
@@ -1598,10 +1599,10 @@ void Cart::UpdateChrMapMMC3()
         if (mapper_ == MapperType::TxSROM)
         {
             auto base = bus_->GetPpuRamBase();
-            state_.PpuBanks[8]  = state_.PpuBanks[12] = &base[(state_.ChrBank0 >> 7) & 0x00400];
-            state_.PpuBanks[9]  = state_.PpuBanks[13] = &base[(state_.ChrBank0 >> 7) & 0x00400];
-            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank1 >> 7) & 0x00400];
-            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank1 >> 7) & 0x00400];
+            state_.PpuBanks[8] = state_.PpuBanks[12] = &base[(state_.ChrBank2 >> 7) & 0x00400];
+            state_.PpuBanks[9] = state_.PpuBanks[13] = &base[(state_.ChrBank3 >> 7) & 0x00400];
+            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank4 >> 7) & 0x00400];
+            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank5 >> 7) & 0x00400];
         }
     }
 }
