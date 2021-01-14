@@ -78,7 +78,7 @@ void Cart::SetMapper(MapperType mapper)
         state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
         state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
     }
-    else if (mapper_ == MapperType::Rambo1)
+    else if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
     {
         // we always care about A12, since we need to know the last time it dropped, in order to correctly set the reset flag when we switch on interrupts.
         // TODO: we could do this without scheduling all A12 events.
@@ -355,6 +355,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         break;
 
     case MapperType::Rambo1:
+    case MapperType::Tengen800037:
         WriteRambo1(address, value);
         break;
 
@@ -533,6 +534,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         break;
 
     case MapperType::Rambo1:
+    case MapperType::Tengen800037:
         WriteRambo1(address, firstValue);
         bus_->TickCpuWrite();
         WriteRambo1(address, secondValue);
@@ -900,11 +902,11 @@ void Cart::ChrA12Rising()
                 state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
         }
     }
-    else if (mapper_ != MapperType::MCACC) // MMC3, MMC6, QJ, RAMBO-1, TxSROM, TQROM
+    else if (mapper_ != MapperType::MCACC) // MMC3, MMC6, QJ, RAMBO-1, TxSROM, TQROM, 800037
     {
         if (state_.ChrA12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed)
         {
-            if (mapper_ == MapperType::Rambo1)
+            if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
             {
                 state_.LastA12Cycle = bus_->GetA12FallingEdgeCycleSmoothed();
                 if (state_.IrqMode != 0)
@@ -1604,7 +1606,7 @@ void Cart::UpdateChrMapMMC3()
         state_.PpuBanks[7] = &block[state_.ChrBank5 & chrMask_];
 
 
-        if (mapper_ == MapperType::TxSROM)
+        if (mapper_ == MapperType::TxSROM || mapper_ == MapperType::Tengen800037)
         {
             auto base = bus_->GetPpuRamBase();
             state_.PpuBanks[8] = state_.PpuBanks[12] = &base[(state_.ChrBank0 >> 7) & 0x00400];
@@ -1639,7 +1641,7 @@ void Cart::UpdateChrMapMMC3()
             state_.PpuBanks[7] = base1 + 0x400;
         }
 
-        if (mapper_ == MapperType::TxSROM)
+        if (mapper_ == MapperType::TxSROM || mapper_ == MapperType::Tengen800037)
         {
             auto base = bus_->GetPpuRamBase();
             state_.PpuBanks[8] = state_.PpuBanks[12] = &base[(state_.ChrBank2 >> 7) & 0x00400];
@@ -1663,7 +1665,7 @@ void Cart::ClockMMC3IrqCounter()
         state_.BumpIrqCounter = false;
         state_.ReloadCounter = false;
 
-        if (mapper_ != MapperType::Rambo1 && state_.IrqCounter == 0 && !state_.IrqEnabled)
+        if ((mapper_ != MapperType::Rambo1 && mapper_ != MapperType::Tengen800037) && state_.IrqCounter == 0 && !state_.IrqEnabled)
         {
             state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
             bus_->UpdateA12Sensitivity();
@@ -1676,7 +1678,7 @@ void Cart::ClockMMC3IrqCounter()
 
     if (state_.IrqCounter == 0 && state_.IrqEnabled)
     {
-        if (mapper_ == MapperType::Rambo1)
+        if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
         {
             bus_->Schedule(3, SyncEvent::CartSetIrq);
         }
@@ -2617,7 +2619,7 @@ void Cart::WriteRambo1(uint16_t address, uint8_t value)
             state_.IrqMode = value & 1;
             state_.ReloadCounter = true;
 
-            if (mapper_ == MapperType::Rambo1)
+            if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
             {
                 bus_->Deschedule(SyncEvent::CartCpuIrqCounter);
 
@@ -3490,6 +3492,10 @@ std::unique_ptr<Cart> TryCreateCart(
     case 148:
         mapper = MapperType::SachenSA008A;
         cart->EnableBusConflicts(true);
+        break;
+
+    case 158:
+        mapper = MapperType::Tengen800037;
         break;
 
     default:

@@ -29,4 +29,5 @@ enum class MapperType
     TxSROM,
     TQROM,
     SachenSA008A, // also Tengen 800008
+    Tengen800037
 };
