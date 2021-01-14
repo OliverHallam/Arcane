@@ -2397,11 +2397,12 @@ void Cart::UpdateChrMapMMC2()
 
 void Cart::WriteColorDreams(uint16_t address, uint8_t value)
 {
-    if (busConflicts_)
-    {
-        auto bank = state_.CpuBanks[address >> 13];
-        value &= bank[address & 0x1fff];
-    }
+    // TODO: use a better variable for this!
+    if (!busConflicts_)
+        value |= 1;
+
+    auto bank = state_.CpuBanks[address >> 13];
+    value &= bank[address & 0x1fff];
 
     bus_->SyncPpu();
 
@@ -3452,6 +3453,12 @@ std::unique_ptr<Cart> TryCreateCart(
 
     case 119:
         mapper = MapperType::TQROM;
+        break;
+
+    case 144:
+        mapper = MapperType::ColorDreams;
+        // it's more of a special third state than false!
+        cart->EnableBusConflicts(false);
         break;
 
     default:
