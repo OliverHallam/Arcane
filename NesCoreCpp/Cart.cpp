@@ -378,6 +378,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
     case MapperType::NesEvent:
         WriteNesEvent(address, value);
         break;
+
+    case MapperType::SachenSA008A:
+        WriteSachenSA008A(address, value);
+        return;
     }
 }
 
@@ -563,6 +567,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteNesEvent(address, firstValue);
         bus_->TickCpuWrite();
         break;
+
+    case MapperType::SachenSA008A:
+        WriteSachenSA008A(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteSachenSA008A(address, secondValue);
+        return;
 
     default:
         bus_->TickCpuWrite();
@@ -3153,6 +3163,22 @@ void Cart::Set1kBankTQROM(int index, uint32_t bank)
     state_.PpuBankWritable[index] = isRam;
 }
 
+void Cart::WriteSachenSA008A(uint16_t address, uint8_t value)
+{
+    if (busConflicts_)
+    {
+        auto bank = state_.CpuBanks[address >> 13];
+        value &= bank[address & 0x1fff];
+    }
+
+    state_.PrgBank0 = ((value & 0x08) << 12);
+    state_.ChrBank0 = ((value & 0x07) << 13);
+
+    bus_->SyncPpu();
+    UpdatePrgMap32k();
+    UpdateChrMap8k();
+}
+
 void Cart::UpdatePrgMap32k()
 {
     auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
@@ -3455,10 +3481,15 @@ std::unique_ptr<Cart> TryCreateCart(
         mapper = MapperType::TQROM;
         break;
 
-    case 144:
+    case 144: // Death race
         mapper = MapperType::ColorDreams;
         // it's more of a special third state than false!
         cart->EnableBusConflicts(false);
+        break;
+
+    case 148:
+        mapper = MapperType::SachenSA008A;
+        cart->EnableBusConflicts(true);
         break;
 
     default:

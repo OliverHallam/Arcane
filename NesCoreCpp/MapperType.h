@@ -27,5 +27,6 @@ enum class MapperType
     NINA03, // and NINA-006
     NesEvent, // Nintendo World Championships 1990
     TxSROM,
-    TQROM
+    TQROM,
+    SachenSA008A, // also Tengen 800008
 };

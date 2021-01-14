@@ -136,6 +136,8 @@ private:
     void Set2kBankTQROM(int index, uint32_t bank);
     void Set1kBankTQROM(int index, uint32_t bank);
 
+    void WriteSachenSA008A(uint16_t address, uint8_t value);
+
     void UpdatePrgMap32k();
     void UpdateChrMap8k();
 
