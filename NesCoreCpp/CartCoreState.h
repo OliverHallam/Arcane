@@ -111,6 +111,7 @@ struct CartCoreState
 
     // The PPU address space in 1K banks
     std::array<uint8_t*, 16> PpuBanks{};
+    std::array<bool, 16> PpuBankWritable{};
 
     std::array<uint8_t, 4> PpuBankFillBytes{};
     std::array<uint8_t, 4> PPuBankAttributeBytes{};

@@ -24,7 +24,7 @@ public:
     void AddPrgRam(uint32_t size);
     void AddPrgRam(uint8_t* data, uint32_t size);
     void SetChrRom(std::vector<uint8_t> chrData);
-    void SetChrRam(uint32_t size);
+    void AddChrRam(uint32_t size);
     void SetMirrorMode(MirrorMode mirrorMode);
     void EnableBusConflicts(bool conflicts);
 
@@ -132,6 +132,10 @@ private:
     void WriteNesEventRegister(uint16_t address, uint8_t value);
     void UpdatePrgMapNesEvent();
 
+    void UpdateChrMapTQROM();
+    void Set2kBankTQROM(int index, uint32_t bank);
+    void Set1kBankTQROM(int index, uint32_t bank);
+
     void UpdatePrgMap32k();
     void UpdateChrMap8k();
 
@@ -157,7 +161,8 @@ private:
 
     uint32_t prgRamMask_;
 
-    bool chrWriteable_;
+    int32_t chrRamStart_;
+    uint32_t chrRamMask_;
     bool busConflicts_;
 };
 
