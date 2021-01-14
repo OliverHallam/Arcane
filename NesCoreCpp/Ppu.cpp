@@ -1013,10 +1013,17 @@ void Ppu::SetCurrentAddress(uint16_t address)
 
     if (a12Before != a12After)
     {
-        if (a12After)
+        auto a12Sensitivity = bus_.ChrA12Sensitivity();
+        if (a12After && (a12Sensitivity == ChrA12Sensitivity::AllEdges 
+            || a12Sensitivity == ChrA12Sensitivity::RisingEdgeSmoothed))
+        {
             bus_.ChrA12Rising();
-        else
+        }
+        else if (a12Sensitivity == ChrA12Sensitivity::AllEdges
+            || a12Sensitivity == ChrA12Sensitivity::FallingEdgeDivided)
+        {
             bus_.ChrA12Falling();
+        }
     }
 }
 
