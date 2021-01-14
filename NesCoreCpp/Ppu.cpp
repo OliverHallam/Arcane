@@ -408,7 +408,7 @@ void Ppu::SyncState()
         auto prevRenderingEnabled = state_.EnableRendering;
         state_.EnableRendering = (state_.Mask & 0x18) != 0;
 
-        if (state_.EnableRendering != prevRenderingEnabled && (state_.CurrentScanline < 240))
+        if (state_.EnableRendering != prevRenderingEnabled && (state_.CurrentScanline < 240) || state_.CurrentScanline == 261)
         {
             if (state_.EnableRendering)
                 background_.EnableRendering(scanlineCycle - 1);
