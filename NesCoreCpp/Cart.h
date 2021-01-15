@@ -28,6 +28,8 @@ public:
     void SetMirrorMode(MirrorMode mirrorMode);
     void EnableBusConflicts(bool conflicts);
 
+    void Initialize();
+
     void Attach(Bus* bus);
 
     uint8_t CpuRead(uint16_t address);
@@ -137,6 +139,9 @@ private:
     void Set1kBankTQROM(int index, uint32_t bank);
 
     void WriteSachenSA008A(uint16_t address, uint8_t value);
+
+    void WriteActiveEnterprises(uint16_t address, uint8_t value);
+    void UpdatePrgMapActiveEnterprises();
 
     void UpdatePrgMap32k();
     void UpdateChrMap8k();

@@ -29,6 +29,119 @@ Cart::Cart() :
 void Cart::SetMapper(MapperType mapper)
 {
     mapper_ = mapper;
+}
+
+void Cart::SetPrgRom(std::vector<uint8_t> prgData)
+{
+    prgData_ = std::move(prgData);
+
+    auto size = prgData_.size();
+    auto sizeBitRemoved = prgData.size() & (prgData.size() - 1);
+    if (sizeBitRemoved != 0)
+    {
+        size = sizeBitRemoved << 1;
+    }
+
+    prgMask_ = static_cast<uint32_t>(size) - 1;
+    prgBlockSize_ = static_cast<uint32_t>(size);
+}
+
+void Cart::AddPrgRam(uint32_t size)
+{
+    prgRamMask_ = size - 1;
+    localPrgRam_.resize(size);
+    prgRamBanks_.push_back(&localPrgRam_[0]);
+    state_.CpuBanks[3] = prgRamBanks_[0];
+}
+
+void Cart::AddPrgRam(uint8_t* data, uint32_t size)
+{
+    prgRamMask_ = size - 1;
+    prgRamBanks_.push_back(data);
+
+    if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
+        state_.CpuBanks[3] = prgRamBanks_[0];
+}
+
+void Cart::SetChrRom(std::vector<uint8_t> chrData)
+{
+    chrData_ = std::move(chrData);
+
+    state_.PpuBanks[0] = &chrData_[0];
+    state_.PpuBanks[1] = &chrData_[0x0400];
+    state_.PpuBanks[2] = &chrData_[0x0800];
+    state_.PpuBanks[3] = &chrData_[0x0c00];
+    state_.PpuBanks[4] = &chrData_[0x1000];
+    state_.PpuBanks[5] = &chrData_[0x1400];
+    state_.PpuBanks[6] = &chrData_[0x1800];
+    state_.PpuBanks[7] = &chrData_[0x1c00];
+
+    assert((chrData_.size() & (chrData_.size() - 1)) == 0);
+    chrBlockSize_ = static_cast<uint32_t>(chrData_.size());
+    chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
+}
+
+void Cart::AddChrRam(uint32_t size)
+{
+    assert(size >= 0x2000);
+    chrRamStart_ = static_cast<int32_t>(chrData_.size());
+
+    assert((size & (size - 1)) == 0);
+    chrRamMask_ = size - 1;
+
+    size += static_cast<uint32_t>(chrData_.size());
+    chrData_.resize(size);
+
+    if (chrRamStart_ == 0)
+    {
+        state_.PpuBanks[0] = &chrData_[0];
+        state_.PpuBanks[1] = &chrData_[0x0400];
+        state_.PpuBanks[2] = &chrData_[0x0800];
+        state_.PpuBanks[3] = &chrData_[0x0c00];
+        state_.PpuBanks[4] = &chrData_[0x1000];
+        state_.PpuBanks[5] = &chrData_[0x1400];
+        state_.PpuBanks[6] = &chrData_[0x1800];
+        state_.PpuBanks[7] = &chrData_[0x1c00];
+
+        state_.PpuBankWritable[0] = true;
+        state_.PpuBankWritable[1] = true;
+        state_.PpuBankWritable[2] = true;
+        state_.PpuBankWritable[3] = true;
+        state_.PpuBankWritable[4] = true;
+        state_.PpuBankWritable[5] = true;
+        state_.PpuBankWritable[6] = true;
+        state_.PpuBankWritable[7] = true;
+
+        chrBlockSize_ = size;
+        chrMask_ = size - 1;
+    }
+
+}
+
+void Cart::SetMirrorMode(MirrorMode mirrorMode)
+{
+    state_.MirrorMode = mirrorMode;
+    if (bus_)
+    {
+        UpdatePpuRamMap();
+    }
+}
+
+void Cart::EnableBusConflicts(bool conflicts)
+{
+    busConflicts_ = conflicts;
+}
+
+void Cart::Initialize()
+{
+    // first and last bank mapped by default.
+    state_.CpuBanks[4] = &prgData_[0];
+    state_.CpuBanks[5] = &prgData_[0x2000];
+    state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
+    state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
+
+    // initial state for mapper 5
+    state_.PrgBank3 = prgMask_ & 0x01fe000;
 
     if (mapper_ == MapperType::MMC1)
         state_.PrgMode = 3;
@@ -37,7 +150,7 @@ void Cart::SetMapper(MapperType mapper)
         state_.PrgMode = 3;
         state_.PrgRamProtect0 = 3; // two protect flags
     }
-    else if (mapper_ == MapperType::MMC3 || mapper_ == MapperType::MMC6 || mapper_ == MapperType::TxSROM 
+    else if (mapper_ == MapperType::MMC3 || mapper_ == MapperType::MMC6 || mapper_ == MapperType::TxSROM
         || mapper_ == MapperType::TQROM)
     {
         // RAMBO-1 extends MMC3 to support a third PRG register - we fix this for the other variants.
@@ -96,109 +209,10 @@ void Cart::SetMapper(MapperType mapper)
         state_.CpuBanks[5] = &prgData_[0];
         state_.CpuBanks[6] = &prgData_[0];
     }
-}
-
-void Cart::SetPrgRom(std::vector<uint8_t> prgData)
-{
-    prgData_ = std::move(prgData);
-
-    // first and last bank mapped by default.
-    state_.CpuBanks[4] = &prgData_[0];
-    state_.CpuBanks[5] = &prgData_[0x2000];
-    state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
-    state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
-
-    prgMask_ = static_cast<uint32_t>(prgData_.size()) - 1;
-    prgBlockSize_ = static_cast<uint32_t>(prgData_.size());
-
-    // initial state for mapper 5
-    state_.PrgBank3 = prgMask_ & 0x01fe000;
-}
-
-void Cart::AddPrgRam(uint32_t size)
-{
-    prgRamMask_ = size - 1;
-    localPrgRam_.resize(size);
-    prgRamBanks_.push_back(&localPrgRam_[0]);
-    state_.CpuBanks[3] = prgRamBanks_[0];
-}
-
-void Cart::AddPrgRam(uint8_t* data, uint32_t size)
-{
-    prgRamMask_ = size - 1;
-    prgRamBanks_.push_back(data);
-
-    if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
-        state_.CpuBanks[3] = prgRamBanks_[0];
-}
-
-void Cart::SetChrRom(std::vector<uint8_t> chrData)
-{
-    chrData_ = std::move(chrData);
-
-    state_.PpuBanks[0] = &chrData_[0];
-    state_.PpuBanks[1] = &chrData_[0x0400];
-    state_.PpuBanks[2] = &chrData_[0x0800];
-    state_.PpuBanks[3] = &chrData_[0x0c00];
-    state_.PpuBanks[4] = &chrData_[0x1000];
-    state_.PpuBanks[5] = &chrData_[0x1400];
-    state_.PpuBanks[6] = &chrData_[0x1800];
-    state_.PpuBanks[7] = &chrData_[0x1c00];
-
-    assert((chrData_.size() & (chrData_.size() - 1)) == 0);
-    chrBlockSize_ = static_cast<uint32_t>(chrData_.size());
-    chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
-}
-
-void Cart::AddChrRam(uint32_t size)
-{
-    assert(size >= 0x2000);
-    chrRamStart_ = chrData_.size();
-
-    assert((size & (size - 1)) == 0);
-    chrRamMask_ = size - 1;
-
-    size += chrData_.size();
-    chrData_.resize(size);
-
-    if (chrRamStart_ == 0)
+    else if (mapper_ == MapperType::ActiveEnterprises)
     {
-        state_.PpuBanks[0] = &chrData_[0];
-        state_.PpuBanks[1] = &chrData_[0x0400];
-        state_.PpuBanks[2] = &chrData_[0x0800];
-        state_.PpuBanks[3] = &chrData_[0x0c00];
-        state_.PpuBanks[4] = &chrData_[0x1000];
-        state_.PpuBanks[5] = &chrData_[0x1400];
-        state_.PpuBanks[6] = &chrData_[0x1800];
-        state_.PpuBanks[7] = &chrData_[0x1c00];
-
-        state_.PpuBankWritable[0] = true;
-        state_.PpuBankWritable[1] = true;
-        state_.PpuBankWritable[2] = true;
-        state_.PpuBankWritable[3] = true;
-        state_.PpuBankWritable[4] = true;
-        state_.PpuBankWritable[5] = true;
-        state_.PpuBankWritable[6] = true;
-        state_.PpuBankWritable[7] = true;
-
-        chrBlockSize_ = size;
-        chrMask_ = size - 1;
+        UpdatePrgMapActiveEnterprises();
     }
-
-}
-
-void Cart::SetMirrorMode(MirrorMode mirrorMode)
-{
-    state_.MirrorMode = mirrorMode;
-    if (bus_)
-    {
-        UpdatePpuRamMap();
-    }
-}
-
-void Cart::EnableBusConflicts(bool conflicts)
-{
-    busConflicts_ = conflicts;
 }
 
 void Cart::Attach(Bus* bus)
@@ -382,6 +396,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     case MapperType::SachenSA008A:
         WriteSachenSA008A(address, value);
+        return;
+
+    case MapperType::ActiveEnterprises:
+        WriteActiveEnterprises(address, value);
         return;
     }
 }
@@ -574,6 +592,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteSachenSA008A(address, firstValue);
         bus_->TickCpuWrite();
         WriteSachenSA008A(address, secondValue);
+        return;
+
+    case MapperType::ActiveEnterprises:
+        WriteActiveEnterprises(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteActiveEnterprises(address, secondValue);
         return;
 
     default:
@@ -3181,6 +3205,59 @@ void Cart::WriteSachenSA008A(uint16_t address, uint8_t value)
     UpdateChrMap8k();
 }
 
+void Cart::WriteActiveEnterprises(uint16_t address, uint8_t value)
+{
+    SetMirrorMode((address & 0x2000) ? MirrorMode::Horizontal : MirrorMode::Vertical);
+
+    // no bank switching for Cheetamen II
+    if (prgData_.size() >= 0x00080000)
+        state_.PrgBankHighBits = (address & 0x1800) << 8;
+
+    state_.PrgBank0 = (address & 0x07c0) << 8;
+    state_.PrgMode = (address & 0x0020) >> 5;
+    state_.ChrBank0 = ((value & 3) | ((address & 0x000f) << 2)) << 13;
+
+    bus_->SyncPpu();
+    UpdateChrMap8k();
+    UpdatePrgMapActiveEnterprises();
+}
+
+void Cart::UpdatePrgMapActiveEnterprises()
+{
+    if (state_.PrgBankHighBits >= 0x00100000)
+    {
+        if (state_.PrgBankHighBits < 0x00180000)
+        {
+            // bank 2 is open bus
+            state_.CpuBanks[4] = nullptr;
+            state_.CpuBanks[5] = nullptr;
+            state_.CpuBanks[6] = nullptr;
+            state_.CpuBanks[7] = nullptr;
+        }
+        else
+        {
+            state_.PrgBankHighBits = 0x00100000;
+        }
+    }
+
+    if (state_.PrgMode)
+    {
+        auto base = &prgData_[state_.PrgBankHighBits | state_.PrgBank0];
+        state_.CpuBanks[4] = base;
+        state_.CpuBanks[5] = base + 0x2000;
+        state_.CpuBanks[6] = base;
+        state_.CpuBanks[7] = base + 0x2000;
+    }
+    else
+    {
+        auto base = &prgData_[state_.PrgBankHighBits | ((state_.PrgBank0) & 0xffff8000) ];
+        state_.CpuBanks[4] = base;
+        state_.CpuBanks[5] = base + 0x2000;
+        state_.CpuBanks[6] = base + 0x4000;
+        state_.CpuBanks[7] = base + 0x6000;
+    }
+}
+
 void Cart::UpdatePrgMap32k()
 {
     auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
@@ -3246,11 +3323,6 @@ std::unique_ptr<Cart> TryCreateCart(
 {
     auto cart = std::make_unique<Cart>();
 
-    if (prgData.size() & (prgData.size() - 1))
-        return nullptr; // non-zero power of 2 size expected
-
-    cart->SetPrgRom(std::move(prgData));
-
     if (chrData.size() != 0)
     {
         cart->SetChrRom(std::move(chrData));
@@ -3266,6 +3338,8 @@ std::unique_ptr<Cart> TryCreateCart(
     }
 
     cart->SetMirrorMode(desc.MirrorMode);
+
+    bool prgSizeChecked = false;
 
     MapperType mapper;
     switch (desc.Mapper)
@@ -3498,11 +3572,25 @@ std::unique_ptr<Cart> TryCreateCart(
         mapper = MapperType::Tengen800037;
         break;
 
+    case 228:
+        // Action-52 has 1.5MB of ROM - the third bank is unmapped.
+        // this is the only non-power-of-2 ROM allowed
+        if (prgData.size() == 1572864)
+            prgSizeChecked = true;
+        mapper = MapperType::ActiveEnterprises;
+        break;
+
     default:
         return nullptr;
     }
 
+    if (!prgSizeChecked && (prgData.size() & (prgData.size() - 1)))
+        return nullptr; // non-zero power of 2 size expected
+
     cart->SetMapper(mapper);
+
+    cart->SetPrgRom(std::move(prgData));
+
 
     if (desc.PrgRamSize != 0 && desc.PrgBatteryRamSize != 0 && desc.PrgRamSize != desc.PrgBatteryRamSize)
         return nullptr;
@@ -3517,6 +3605,8 @@ std::unique_ptr<Cart> TryCreateCart(
 
     if (desc.PrgRamSize != 0)
         cart->AddPrgRam(desc.PrgRamSize);
+
+    cart->Initialize();
 
     return std::move(cart);
 }

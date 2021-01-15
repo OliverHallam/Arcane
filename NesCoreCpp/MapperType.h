@@ -29,5 +29,6 @@ enum class MapperType
     TxSROM,
     TQROM,
     SachenSA008A, // also Tengen 800008
-    Tengen800037
+    Tengen800037,
+    ActiveEnterprises // For Action 52 / Cheetahmen II
 };
