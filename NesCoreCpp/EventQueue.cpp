@@ -10,6 +10,9 @@ EventQueue::EventQueue()
 
 void EventQueue::Schedule(uint32_t cycles, SyncEvent value)
 {
+    if (count_ >= MAX_EVENTS)
+        Tidy();
+
     heap_[count_++] = Event(cycles, value);
     std::push_heap(begin(heap_), begin(heap_) + count_);
 }
@@ -64,6 +67,19 @@ SyncEvent EventQueue::PopEvent()
     std::pop_heap(begin(heap_), begin(heap_) + count_);
     count_--;
     return value;
+}
+
+void EventQueue::Tidy()
+{
+    int count = 0;
+    for (auto i = 0; i < MAX_EVENTS; i++)
+    {
+        if (heap_[i].Value != SyncEvent::None)
+            heap_[count++] = heap_[i];
+    }
+
+    count_ = count;
+    std::make_heap(begin(heap_), begin(heap_) + count_);
 }
 
 EventQueue::Event::Event(uint32_t cycles, SyncEvent value)
