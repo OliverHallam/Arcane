@@ -199,11 +199,12 @@ bool retro_load_game(const struct retro_game_info* info)
     auto cart = TryCreateCart(
         goodDescriptor ? *goodDescriptor : romFile->Descriptor,
         std::move(romFile->PrgData),
-        std::move(romFile->ChrData),
-        nullptr);
+        std::move(romFile->ChrData));
 
     if (!cart)
         return false;
+
+    cart->Initialize();
 
     nesSystem->InsertCart(std::move(cart));
     nesSystem->Reset();

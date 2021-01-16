@@ -7,7 +7,8 @@
 
 Cart::Cart() :
     chrRamStart_{ -1 },
-    mapper_{ 0 },
+    chrRamMask_{},
+    mapper_{},
     bus_{},
     chrMask_{},
     prgMask_{},
@@ -46,7 +47,7 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
     prgBlockSize_ = static_cast<uint32_t>(size);
 }
 
-void Cart::AddPrgRam(uint32_t size)
+void Cart::SetPrgRam(uint32_t size)
 {
     prgRamMask_ = size - 1;
     localPrgRam_.resize(size);
@@ -54,13 +55,18 @@ void Cart::AddPrgRam(uint32_t size)
     state_.CpuBanks[3] = prgRamBanks_[0];
 }
 
-void Cart::AddPrgRam(uint8_t* data, uint32_t size)
+void Cart::AddPrgBatteryRam()
 {
-    prgRamMask_ = size - 1;
-    prgRamBanks_.push_back(data);
+    // reserve the slot
+    assert(!prgRamBanks_.size());
+    prgRamBanks_.push_back(nullptr);
+}
 
-    if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
-        state_.CpuBanks[3] = prgRamBanks_[0];
+void Cart::SetPrgBatteryRam(uint8_t* data)
+{
+    assert(prgRamBanks_.size());
+    assert(!prgRamBanks_[0]);
+    prgRamBanks_[0] = data;
 }
 
 void Cart::SetChrRom(std::vector<uint8_t> chrData)
@@ -134,6 +140,18 @@ void Cart::EnableBusConflicts(bool conflicts)
 
 void Cart::Initialize()
 {
+    if (prgRamBanks_.size())
+    {
+        if (!prgRamBanks_[0])
+        {
+            localBatteryRam_.resize(prgRamMask_ + 1);
+            prgRamBanks_[0] = &localBatteryRam_[0];
+        }
+
+        if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
+            state_.CpuBanks[3] = prgRamBanks_[0];
+    }
+
     // first and last bank mapped by default.
     state_.CpuBanks[4] = &prgData_[0];
     state_.CpuBanks[5] = &prgData_[0x2000];
@@ -3373,8 +3391,7 @@ void Cart::UpdatePpuRamMap()
 std::unique_ptr<Cart> TryCreateCart(
     const CartDescriptor& desc,
     std::vector<uint8_t> prgData,
-    std::vector<uint8_t> chrData,
-    uint8_t* batteryRam)
+    std::vector<uint8_t> chrData)
 {
     auto cart = std::make_unique<Cart>();
 
@@ -3593,7 +3610,7 @@ std::unique_ptr<Cart> TryCreateCart(
             mapper = MapperType::BF9093;
             break;
         }
-        break;
+        return nullptr;
 
     case 79:
     case 146: // Sachen 3015 - functionally identical.
@@ -3660,17 +3677,10 @@ std::unique_ptr<Cart> TryCreateCart(
         return nullptr;
 
     if (desc.PrgBatteryRamSize != 0)
-    {
-        if (batteryRam)
-            cart->AddPrgRam(batteryRam, desc.PrgBatteryRamSize);
-        else
-            cart->AddPrgRam(desc.PrgBatteryRamSize);
-    }
+        cart->AddPrgBatteryRam();
 
     if (desc.PrgRamSize != 0)
-        cart->AddPrgRam(desc.PrgRamSize);
-
-    cart->Initialize();
+        cart->SetPrgRam(desc.PrgRamSize);
 
     return std::move(cart);
 }

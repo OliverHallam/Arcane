@@ -25,7 +25,9 @@ int main()
     auto system = std::make_unique<NesSystem>(44100);
 
     auto romFile = TryLoadINesFile(reinterpret_cast<uint8_t*>(&buffer[0]), buffer.size());
-    auto cart = TryCreateCart(romFile->Descriptor, std::move(romFile->PrgData), std::move(romFile->ChrData), nullptr);
+    auto cart = TryCreateCart(romFile->Descriptor, std::move(romFile->PrgData), std::move(romFile->ChrData));
+
+    cart->Initialize();
 
     system->InsertCart(std::move(cart));
     system->Reset();

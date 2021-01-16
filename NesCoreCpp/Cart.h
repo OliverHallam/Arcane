@@ -21,8 +21,9 @@ public:
 
     void SetMapper(MapperType mapper);
     void SetPrgRom(std::vector<uint8_t> prgData);
-    void AddPrgRam(uint32_t size);
-    void AddPrgRam(uint8_t* data, uint32_t size);
+    void SetPrgRam(uint32_t size);
+    void AddPrgBatteryRam();
+    void SetPrgBatteryRam(uint8_t* data);
     void SetChrRom(std::vector<uint8_t> chrData);
     void AddChrRam(uint32_t size);
     void SetMirrorMode(MirrorMode mirrorMode);
@@ -168,6 +169,7 @@ private:
     CartCoreState state_;
 
     std::vector<uint8_t> localPrgRam_;
+    std::vector<uint8_t> localBatteryRam_;
     std::vector<uint8_t*> prgRamBanks_;
 
     uint32_t prgRamMask_;
@@ -180,5 +182,4 @@ private:
 std::unique_ptr<Cart> TryCreateCart(
     const CartDescriptor& desc,
     std::vector<uint8_t> prgData,
-    std::vector<uint8_t> chrData,
-    uint8_t* batteryRam);
+    std::vector<uint8_t> chrData);

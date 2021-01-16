@@ -340,6 +340,20 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
         return nullptr;
     }
 
+    auto cart = TryCreateCart(
+        romFile->Descriptor,
+        std::move(romFile->PrgData),
+        std::move(romFile->ChrData));
+
+    if (!cart)
+    {
+        MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
+        return nullptr;
+    }
+
+    // Now we've loaded the ROM, we can mount the new save file
+    save_.Close();
+
     auto batteryBackedMemorySize = romFile->Descriptor.PrgBatteryRamSize;
     if (batteryBackedMemorySize)
     {
@@ -364,21 +378,13 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
 
             MessageBox(wnd, ss.str().c_str(), L"Error loading save file", MB_ICONERROR | MB_OK);
         }
+
+        auto batteryRam = save_.Data();
+        if (batteryRam)
+            cart->SetPrgBatteryRam(batteryRam);
     }
 
-    auto cart = TryCreateCart(
-        romFile->Descriptor,
-        std::move(romFile->PrgData),
-        std::move(romFile->ChrData),
-        save_.Data());
-
-    if (!cart)
-    {
-        save_.Close();
-
-        MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
-        return nullptr;
-    }
+    cart->Initialize();
 
     return cart;
 }
