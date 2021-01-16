@@ -429,12 +429,13 @@ void Ppu::SyncState()
             UpdateA12Sensitivity(true);
         }
 
-        state_.GrayscaleMask = (state_.Mask & 0x01) ? 0x30 : 0xff;
+        auto newGrayscale = (state_.Mask & 0x01) ? 0x30 : 0xff;
         auto newEmphasis = (state_.Mask & 0xe0) >> 5;
-        if (newEmphasis != state_.Emphasis)
+        if (newEmphasis != state_.Emphasis || newGrayscale != state_.GrayscaleMask)
         {
             SyncComposite(scanlineCycle - 1);
             state_.Emphasis = newEmphasis;
+            state_.GrayscaleMask = newGrayscale;
 
             // rebuild palette
             for (auto index = 0; index < 32; index++)
