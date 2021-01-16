@@ -126,6 +126,8 @@ uint8_t Apu::Read(uint16_t address)
 {
     if (address == 0x4015)
     {
+        Sync();
+
         uint8_t status = 0;
         if (pulse1_.IsEnabled())
             status |= 0x01;

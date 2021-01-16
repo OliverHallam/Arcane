@@ -19,6 +19,7 @@ struct ApuDmcState
 
     uint8_t sampleBuffer_{};
     bool sampleBufferHasData_{};
+    bool byteRequested_{};
 
     uint16_t currentAddress_{ 0xC000 };
     uint16_t sampleBytesRemaining_{};

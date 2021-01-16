@@ -62,12 +62,7 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
 
     case 3:
     {
-        auto prevSampleBytesRemaining = state_.sampleBytesRemaining_;
-        state_.sampleBytesRemaining_ = state_.sampleLength_ = (value << 4) + 1;
-
-        if (!prevSampleBytesRemaining && !state_.irqEnabled_)
-            apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
-
+        state_.sampleLength_ = (value << 4) + 1;
         break;
     }
     }
@@ -82,12 +77,37 @@ void ApuDmc::Run(uint32_t cycles)
         Clock();
         state_.timer_ += state_.rate_;
     }
+
+    if (!state_.sampleBufferHasData_ && state_.sampleBytesRemaining_ > 0)
+    {
+        RequestByte();
+    }
 }
 
 void ApuDmc::SetBuffer(uint8_t value)
 {
     state_.sampleBuffer_ = value;
     state_.sampleBufferHasData_ = true;
+    state_.byteRequested_ = false;
+
+    state_.currentAddress_++;
+    state_.currentAddress_ |= 0x8000;
+    state_.sampleBytesRemaining_--;
+
+    if (state_.sampleBytesRemaining_ == 0)
+    {
+        if (!state_.loop_)
+        {
+            state_.outBuffer_ = 0;
+            state_.outBufferHasData_ = false;
+            if (state_.irqEnabled_)
+                apu_.SetDmcInterrupt(true);
+            return;
+        }
+
+        state_.sampleBytesRemaining_ = state_.sampleLength_;
+        state_.currentAddress_ = state_.sampleAddress_;
+    }
 }
 
 uint8_t ApuDmc::Sample() const
@@ -130,9 +150,6 @@ void ApuDmc::Clock()
         state_.outBufferHasData_ = state_.sampleBufferHasData_;
         state_.sampleBufferHasData_ = false;
 
-        if (state_.sampleBytesRemaining_ != 0)
-            RequestByte();
-
         if (state_.sampleBytesRemaining_ > 1 || state_.irqEnabled_)
             apu_.ScheduleDmc(state_.timer_ + 7 * state_.rate_);
     }
@@ -142,25 +159,11 @@ void ApuDmc::Clock()
 
 void ApuDmc::RequestByte()
 {
+    if (state_.byteRequested_)
+        return;
+
+    state_.byteRequested_ = true;
     apu_.RequestDmcByte(state_.currentAddress_);
-    state_.currentAddress_++;
-    state_.currentAddress_ |= 0x8000;
-    state_.sampleBytesRemaining_--;
-
-    if (state_.sampleBytesRemaining_ == 0)
-    {
-        if (!state_.loop_)
-        {
-            state_.outBuffer_ = 0;
-            state_.outBufferHasData_ = false;
-            if (state_.irqEnabled_)
-                apu_.SetDmcInterrupt(true);
-            return;
-        }
-
-        state_.sampleBytesRemaining_ = state_.sampleLength_;
-        state_.currentAddress_ = state_.sampleAddress_;
-    }
 }
 
 uint32_t ApuDmc::GetLinearRate(uint8_t rate)

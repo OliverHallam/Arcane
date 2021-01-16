@@ -26,7 +26,7 @@ uint32_t ApuFrameCounter::SetMode(uint8_t mode)
     {
         // we will reset in 3/4 cycles time so lets do this by jumping to the end 
         state_.Phase = 6;
-        return 3;
+        return 2;
     }
     else
     {
@@ -87,13 +87,13 @@ uint32_t ApuFrameCounter::Activate()
             apu_.SetFrameCounterInterrupt(true);
 
         state_.Phase = 0;
-        return 7456;
+        return 7457;
 
     case 6:
         apu_.QuarterFrame();
         apu_.HalfFrame();
         state_.Phase = 0;
-        return 7457;
+        return 7458;
 
     default:
         assert(false);
