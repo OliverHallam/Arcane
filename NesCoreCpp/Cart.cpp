@@ -412,6 +412,10 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
             WriteUxROM(address, value);
         break;
 
+    case MapperType::BF9097:
+        WriteBF9097(address, value);
+        break;
+
     case MapperType::NesEvent:
         WriteNesEvent(address, value);
         break;
@@ -592,6 +596,12 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         bus_->TickCpuWrite();
         if (address >= 0xc000)
             WriteUxROM(address, secondValue);
+        break;
+
+    case MapperType::BF9097:
+        WriteBF9097(address, secondValue);
+        bus_->TickCpuWrite();
+        WriteBF9097(address, secondValue);
         break;
 
     case MapperType::GxROM:
@@ -3062,6 +3072,19 @@ void Cart::UpdateChrMapSunsoftFME7()
     state_.PpuBanks[7] = &chrData_[state_.ChrBank7];
 }
 
+void Cart::WriteBF9097(uint16_t address, uint8_t value)
+{
+    if (address < 0xa000)
+    {
+        bus_->SyncPpu();
+        SetMirrorMode((address & 0x10) ? MirrorMode::SingleScreenHigh : MirrorMode::SingleScreenLow);
+    }
+    else if (address >= 0xc000)
+    {
+        WriteUxROM(address, value);
+    }
+}
+
 void Cart::WriteNINA03(uint16_t address, uint8_t value)
 {
     if ((address & 0x7100) == 0x4100)
@@ -3609,8 +3632,16 @@ std::unique_ptr<Cart> TryCreateCart(
         case 0:
             mapper = MapperType::BF9093;
             break;
+
+        case 1:
+            mapper = MapperType::BF9097;
+            cart->SetMirrorMode(MirrorMode::SingleScreenLow);
+            break;
+
+        default:
+            return nullptr;
         }
-        return nullptr;
+        break;
 
     case 79:
     case 146: // Sachen 3015 - functionally identical.
@@ -3671,7 +3702,6 @@ std::unique_ptr<Cart> TryCreateCart(
     cart->SetMapper(mapper);
 
     cart->SetPrgRom(std::move(prgData));
-
 
     if (desc.PrgRamSize != 0 && desc.PrgBatteryRamSize != 0 && desc.PrgRamSize != desc.PrgBatteryRamSize)
         return nullptr;

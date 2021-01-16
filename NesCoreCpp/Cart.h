@@ -129,6 +129,8 @@ private:
     void UpdatePrgMapSunsoftFME7();
     void UpdateChrMapSunsoftFME7();
 
+    void WriteBF9097(uint16_t address, uint8_t value);
+
     void WriteNINA03(uint16_t address, uint8_t value);
 
     void WriteNesEvent(uint16_t address, uint8_t value);
