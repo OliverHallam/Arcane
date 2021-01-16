@@ -255,6 +255,7 @@ void PpuSprites::HReset()
 void PpuSprites::VReset()
 {
     state_.sprite0Hit_ = false;
+    state_.spriteOverflow_ = false;
     spritesRendered_ = false;
 }
 
