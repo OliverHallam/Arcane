@@ -14,9 +14,15 @@ void ApuDmc::Enable(bool enabled)
         if (state_.sampleBytesRemaining_ == 0)
         {
             state_.currentAddress_ = state_.sampleAddress_;
-            state_.sampleBytesRemaining_ = state_.sampleLength_;
-            if (!state_.sampleBufferHasData_ && state_.sampleBytesRemaining_)
-                RequestByte();
+            if (state_.sampleLength_)
+            {
+                state_.sampleBytesRemaining_ = state_.sampleLength_;
+
+                if (!state_.sampleBufferHasData_)
+                    RequestByte();
+
+                apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
+            }
         }
     }
     else
@@ -150,8 +156,8 @@ void ApuDmc::Clock()
         state_.outBufferHasData_ = state_.sampleBufferHasData_;
         state_.sampleBufferHasData_ = false;
 
-        if (state_.sampleBytesRemaining_ > 1 || state_.irqEnabled_)
-            apu_.ScheduleDmc(state_.timer_ + 7 * state_.rate_);
+        if (state_.sampleBytesRemaining_ > 1 || state_.loop_ || state_.irqEnabled_)
+            apu_.ScheduleDmc(state_.timer_ + 8 * state_.rate_);
     }
     else
         state_.sampleShift_++;
