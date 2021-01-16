@@ -2,6 +2,8 @@
 
 #include "Bus.h"
 
+#include <cassert>
+
 ApuDmc::ApuDmc(Apu& apu)
     : apu_{ apu }
 {
@@ -27,6 +29,8 @@ void ApuDmc::Enable(bool enabled)
     }
     else
     {
+        apu_.ClearDmcByteRequest();
+        state_.byteRequested_ = false;
         state_.sampleBytesRemaining_ = 0;
     }
 
@@ -45,14 +49,16 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
     case 0:
     {
         auto prevIrqEnabled = state_.irqEnabled_;
+        auto prevLoop = state_.loop_;
         state_.irqEnabled_ = value & 0x80;
         state_.loop_ = value & 0x40;
         state_.rate_ = GetLinearRate(value & 0x0f);
 
         if (!state_.irqEnabled_)
             apu_.SetDmcInterrupt(false);
-        else if (!state_.sampleBytesRemaining_ && !prevIrqEnabled)
-            apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
+
+        // TODO: work out  when we actually need to do this.
+        apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
 
         break;
     }
@@ -68,7 +74,11 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
 
     case 3:
     {
+        bool prevSampleLength = state_.sampleLength_;
         state_.sampleLength_ = (value << 4) + 1;
+
+        if (state_.sampleLength_ && !prevSampleLength && state_.loop_ && state_.sampleBytesRemaining_ <= 1);
+            apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
         break;
     }
     }
@@ -81,17 +91,22 @@ void ApuDmc::Run(uint32_t cycles)
     while (state_.timer_ <= 0)
     {
         Clock();
-        state_.timer_ += state_.rate_;
-    }
 
-    if (!state_.sampleBufferHasData_ && state_.sampleBytesRemaining_ > 0)
-    {
-        RequestByte();
+        state_.timer_ += state_.rate_;
+
+        if (!state_.sampleBufferHasData_ && state_.sampleBytesRemaining_ > 0)
+        {
+            assert(state_.timer_ == state_.rate_);
+
+            RequestByte();
+        }
     }
 }
 
 void ApuDmc::SetBuffer(uint8_t value)
 {
+    assert(state_.sampleBytesRemaining_);
+
     state_.sampleBuffer_ = value;
     state_.sampleBufferHasData_ = true;
     state_.byteRequested_ = false;
@@ -156,8 +171,10 @@ void ApuDmc::Clock()
         state_.outBufferHasData_ = state_.sampleBufferHasData_;
         state_.sampleBufferHasData_ = false;
 
-        if (state_.sampleBytesRemaining_ > 1 || state_.loop_ || state_.irqEnabled_)
+        if (state_.sampleBytesRemaining_ > 1 || (state_.loop_ && state_.sampleLength_) || state_.irqEnabled_)
+        {
             apu_.ScheduleDmc(state_.timer_ + 8 * state_.rate_);
+        }
     }
     else
         state_.sampleShift_++;
@@ -167,6 +184,8 @@ void ApuDmc::RequestByte()
 {
     if (state_.byteRequested_)
         return;
+
+    assert(state_.sampleBytesRemaining_);
 
     state_.byteRequested_ = true;
     apu_.RequestDmcByte(state_.currentAddress_);
