@@ -10,7 +10,7 @@ class EventQueue
 public:
     EventQueue();
 
-    static const uint32_t MAX_EVENTS = 64;
+    static const uint32_t MAX_EVENTS = 32;
 
     void Schedule(uint32_t cycles, SyncEvent value);
     bool Deschedule(SyncEvent value);
