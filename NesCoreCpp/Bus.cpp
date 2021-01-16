@@ -5,7 +5,6 @@
 #include "Cpu.h"
 #include "Ppu.h"
 
-
 Bus::Bus() :
     cpu_(nullptr),
     ppu_(nullptr),
@@ -167,22 +166,7 @@ void Bus::CpuDummyRead(uint16_t address)
 uint8_t Bus::CpuReadData(uint16_t address)
 {
     TickCpuRead();
-
-    if (address < 0x2000)
-        return state_.CpuRam[address & 0x7ff];
-    else if (address < 0x4020)
-    {
-        if (address < 0x4000)
-            return ppu_->Read(address);
-        else if (address == 0x4016)
-            return -controller_->Read();
-        else
-            return apu_->Read(address);
-    }
-    else if (cart_)
-        return cart_->CpuRead(address);
-    else
-        return 0;
+    return CpuReadImpl(address);
 }
 
 uint8_t Bus::CpuReadZeroPage(uint16_t address)
@@ -379,22 +363,30 @@ void Bus::SetCartIrq(bool irq)
     }
 }
 
+uint8_t Bus::OamDmaRead(uint16_t address)
+{
+    Tick();
+    return CpuReadImpl(address);
+}
+
 uint8_t Bus::DmcDmaRead(uint16_t address)
 {
+    Tick();
+
     uint8_t value;
     if (cart_)
         value = cart_->CpuRead(address);
     else
         value = 0;
 
-    Tick();
     return value;
 }
 
 void Bus::OamDmaWrite(uint8_t value)
 {
-    ppu_->DmaWrite(value);
     Tick();
+
+    ppu_->DmaWrite(value);
 }
 
 void Bus::BeginOamDma(uint8_t page)
@@ -409,6 +401,12 @@ void Bus::BeginDmcDma(uint16_t address)
     state_.DmcDmaAddress = address;
     state_.DmcDma = true;
     state_.Dma = true;
+}
+
+void Bus::CancelDmcDma()
+{
+    state_.DmcDma = false;
+    state_.Dma = state_.OamDma;
 }
 
 void Bus::OnFrame()
@@ -468,6 +466,25 @@ void Bus::Tick()
     }
 
     state_.CycleCount = nextCycleCount;
+}
+
+uint8_t Bus::CpuReadImpl(uint16_t address)
+{
+    if (address < 0x2000)
+        return state_.CpuRam[address & 0x7ff];
+    else if (address < 0x4020)
+    {
+        if (address < 0x4000)
+            return ppu_->Read(address);
+        else if (address == 0x4016)
+            return -controller_->Read();
+        else
+            return apu_->Read(address);
+    }
+    else if (cart_)
+        return cart_->CpuRead(address);
+    else
+        return 0;
 }
 
 uint8_t Bus::CpuReadProgramDataRare(uint16_t address)
@@ -602,7 +619,7 @@ void Bus::RunOamDma()
         // it takes two cycles for the dmc to kick in
         dmcStarted = state_.DmcDma;
 
-        auto value = CpuReadData(address++);
+        auto value = OamDmaRead(address++);
         OamDmaWrite(value);
     }
 

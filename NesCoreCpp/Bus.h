@@ -82,6 +82,7 @@ public:
 
     void BeginOamDma(uint8_t page);
     void BeginDmcDma(uint16_t address);
+    void CancelDmcDma();
 
     void OnFrame();
 
@@ -100,12 +101,15 @@ public:
 private:
     __forceinline void Tick();
 
+    uint8_t CpuReadImpl(uint16_t address);
+
     __declspec(noinline)
     uint8_t CpuReadProgramDataRare(uint16_t address);
 
     __declspec(noinline)
     void RunEvent();
 
+    uint8_t OamDmaRead(uint16_t address);
     uint8_t DmcDmaRead(uint16_t address);
     void OamDmaWrite(uint8_t value);
 
