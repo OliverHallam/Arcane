@@ -213,6 +213,10 @@ void Cart::Initialize()
     {
         UpdatePrgMapActiveEnterprises();
     }
+    else if (mapper_ == MapperType::Quattro || mapper_ == MapperType::Aladdin)
+    {
+        UpdatePrgMapQuattro();
+    }
 }
 
 void Cart::Attach(Bus* bus)
@@ -400,6 +404,14 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     case MapperType::ActiveEnterprises:
         WriteActiveEnterprises(address, value);
+        return;
+
+    case MapperType::Quattro:
+        WriteQuattro(address, value);
+        return;
+
+    case MapperType::Aladdin:
+        WriteAladdin(address, value);
         return;
     }
 }
@@ -598,6 +610,18 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         WriteActiveEnterprises(address, firstValue);
         bus_->TickCpuWrite();
         WriteActiveEnterprises(address, secondValue);
+        return;
+
+    case MapperType::Quattro:
+        WriteQuattro(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteQuattro(address, secondValue);
+        return;
+
+    case MapperType::Aladdin:
+        WriteAladdin(address, firstValue);
+        bus_->TickCpuWrite();
+        WriteAladdin(address, secondValue);
         return;
 
     default:
@@ -3258,6 +3282,37 @@ void Cart::UpdatePrgMapActiveEnterprises()
     }
 }
 
+void Cart::WriteQuattro(uint16_t address, uint8_t value)
+{
+    if (address < 0xc000)
+        state_.PrgBankHighBits = (value & 0x18) << 13;
+    else
+        state_.PrgBank0 = (value & 0x03) << 14;
+
+    UpdatePrgMapQuattro();
+}
+
+void Cart::WriteAladdin(uint16_t address, uint8_t value)
+{
+    if (address < 0xc000)
+        state_.PrgBankHighBits = ((value & 0x08) << 14) | ((value & 0x10) << 12); // bits are swapped
+    else
+        state_.PrgBank0 = (value & 0x03) << 14;
+
+    UpdatePrgMapQuattro();
+}
+
+void Cart::UpdatePrgMapQuattro()
+{
+    auto base0 = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
+    state_.CpuBanks[4] = base0;
+    state_.CpuBanks[5] = base0 + 0x2000;
+
+    auto base1 = &prgData_[(state_.PrgBankHighBits | 0xc000) & prgMask_];
+    state_.CpuBanks[6] = base1;
+    state_.CpuBanks[7] = base1 + 0x2000;
+}
+
 void Cart::UpdatePrgMap32k()
 {
     auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
@@ -3578,6 +3633,15 @@ std::unique_ptr<Cart> TryCreateCart(
         if (prgData.size() == 1572864)
             prgSizeChecked = true;
         mapper = MapperType::ActiveEnterprises;
+        break;
+
+    case 232:
+        if (desc.SubMapper == 0)
+            mapper = MapperType::Quattro;
+        else if (desc.SubMapper == 1)
+            mapper = MapperType::Aladdin;
+        else
+            return nullptr;
         break;
 
     default:

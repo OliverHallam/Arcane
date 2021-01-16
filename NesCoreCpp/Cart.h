@@ -143,6 +143,10 @@ private:
     void WriteActiveEnterprises(uint16_t address, uint8_t value);
     void UpdatePrgMapActiveEnterprises();
 
+    void WriteQuattro(uint16_t address, uint8_t value);
+    void WriteAladdin(uint16_t address, uint8_t value);
+    void UpdatePrgMapQuattro();
+
     void UpdatePrgMap32k();
     void UpdateChrMap8k();
 

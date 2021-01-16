@@ -23,12 +23,14 @@ enum class MapperType
     GxROM,
     Sunsoft4,
     SunsoftFME7, // also Sunsoft 5A and Sunsoft 5B
-    BF9093, // Codemasters UNROM clone
+    BF9093, // Camerica/Codemasters UNROM clone
     NINA03, // and NINA-006
     NesEvent, // Nintendo World Championships 1990
     TxSROM,
     TQROM,
     SachenSA008A, // also Tengen 800008
     Tengen800037,
-    ActiveEnterprises // For Action 52 / Cheetahmen II
+    ActiveEnterprises, // For Action 52 / Cheetahmen II
+    Quattro, // Camerica BF9096
+    Aladdin // Variant of Quatro
 };
