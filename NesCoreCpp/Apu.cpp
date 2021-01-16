@@ -189,6 +189,11 @@ void Apu::RequestDmcByte(uint16_t address)
     bus_.BeginDmcDma(address);
 }
 
+void Apu::ClearDmcByteRequest()
+{
+    bus_.CancelDmcDma();
+}
+
 void Apu::SetDmcBuffer(uint8_t value)
 {
     dmc_.SetBuffer(value);

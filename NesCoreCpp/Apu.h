@@ -37,6 +37,7 @@ public:
     void ScheduleDmc(uint32_t cycles);
 
     void RequestDmcByte(uint16_t address);
+    void ClearDmcByteRequest();
     void SetDmcBuffer(uint8_t value);
 
     void SetFrameCounterInterrupt(bool interrupt);
