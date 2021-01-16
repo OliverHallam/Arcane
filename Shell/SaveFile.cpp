@@ -40,7 +40,8 @@ void SaveFile::Create(const std::wstring& path, uint32_t size)
             0,
             size,
             NULL));
-    winrt::check_bool(bool{ mapping_ });
+    if (!mapping_)
+        winrt::throw_last_error();
 
     data_ = reinterpret_cast<uint8_t*>(MapViewOfFile(mapping_.get(), FILE_MAP_ALL_ACCESS, 0, 0, size));
     if (data_ == nullptr)
@@ -49,9 +50,18 @@ void SaveFile::Create(const std::wstring& path, uint32_t size)
 
 void SaveFile::Close()
 {
-    data_ = nullptr;
+    if (data_)
+    {
+        FlushViewOfFile(data_, size_);
+        UnmapViewOfFile(data_);
+        data_ = nullptr;
+    }
+
     mapping_.close();
     hFile_.close();
+
+    if (GetLastError() != 0)
+        winrt::throw_last_error();
 }
 
 uint8_t* SaveFile::Data()
