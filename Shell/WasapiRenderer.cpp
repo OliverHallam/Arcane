@@ -17,6 +17,19 @@ void WasapiRenderer::Initialize()
     hr = device_->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, client_.put_void());
     winrt::check_hresult(hr);
 
+    auto audioClient2 = client_.as<IAudioClient2>();
+    if (audioClient2)
+    {
+        // The key thing here is setting this up as a "Raw" stream, which bypasses signal processing.
+        // without this we get horrible clicks and crackles when stopping the audio.
+        AudioClientProperties properties;
+        ZeroMemory(&properties, sizeof(AudioClientProperties));
+        properties.cbSize = sizeof(AudioClientProperties);
+        properties.eCategory = AudioCategory_Media;
+        properties.Options = AUDCLNT_STREAMOPTIONS_RAW; 
+        audioClient2->SetClientProperties(&properties);
+    }
+
     WAVEFORMATEXTENSIBLE* mixFormat;
     hr = client_->GetMixFormat(reinterpret_cast<WAVEFORMATEX **>(&mixFormat));
     winrt::check_hresult(hr);
