@@ -77,7 +77,7 @@ void ApuDmc::Write(uint16_t address, uint8_t value)
         bool prevSampleLength = state_.sampleLength_;
         state_.sampleLength_ = (value << 4) + 1;
 
-        if (state_.sampleLength_ && !prevSampleLength && state_.loop_ && state_.sampleBytesRemaining_ <= 1);
+        if (state_.sampleLength_ && !prevSampleLength && state_.loop_ && state_.sampleBytesRemaining_ <= 1)
             apu_.ScheduleDmc(state_.timer_ + (7 - state_.sampleShift_) * state_.rate_);
         break;
     }
@@ -96,7 +96,7 @@ void ApuDmc::Run(uint32_t cycles)
 
         if (!state_.sampleBufferHasData_ && state_.sampleBytesRemaining_ > 0)
         {
-            assert(state_.timer_ == state_.rate_);
+            assert(state_.byteRequested_ || state_.timer_ == state_.rate_);
 
             RequestByte();
         }
