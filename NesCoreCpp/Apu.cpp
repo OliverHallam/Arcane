@@ -3,6 +3,7 @@
 
 #include <cassert>
 
+
 Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     bus_(bus),
     frameCounter_{ *this },
@@ -19,6 +20,11 @@ Apu::Apu(Bus& bus, uint32_t samplesPerFrame) :
     auto currentCycle = (21 * 341 / 3);
     bus_.Schedule(state_.SampleCycle - currentCycle, SyncEvent::ApuSample);
     bus_.Schedule(7457, SyncEvent::ApuFrameCounter);
+
+    auto bufferSize = samplesPerFrame * 3ULL / 2;
+
+    memset(backBuffer_.get(), 0, bufferSize * sizeof(int16_t));
+    memset(sampleBuffer_.get(), 0, bufferSize * sizeof(int16_t));
 }
 
 void Apu::SetSamplesPerFrame(uint32_t samplesPerFrame)
