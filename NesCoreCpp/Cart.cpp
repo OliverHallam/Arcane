@@ -3077,7 +3077,7 @@ void Cart::WriteBF9097(uint16_t address, uint8_t value)
     if (address < 0xa000)
     {
         bus_->SyncPpu();
-        SetMirrorMode((address & 0x10) ? MirrorMode::SingleScreenHigh : MirrorMode::SingleScreenLow);
+        SetMirrorMode((value & 0x10) ? MirrorMode::SingleScreenHigh : MirrorMode::SingleScreenLow);
     }
     else if (address >= 0xc000)
     {
