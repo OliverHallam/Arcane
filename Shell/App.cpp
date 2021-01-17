@@ -36,9 +36,6 @@ int App::Run(int nCmdShow)
     auto hProcess = GetCurrentProcess();
     SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
 
-    auto hThread = GetCurrentThread();
-    SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
-
     try
     {
         std::wstring romPath;
@@ -241,19 +238,28 @@ int App::Run(int nCmdShow)
 
 void App::StartRunning()
 {
+    auto hThread = GetCurrentThread();
+    SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
+
+
     // wait for a vsync to get an accurate time
     d3d_.WaitForFrame();
 
     emulatedTime_ = QpcTimer::Current();
 
-    d3d_.RenderClear();
+    if (host_.Running())
+        d3d_.RepeatLastFrame();
+    else
+        d3d_.RenderClear();
 
     wasapi_.Start();
-    wasapi_.WritePadding(sampler_.TargetLatency());
 }
 
 void App::StopRunning()
 {
+    auto hThread = GetCurrentThread();
+    SetThreadPriority(hThread, THREAD_PRIORITY_NORMAL);
+
     wasapi_.Stop();
     sampler_.Reset();
 }
