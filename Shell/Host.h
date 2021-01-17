@@ -17,6 +17,7 @@ public:
     void Start();
     void Stop();
     void Step();
+    void Restart();
 
     bool Loaded() const;
     bool Running() const;

@@ -22,7 +22,7 @@ public:
     Apu& Apu();
 
     void InsertCart(std::unique_ptr<Cart> cart);
-    void RemoveCart();
+    std::unique_ptr<Cart> RemoveCart();
     bool HasCart() const;
 
     void Reset();

@@ -4,9 +4,11 @@ enum class MenuCommand : WORD
 {
     Open = 101,
     Close = 102,
+    Exit= 103,
 
-    Snapshot = 201,
-    Restore = 202,
+    Restart = 201,
+    Snapshot = 202,
+    Restore = 203,
 
     Fullscreen = 301
 };

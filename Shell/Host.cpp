@@ -50,6 +50,20 @@ void Host::Step()
     step_ = true;
 }
 
+void Host::Restart()
+{
+    auto cart = system_->RemoveCart();
+
+    // TODO: implement this better
+    // we don't have a way to reset the nes, so lets just build a new one.
+    system_ = std::make_unique<NesSystem>(sampleRate_);
+
+    cart->Initialize();
+
+    system_->InsertCart(std::move(cart));
+    system_->Reset();
+}
+
 bool Host::Loaded() const
 {
     return !!system_;

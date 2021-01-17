@@ -698,6 +698,18 @@ bool App::ProcessCommand(WORD command)
         return true;
     }
 
+    if (command == static_cast<WORD>(MenuCommand::Exit))
+    {
+        DestroyWindow(window_);
+        return true;
+    }
+
+    if (command == static_cast<WORD>(MenuCommand::Restart))
+    {
+        host_.Restart();
+        return true;
+    }
+
     if (command == static_cast<WORD>(MenuCommand::Snapshot))
     {
         host_.Snapshot();

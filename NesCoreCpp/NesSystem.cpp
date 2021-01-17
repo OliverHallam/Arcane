@@ -36,9 +36,10 @@ void NesSystem::InsertCart(std::unique_ptr<Cart> cart)
     bus_.Attach(cart_.get());
 }
 
-void NesSystem::RemoveCart()
+std::unique_ptr<Cart> NesSystem::RemoveCart()
 {
     bus_.DetachCart();
+    return std::move(cart_);
 }
 
 bool NesSystem::HasCart() const
@@ -48,6 +49,7 @@ bool NesSystem::HasCart() const
 
 void NesSystem::Reset()
 {
+    // TODO: implement reset fully.
     cpu_.Reset();
 }
 
