@@ -11,6 +11,8 @@
 
 #include "../NesCoreCpp/RomFile.h"
 
+#include <shellapi.h>
+
 class App
 {
 public:
@@ -45,6 +47,8 @@ private:
 
     bool ProcessKey(WPARAM key, bool down);
     bool ProcessCommand(WORD command);
+
+    bool DropFiles(HDROP drop);
 
     void SetFullscreen(bool fullscreen);
 

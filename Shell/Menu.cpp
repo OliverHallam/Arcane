@@ -9,6 +9,7 @@ Menu::Menu()
 
     fileMenu_ = CreateMenu();
     AppendMenu(fileMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void *>(MenuCommand::Open)), L"&Open ROM...\tCtrl+O");
+    AppendMenu(fileMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Close)), L"Close");
 
     AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(fileMenu_), L"&File");
 
@@ -44,4 +45,9 @@ HMENU Menu::Get() const
 HACCEL Menu::AcceleratorTable() const
 {
     return acceleratorTable_;
+}
+
+void Menu::UpdateLoaded(bool isLoaded)
+{
+    EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Close), isLoaded ? MF_ENABLED : MF_DISABLED);
 }

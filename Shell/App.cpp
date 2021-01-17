@@ -15,6 +15,7 @@
 #include "../NesCoreCpp/GameDatabase.h"
 #include "../NesCoreCpp/RomFile.h"
 
+#include <shellapi.h>
 #include <dwmapi.h>
 
 #include <cstdlib>
@@ -98,6 +99,8 @@ int App::Run(int nCmdShow)
 
             host_.Load(std::move(cart));
             host_.Start();
+
+            menu_.UpdateLoaded(true);
         }
         else
         {
@@ -202,6 +205,9 @@ int App::Run(int nCmdShow)
                 if (!running)
                 {
                     StopRunning();
+
+                    if (!host_.Loaded())
+                        d3d_.RenderClear();
                 }
             }
             else
@@ -324,6 +330,8 @@ HWND App::InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow)
 
     ShowWindow(wnd, nCmdShow);
     UpdateWindow(wnd);
+
+    DragAcceptFiles(wnd, TRUE);
 
     return wnd;
 }
@@ -488,6 +496,8 @@ void App::Open(HWND window)
         {
             host_.Load(std::move(cart));
             host_.Start();
+
+            menu_.UpdateLoaded(true);
         }
     }
 }
@@ -599,6 +609,11 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_ACTIVATE:
         foreground_ = wParam != WA_INACTIVE;
         break;
+
+    case WM_DROPFILES:
+        if (DropFiles(reinterpret_cast<HDROP>(wParam)))
+            return 0;
+        break;
     }
 
     return DefWindowProc(window_, uMsg, wParam, lParam);
@@ -674,6 +689,15 @@ bool App::ProcessCommand(WORD command)
         return true;
     }
 
+    if (command == static_cast<WORD>(MenuCommand::Close))
+    {
+        host_.Stop();
+        host_.Unload();
+        save_.Close();
+        menu_.UpdateLoaded(false);
+        return true;
+    }
+
     if (command == static_cast<WORD>(MenuCommand::Snapshot))
     {
         host_.Snapshot();
@@ -693,6 +717,37 @@ bool App::ProcessCommand(WORD command)
     }
 
     return false;
+}
+
+bool App::DropFiles(HDROP drop)
+{
+    auto count = DragQueryFile(drop, 0xffffffff, NULL, 0);
+
+    if (count != 1)
+        return false;
+
+    wchar_t path[MAX_PATH];
+    if (!DragQueryFile(drop, 0, path, MAX_PATH))
+        return false;
+
+    DragFinish(drop);
+
+    host_.Stop();
+    host_.Unload();
+    save_.Close();
+
+    std::wstring romPath(path);
+    auto cart = LoadGame(window_, romPath);
+
+    if (cart)
+    {
+        host_.Load(std::move(cart));
+        host_.Start();
+
+        menu_.UpdateLoaded(true);
+    }
+
+    return true;
 }
 
 void App::SetFullscreen(bool fullscreen)

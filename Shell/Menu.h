@@ -3,6 +3,7 @@
 enum class MenuCommand : WORD
 {
     Open = 101,
+    Close = 102,
 
     Snapshot = 201,
     Restore = 202,
@@ -17,6 +18,8 @@ public:
 
     HMENU Get() const;
     HACCEL AcceleratorTable() const;
+
+    void UpdateLoaded(bool isLoaded);
 
 private:
     HMENU fileMenu_;
