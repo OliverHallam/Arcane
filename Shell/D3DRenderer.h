@@ -26,6 +26,7 @@ public:
     RECT GetFullscreenRect() const;
 
     void OnSize();
+    void SetOverscan(bool overscan);
 
 private:
     void CreateDevice();
@@ -39,8 +40,13 @@ private:
     void CreateShaderParameters();
     void CreateRasterizerState();
 
+    void UpdateViewport();
+    void UpdateViewport(int width, int height);
+
     uint32_t width_;
     uint32_t height_;
+
+    bool overscan_;
 
     winrt::com_ptr<ID3D11Device> device_;
     winrt::com_ptr<ID3D11DeviceContext> deviceContext_;
@@ -69,5 +75,8 @@ private:
     {
         float x;
         float y;
+
+        float tx;
+        float ty;
     };
 };

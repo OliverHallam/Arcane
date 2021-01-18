@@ -100,7 +100,7 @@ int App::Run(int nCmdShow)
             host_.Load(std::move(cart));
             host_.Start();
 
-            menu_.UpdateLoaded(true);
+            menu_.SetLoaded(true);
         }
         else
         {
@@ -497,7 +497,7 @@ void App::Open(HWND window)
             host_.Load(std::move(cart));
             host_.Start();
 
-            menu_.UpdateLoaded(true);
+            menu_.SetLoaded(true);
         }
     }
 }
@@ -694,7 +694,7 @@ bool App::ProcessCommand(WORD command)
         host_.Stop();
         host_.Unload();
         save_.Close();
-        menu_.UpdateLoaded(false);
+        menu_.SetLoaded(false);
         return true;
     }
 
@@ -728,6 +728,13 @@ bool App::ProcessCommand(WORD command)
         return true;
     }
 
+    if (command == static_cast<WORD>(MenuCommand::Overscan))
+    {
+        overscan_ = !overscan_;
+        d3d_.SetOverscan(overscan_);
+        menu_.SetOverscan(overscan_);
+    }
+
     return false;
 }
 
@@ -756,7 +763,7 @@ bool App::DropFiles(HDROP drop)
         host_.Load(std::move(cart));
         host_.Start();
 
-        menu_.UpdateLoaded(true);
+        menu_.SetLoaded(true);
     }
 
     return true;

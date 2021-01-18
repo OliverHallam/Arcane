@@ -11,7 +11,8 @@
 D3DRenderer::D3DRenderer() :
     width_{},
     height_{},
-    window_{ NULL }
+    window_{ NULL },
+    overscan_{}
 {
 }
 
@@ -62,6 +63,8 @@ void D3DRenderer::PrepareRenderState()
     deviceContext_->PSSetShaderResources(0, 1, shaderResourceViews);
     ID3D11SamplerState* const samplers[1] = { samplerState_.get() };
     deviceContext_->PSSetSamplers(0, 1, samplers);
+
+    UpdateViewport();
 }
 
 bool D3DRenderer::WaitForFrame() const
@@ -109,7 +112,7 @@ void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
 
     deviceContext_->Unmap(frameBuffer_.get(), 0);
 
-    deviceContext_->DrawIndexed(6, 0, 0);
+    deviceContext_->DrawIndexed(6, 0, overscan_ ? 4 : 0);
 
     hr = swapChain_->Present(displayFrames, 0);
     winrt::check_hresult(hr);
@@ -123,7 +126,7 @@ void D3DRenderer::RepeatLastFrame()
     auto renderTargetView = renderTargetView_.get();
     deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
 
-    deviceContext_->DrawIndexed(6, 0, 0);
+    deviceContext_->DrawIndexed(6, 0, overscan_ ? 4 : 0);
 
     auto hr = swapChain_->Present(1, 0);
     winrt::check_hresult(hr);
@@ -198,7 +201,14 @@ void D3DRenderer::OnSize()
         swapChain_->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
 
         CreateRenderTarget();
+        UpdateViewport();
     }
+}
+
+void D3DRenderer::SetOverscan(bool overscan)
+{
+    overscan_ = overscan;
+    UpdateViewport();
 }
 
 void D3DRenderer::CreateDevice()
@@ -288,42 +298,24 @@ void D3DRenderer::CreateRenderTarget()
 
     hr = device_->CreateRenderTargetView(backBuffer.get(), nullptr, renderTargetView_.put());
     winrt::check_hresult(hr);
-
-    D3D11_TEXTURE2D_DESC backBufferDesc;
-    backBuffer->GetDesc(&backBufferDesc);
-
-    // round down to nearest pixel multiple
-    auto height = (backBufferDesc.Height / height_) * height_;
-    auto width = height * width_ / height_;
-
-    if (width > backBufferDesc.Width)
-    {
-        width = (backBufferDesc.Width / width_) * width_;
-        height = width * height_ / width_;
-    }
-
-    auto x = (backBufferDesc.Width - width) / 2;
-    auto y = (backBufferDesc.Height - height) / 2;
-
-    D3D11_VIEWPORT viewport;
-    ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-    viewport.Width = static_cast<FLOAT>(width);
-    viewport.Height = static_cast<FLOAT>(height);
-    viewport.MinDepth = 0;
-    viewport.MaxDepth = 1;
-    viewport.TopLeftX = static_cast<FLOAT>(x);
-    viewport.TopLeftY = static_cast<FLOAT>(y);
-
-    deviceContext_->RSSetViewports(1, &viewport);
 }
 
 void D3DRenderer::CreateVertexBuffer()
 {
-    const Vertex vertices[4] = {
-        { -1.0f, 1.0f },
-        { 1.0f, 1.0f },
-        { -1.0f, -1.0 },
-        { 1.0f, -1.0f },
+    auto h = 1.0f - 16.0f / width_;
+    auto v = 1.0f - 16.0f / height_;
+
+    const Vertex vertices[8] = {
+        { -1.0f, 1.0f, -1.0f, 1.0f },
+        { 1.0f, 1.0f, 1.0f, 1.0f },
+        { -1.0f, -1.0, -1.0f, -1.0f  },
+        { 1.0f, -1.0f, 1.0f, -1.0f },
+
+        // these are for when overscan is enabled.
+        { -1.0f, 1.0f, -h, v },
+        { 1.0f, 1.0f, h, v },
+        { -1.0f, -1.0, -h, -v },
+        { 1.0f, -1.0f, h, -v },
     };
 
     D3D11_BUFFER_DESC bufferDesc;
@@ -344,9 +336,9 @@ void D3DRenderer::CreateVertexBuffer()
 
 void D3DRenderer::CreateIndexBuffer()
 {
-    const uint16_t indices[6] = {
+    const uint16_t indices[12] = {
         0, 1, 2,
-        1, 3, 2
+        1, 3, 2,
     };
 
     D3D11_BUFFER_DESC bufferDesc;
@@ -406,7 +398,8 @@ void D3DRenderer::CreateShaders()
 void D3DRenderer::CreateInputLayout()
 {
     D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+        { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
     auto hr = device_->CreateInputLayout(
@@ -470,4 +463,46 @@ void D3DRenderer::CreateRasterizerState()
 
     auto hr = device_->CreateRasterizerState(&rasterizerDesc, rasterizerState_.put());
     winrt::check_hresult(hr);
+}
+
+void D3DRenderer::UpdateViewport()
+{
+    if (overscan_)
+        UpdateViewport(width_ - 16, height_ - 16);
+    else
+        UpdateViewport(width_, height_);
+}
+
+void D3DRenderer::UpdateViewport(int width, int height)
+{
+    winrt::com_ptr<ID3D11Texture2D> backBuffer;
+    auto hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(backBuffer.put()));
+    winrt::check_hresult(hr);
+
+    D3D11_TEXTURE2D_DESC backBufferDesc;
+    backBuffer->GetDesc(&backBufferDesc);
+
+    // round down to nearest pixel multiple
+    auto viewportHeight = (backBufferDesc.Height / height) * height;
+    auto viewportWidth = viewportHeight * width / height;
+
+    if (viewportWidth > backBufferDesc.Width)
+    {
+        viewportWidth = (backBufferDesc.Width / width) * width;
+        viewportHeight = viewportWidth * height / width;
+    }
+
+    auto x = (backBufferDesc.Width - viewportWidth) / 2;
+    auto y = (backBufferDesc.Height - viewportHeight) / 2;
+
+    D3D11_VIEWPORT viewport;
+    ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+    viewport.Width = static_cast<FLOAT>(viewportWidth);
+    viewport.Height = static_cast<FLOAT>(viewportHeight);
+    viewport.MinDepth = 0;
+    viewport.MaxDepth = 1;
+    viewport.TopLeftX = static_cast<FLOAT>(x);
+    viewport.TopLeftY = static_cast<FLOAT>(y);
+
+    deviceContext_->RSSetViewports(1, &viewport);
 }

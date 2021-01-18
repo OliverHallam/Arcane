@@ -10,7 +10,8 @@ enum class MenuCommand : WORD
     Snapshot = 202,
     Restore = 203,
 
-    Fullscreen = 301
+    Fullscreen = 301,
+    Overscan = 302,
 };
 
 class Menu
@@ -21,7 +22,8 @@ public:
     HMENU Get() const;
     HACCEL AcceleratorTable() const;
 
-    void UpdateLoaded(bool isLoaded);
+    void SetLoaded(bool isLoaded);
+    void SetOverscan(bool overscan);
 
 private:
     HMENU fileMenu_;

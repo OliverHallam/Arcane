@@ -25,6 +25,7 @@ Menu::Menu()
 
     videoMenu_ = CreateMenu();
     AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Fullscreen)), L"Toggle &Fullscreen\tF11");
+    AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Overscan)), L"Crop &Overscan");
 
     AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(videoMenu_), L"&Video");
 
@@ -51,10 +52,15 @@ HACCEL Menu::AcceleratorTable() const
     return acceleratorTable_;
 }
 
-void Menu::UpdateLoaded(bool isLoaded)
+void Menu::SetLoaded(bool isLoaded)
 {
     EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Close), isLoaded ? MF_ENABLED : MF_DISABLED);
     EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Restart), isLoaded ? MF_ENABLED : MF_DISABLED);
     EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Snapshot), isLoaded ? MF_ENABLED : MF_DISABLED);
     EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Restore), isLoaded ? MF_ENABLED : MF_DISABLED);
+}
+
+void Menu::SetOverscan(bool overscan)
+{
+    EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Overscan), overscan ? MF_ENABLED | MF_CHECKED : MF_ENABLED);
 }
