@@ -63,10 +63,10 @@ void Menu::SetLoaded(bool isLoaded)
 
 void Menu::SetOverscan(bool overscan)
 {
-    EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Overscan), overscan ? MF_ENABLED | MF_CHECKED : MF_ENABLED);
+    CheckMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Overscan), overscan ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void Menu::SetIntegerScaling(bool integerScaling)
 {
-    EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::IntegerScaling), integerScaling ? MF_ENABLED | MF_CHECKED : MF_ENABLED);
+    CheckMenuItem(menuBar_, static_cast<UINT>(MenuCommand::IntegerScaling), integerScaling ? MF_CHECKED : MF_UNCHECKED);
 }

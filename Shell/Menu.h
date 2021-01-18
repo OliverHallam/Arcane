@@ -12,7 +12,7 @@ enum class MenuCommand : WORD
 
     Fullscreen = 301,
     Overscan = 302,
-    IntegerScaling = 304
+    IntegerScaling = 303
 };
 
 class Menu
