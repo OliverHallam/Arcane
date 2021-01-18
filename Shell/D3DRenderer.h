@@ -1,6 +1,7 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
+#include "DefaultShaders.h"
+#include "ScanlineShaders.h"
 
 #include <cstdint>
 #include <d3d11_4.h>
@@ -29,6 +30,7 @@ public:
 
     void SetOverscan(bool overscan);
     void SetIntegerScaling(bool integerScaling);
+    void SetScanlines(bool scanlines);
 
 private:
     void CreateDevice();
@@ -37,10 +39,8 @@ private:
     void CreateVertexBuffer();
     void CreateIndexBuffer();
     void CreateFrameBuffer();
-    void CreateShaders();
-    void CreateInputLayout();
-    void CreateShaderParameters();
     void CreateRasterizerState();
+    void CreateFramebufferSampler();
 
     void UpdateViewport();
     void UpdateViewport(int width, int height);
@@ -61,16 +61,15 @@ private:
 
     winrt::com_ptr<ID3D11RasterizerState> rasterizerState_;
 
-    winrt::com_ptr<ID3D11PixelShader> pixelShader_;
     winrt::com_ptr<ID3D11ShaderResourceView> frameBufferShaderResourceView_;
     winrt::com_ptr<ID3D11SamplerState> samplerState_;
-
-    winrt::com_ptr<ID3D11VertexShader> vertexShader_;
-    winrt::com_ptr<ID3D11InputLayout> inputLayout_;
 
     winrt::com_ptr<ID3D11Buffer> vertexBuffer_;
     winrt::com_ptr<ID3D11Buffer> indexBuffer_;
     winrt::com_ptr<ID3D11Texture2D> frameBuffer_;
+
+    DefaultShaders defaultShaders_;
+    ScanlineShaders scanlineShaders_;
 
     HWND window_;
 

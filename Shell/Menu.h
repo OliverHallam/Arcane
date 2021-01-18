@@ -4,7 +4,7 @@ enum class MenuCommand : WORD
 {
     Open = 101,
     Close = 102,
-    Exit= 103,
+    Exit = 103,
 
     Restart = 201,
     Snapshot = 202,
@@ -12,7 +12,8 @@ enum class MenuCommand : WORD
 
     Fullscreen = 301,
     Overscan = 302,
-    IntegerScaling = 303
+    IntegerScaling = 303,
+    Scanlines = 304
 };
 
 class Menu
@@ -26,6 +27,7 @@ public:
     void SetLoaded(bool isLoaded);
     void SetOverscan(bool overscan);
     void SetIntegerScaling(bool integerScaling);
+    void SetScanlines(bool scanlines);
 
 private:
     HMENU fileMenu_;

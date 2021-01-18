@@ -3,9 +3,6 @@
 #include "D3DRenderer.h"
 #include "Error.h"
 
-#include "VertexShader.h"
-#include "PixelShader.h"
-
 #include <dwmapi.h>
 
 D3DRenderer::D3DRenderer() :
@@ -35,10 +32,11 @@ void D3DRenderer::Initialize(HWND window, uint32_t width, uint32_t height)
     CreateVertexBuffer();
     CreateIndexBuffer();
     CreateFrameBuffer();
-    CreateShaders();
-    CreateInputLayout();
-    CreateShaderParameters();
     CreateRasterizerState();
+
+    defaultShaders_.Create(device_.get());
+    scanlineShaders_.Create(device_.get());
+    CreateFramebufferSampler();
 }
 
 void D3DRenderer::PrepareRenderState()
@@ -48,22 +46,19 @@ void D3DRenderer::PrepareRenderState()
     UINT offset = 0;
     ID3D11Buffer* const vertexBuffers[1] = { vertexBuffer_.get() };
     deviceContext_->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
-    deviceContext_->IASetInputLayout(inputLayout_.get());
     deviceContext_->IASetIndexBuffer(indexBuffer_.get(), DXGI_FORMAT_R16_UINT, 0);
     deviceContext_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // vertex shader
-    deviceContext_->VSSetShader(vertexShader_.get(), nullptr, 0);
 
     // rasterizer
     deviceContext_->RSSetState(rasterizerState_.get());
 
     // pixel shader
-    deviceContext_->PSSetShader(pixelShader_.get(), nullptr, 0);
     ID3D11ShaderResourceView* const shaderResourceViews[1] = { frameBufferShaderResourceView_.get() };
     deviceContext_->PSSetShaderResources(0, 1, shaderResourceViews);
     ID3D11SamplerState* const samplers[1] = { samplerState_.get() };
     deviceContext_->PSSetSamplers(0, 1, samplers);
+
+    defaultShaders_.PrepareRenderState(deviceContext_.get());
 
     UpdateViewport();
 }
@@ -216,6 +211,14 @@ void D3DRenderer::SetIntegerScaling(bool integerScaling)
 {
     integerScaling_ = integerScaling;
     UpdateViewport();
+}
+
+void D3DRenderer::SetScanlines(bool scanlines)
+{
+    if (scanlines)
+        scanlineShaders_.PrepareRenderState(deviceContext_.get());
+    else
+        defaultShaders_.PrepareRenderState(deviceContext_.get());
 }
 
 void D3DRenderer::CreateDevice()
@@ -384,41 +387,7 @@ void D3DRenderer::CreateFrameBuffer()
     winrt::check_hresult(hr);
 }
 
-void D3DRenderer::CreateShaders()
-{
-    auto hr = device_->CreateVertexShader(
-        VertexShaderBytecode,
-        _countof(VertexShaderBytecode),
-        nullptr,
-        vertexShader_.put());
-    winrt::check_hresult(hr);
-
-    winrt::com_ptr<ID3D11PixelShader> pixelShader;
-    hr = device_->CreatePixelShader(
-        PixelShaderBytecode,
-        _countof(PixelShaderBytecode),
-        nullptr,
-        pixelShader_.put());
-    winrt::check_hresult(hr);
-}
-
-void D3DRenderer::CreateInputLayout()
-{
-    D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-    };
-
-    auto hr = device_->CreateInputLayout(
-        vertexLayoutDesc,
-        _countof(vertexLayoutDesc),
-        VertexShaderBytecode,
-        _countof(VertexShaderBytecode),
-        inputLayout_.put());
-    winrt::check_hresult(hr);
-}
-
-void D3DRenderer::CreateShaderParameters()
+void D3DRenderer::CreateFramebufferSampler()
 {
     D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
     ZeroMemory(&shaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));

@@ -59,10 +59,12 @@ private:
     Menu menu_;
 
     HWND window_;
+    RECT windowRect_;
+
     bool fullscreen_;
     bool overscan_;
     bool integerScaling_;
-    RECT windowRect_;
+    bool scanlines_;
 
     bool foreground_;
 

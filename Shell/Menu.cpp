@@ -27,6 +27,7 @@ Menu::Menu()
     AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Fullscreen)), L"Toggle &Fullscreen\tF11");
     AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Overscan)), L"Crop &Overscan");
     AppendMenu(videoMenu_, MF_ENABLED | MF_CHECKED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::IntegerScaling)), L"Pixel Perfect Scaling");
+    AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Scanlines)), L"Scanline Filter");
 
     AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(videoMenu_), L"&Video");
 
@@ -69,4 +70,9 @@ void Menu::SetOverscan(bool overscan)
 void Menu::SetIntegerScaling(bool integerScaling)
 {
     CheckMenuItem(menuBar_, static_cast<UINT>(MenuCommand::IntegerScaling), integerScaling ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void Menu::SetScanlines(bool scanlines)
+{
+    CheckMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Scanlines), scanlines ? MF_CHECKED : MF_UNCHECKED);
 }

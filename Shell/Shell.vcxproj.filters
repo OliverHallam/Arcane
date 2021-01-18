@@ -13,6 +13,8 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="DynamicSampleRate.cpp" />
     <ClCompile Include="QpcTimer.cpp" />
+    <ClCompile Include="DefaultShaders.cpp" />
+    <ClCompile Include="ScanlineShaders.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -20,8 +22,6 @@
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="D3DRenderer.h" />
-    <ClInclude Include="VertexShader.h" />
-    <ClInclude Include="PixelShader.h" />
     <ClInclude Include="WasapiRenderer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Error.h" />
@@ -34,13 +34,21 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="DynamicSampleRate.h" />
     <ClInclude Include="QpcTimer.h" />
+    <ClInclude Include="Shaders\ScanlinePixelShader.h" />
+    <ClInclude Include="Shaders\ScanlineVertexShader.h" />
+    <ClInclude Include="Shaders\DefaultPixelShader.h" />
+    <ClInclude Include="Shaders\DefaultVertexShader.h" />
+    <ClInclude Include="DefaultShaders.h" />
+    <ClInclude Include="ScanlineShaders.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="VertexShader.hlsl" />
-    <FxCompile Include="PixelShader.hlsl" />
+    <FxCompile Include="Shaders\DefaultPixelShader.hlsl" />
+    <FxCompile Include="Shaders\DefaultVertexShader.hlsl" />
+    <FxCompile Include="Shaders\ScanlinePixelShader.hlsl" />
+    <FxCompile Include="Shaders\ScanlineVertexShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

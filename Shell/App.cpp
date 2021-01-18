@@ -29,7 +29,8 @@ App::App(HINSTANCE hInstance)
     initialized_{ false },
     foreground_{ false },
     overscan_{ false },
-    integerScaling_{ true }
+    integerScaling_{ true },
+    scanlines_{ false }
 {
 }
 
@@ -745,6 +746,15 @@ bool App::ProcessCommand(WORD command)
         menu_.SetIntegerScaling(integerScaling_);
         return true;
     }
+
+    if (command == static_cast<WORD>(MenuCommand::Scanlines))
+    {
+        scanlines_ = !scanlines_;
+        d3d_.SetScanlines(scanlines_);
+        menu_.SetScanlines(scanlines_);
+        return true;
+    }
+
 
     return false;
 }
