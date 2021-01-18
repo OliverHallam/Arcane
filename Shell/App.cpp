@@ -27,7 +27,9 @@ App::App(HINSTANCE hInstance)
     windowRect_{ },
     fullscreen_{ false },
     initialized_{ false },
-    foreground_{ false }
+    foreground_{ false },
+    overscan_{ false },
+    integerScaling_{ true }
 {
 }
 
@@ -733,6 +735,15 @@ bool App::ProcessCommand(WORD command)
         overscan_ = !overscan_;
         d3d_.SetOverscan(overscan_);
         menu_.SetOverscan(overscan_);
+        return true;
+    }
+
+    if (command == static_cast<WORD>(MenuCommand::IntegerScaling))
+    {
+        integerScaling_ = !integerScaling_;
+        d3d_.SetIntegerScaling(integerScaling_);
+        menu_.SetIntegerScaling(integerScaling_);
+        return true;
     }
 
     return false;

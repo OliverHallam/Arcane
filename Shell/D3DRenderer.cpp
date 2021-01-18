@@ -12,7 +12,8 @@ D3DRenderer::D3DRenderer() :
     width_{},
     height_{},
     window_{ NULL },
-    overscan_{}
+    overscan_{},
+    integerScaling_{ true }
 {
 }
 
@@ -208,6 +209,12 @@ void D3DRenderer::OnSize()
 void D3DRenderer::SetOverscan(bool overscan)
 {
     overscan_ = overscan;
+    UpdateViewport();
+}
+
+void D3DRenderer::SetIntegerScaling(bool integerScaling)
+{
+    integerScaling_ = integerScaling;
     UpdateViewport();
 }
 
@@ -482,14 +489,29 @@ void D3DRenderer::UpdateViewport(int width, int height)
     D3D11_TEXTURE2D_DESC backBufferDesc;
     backBuffer->GetDesc(&backBufferDesc);
 
-    // round down to nearest pixel multiple
-    auto viewportHeight = (backBufferDesc.Height / height) * height;
-    auto viewportWidth = viewportHeight * width / height;
-
-    if (viewportWidth > backBufferDesc.Width)
+    FLOAT viewportHeight, viewportWidth;
+    if (integerScaling_)
     {
-        viewportWidth = (backBufferDesc.Width / width) * width;
-        viewportHeight = viewportWidth * height / width;
+        // round down to nearest pixel multiple
+        viewportHeight = static_cast<FLOAT>((backBufferDesc.Height / height) * height);
+        viewportWidth = viewportHeight * width / height;
+
+        if (viewportWidth > backBufferDesc.Width)
+        {
+            viewportWidth = static_cast<FLOAT>((backBufferDesc.Width / width) * width);
+            viewportHeight = viewportWidth * height / width;
+        }
+    }
+    else
+    {
+        viewportHeight = static_cast<FLOAT>(backBufferDesc.Height);
+        viewportWidth = viewportHeight * width / height;
+
+        if (viewportWidth > backBufferDesc.Width)
+        {
+            viewportWidth = static_cast<FLOAT>(backBufferDesc.Width);
+            viewportHeight = viewportWidth * height / width;
+        }
     }
 
     auto x = (backBufferDesc.Width - viewportWidth) / 2;
@@ -497,12 +519,12 @@ void D3DRenderer::UpdateViewport(int width, int height)
 
     D3D11_VIEWPORT viewport;
     ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-    viewport.Width = static_cast<FLOAT>(viewportWidth);
-    viewport.Height = static_cast<FLOAT>(viewportHeight);
+    viewport.Width = viewportWidth;
+    viewport.Height = viewportHeight;
     viewport.MinDepth = 0;
     viewport.MaxDepth = 1;
-    viewport.TopLeftX = static_cast<FLOAT>(x);
-    viewport.TopLeftY = static_cast<FLOAT>(y);
+    viewport.TopLeftX = x;
+    viewport.TopLeftY = y;
 
     deviceContext_->RSSetViewports(1, &viewport);
 }

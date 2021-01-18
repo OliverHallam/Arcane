@@ -26,7 +26,9 @@ public:
     RECT GetFullscreenRect() const;
 
     void OnSize();
+
     void SetOverscan(bool overscan);
+    void SetIntegerScaling(bool integerScaling);
 
 private:
     void CreateDevice();
@@ -47,6 +49,7 @@ private:
     uint32_t height_;
 
     bool overscan_;
+    bool integerScaling_;
 
     winrt::com_ptr<ID3D11Device> device_;
     winrt::com_ptr<ID3D11DeviceContext> deviceContext_;

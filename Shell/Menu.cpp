@@ -26,6 +26,7 @@ Menu::Menu()
     videoMenu_ = CreateMenu();
     AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Fullscreen)), L"Toggle &Fullscreen\tF11");
     AppendMenu(videoMenu_, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Overscan)), L"Crop &Overscan");
+    AppendMenu(videoMenu_, MF_ENABLED | MF_CHECKED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::IntegerScaling)), L"Pixel Perfect Scaling");
 
     AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(videoMenu_), L"&Video");
 
@@ -63,4 +64,9 @@ void Menu::SetLoaded(bool isLoaded)
 void Menu::SetOverscan(bool overscan)
 {
     EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::Overscan), overscan ? MF_ENABLED | MF_CHECKED : MF_ENABLED);
+}
+
+void Menu::SetIntegerScaling(bool integerScaling)
+{
+    EnableMenuItem(menuBar_, static_cast<UINT>(MenuCommand::IntegerScaling), integerScaling ? MF_ENABLED | MF_CHECKED : MF_ENABLED);
 }

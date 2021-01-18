@@ -12,6 +12,7 @@ enum class MenuCommand : WORD
 
     Fullscreen = 301,
     Overscan = 302,
+    IntegerScaling = 304
 };
 
 class Menu
@@ -24,6 +25,7 @@ public:
 
     void SetLoaded(bool isLoaded);
     void SetOverscan(bool overscan);
+    void SetIntegerScaling(bool integerScaling);
 
 private:
     HMENU fileMenu_;

@@ -61,6 +61,7 @@ private:
     HWND window_;
     bool fullscreen_;
     bool overscan_;
+    bool integerScaling_;
     RECT windowRect_;
 
     bool foreground_;
