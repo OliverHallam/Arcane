@@ -12,9 +12,10 @@ public:
 private:
     void CreateShaders(ID3D11Device* device);
     void CreateInputLayout(ID3D11Device* device);
-    
-    winrt::com_ptr<ID3D11PixelShader> pixelShader_;
+    void CreateSamplerState(ID3D11Device* device);
 
+    winrt::com_ptr<ID3D11PixelShader> pixelShader_;
     winrt::com_ptr<ID3D11VertexShader> vertexShader_;
     winrt::com_ptr<ID3D11InputLayout> inputLayout_;
+    winrt::com_ptr<ID3D11SamplerState> samplerState_;
 };

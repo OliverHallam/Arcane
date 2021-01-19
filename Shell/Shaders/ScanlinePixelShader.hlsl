@@ -5,18 +5,27 @@ struct PixelInput
 {
 	float4 pos : SV_POSITION;
 	float2 tex : TEXCOORD0;
-	float2 phase : TEXCOORD1;
 };
 
 #define PI 3.1415926
 
+#define SCANLINE_WIDTH 256
+#define SCANLINE_HEIGHT 240
+
 float4 main(PixelInput input) : SV_TARGET
 {
-	float4 color = Texture.Sample(Sample, input.tex);
+	float textureY = (floor(input.tex.y * SCANLINE_HEIGHT) + 0.5) / SCANLINE_HEIGHT;
+	float4 rSample = Texture.Sample(Sample, float2(input.tex.x + 0.333333/ SCANLINE_WIDTH, textureY));
+	float4 gSample = Texture.Sample(Sample, float2(input.tex.x, textureY));
+	float4 bSample = Texture.Sample(Sample, float2(input.tex.x - 0.333333 / SCANLINE_WIDTH, textureY));
+	
+	float4 color = float4(rSample.x, gSample.y, bSample.z, 1.0);
 
-	float scanline = 0.9 + 0.1 * sin(input.phase.y);
+	float brightness = dot(float3(0.2126, 0.7152, 0.0722), color.xyz);
 
-	float4 brightness = 0.95 + 0.05 * float4(sin(float3(input.phase.x, input.phase.x - 0.66666666 * PI, input.phase.x - 1.33333333 * PI)), 1);
+	float phase = (input.tex.y * SCANLINE_HEIGHT * 2 - .5) * 3.1415926;
+	float scanline = pow(sin(phase) * 0.5 + 0.5, 0.5 - 0.5 * brightness);
 
-	return (color + float4(0.05, 0.05, 0.05, 1)) * brightness * scanline;
+	float4 scanlineColor = color * scanline;
+	return lerp(color, scanlineColor, brightness);
 }

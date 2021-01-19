@@ -62,7 +62,6 @@ private:
     winrt::com_ptr<ID3D11RasterizerState> rasterizerState_;
 
     winrt::com_ptr<ID3D11ShaderResourceView> frameBufferShaderResourceView_;
-    winrt::com_ptr<ID3D11SamplerState> samplerState_;
 
     winrt::com_ptr<ID3D11Buffer> vertexBuffer_;
     winrt::com_ptr<ID3D11Buffer> indexBuffer_;
