@@ -17,7 +17,8 @@ class NesSystem
 public:
     NesSystem(uint32_t audioSampleRate);
 
-    Controller& Controller();
+    Controller& Controller1();
+    Controller& Controller2();
     const Display& Display() const;
     Apu& Apu();
 
@@ -38,6 +39,7 @@ private:
     Ppu ppu_;
     ::Apu apu_;
     ::Display display_;
-    ::Controller controller_;
+    ::Controller controller1_;
+    ::Controller controller2_;
     std::unique_ptr<Cart> cart_;
 };

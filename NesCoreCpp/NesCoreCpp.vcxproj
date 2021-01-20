@@ -271,6 +271,7 @@
     <ClInclude Include="ApuTriangleState.h" />
     <ClInclude Include="Bus.h" />
     <ClInclude Include="BusState.h" />
+    <ClInclude Include="Buttons.h" />
     <ClInclude Include="Cart.h" />
     <ClInclude Include="CartCoreState.h" />
     <ClInclude Include="CartData.h" />

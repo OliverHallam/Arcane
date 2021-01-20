@@ -34,14 +34,8 @@ public:
     void Snapshot();
     void Restore();
 
-    void Up(bool pressed);
-    void Down(bool pressed);
-    void Left(bool pressed);
-    void Right(bool pressed);
-    void A(bool pressed);
-    void B(bool pressed);
-    void Select(bool pressed);
-    void Start(bool pressed);
+    void SetController1State(int32_t buttons);
+    void SetController2State(int32_t buttons);
 
 private:
     uint32_t sampleRate_;

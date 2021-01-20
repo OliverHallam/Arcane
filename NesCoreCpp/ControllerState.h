@@ -4,9 +4,7 @@
 
 struct ControllerState
 {
-    bool Up, Down, Left, Right;
-    bool A, B;
-    bool Select, Start;
+    uint32_t Buttons;
 
     bool Strobe;
     uint8_t Noise;

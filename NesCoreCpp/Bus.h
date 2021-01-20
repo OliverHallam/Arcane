@@ -21,7 +21,8 @@ public:
     void Attach(Cpu* cpu);
     void Attach(Ppu* ppu);
     void Attach(Apu* apu);
-    void Attach(Controller* controller);
+    void AttachPlayer1(Controller* controller);
+    void AttachPlayer2(Controller* controller);
     void Attach(Cart* cart);
 
     void DetachCart();
@@ -120,7 +121,8 @@ private:
     Cpu* cpu_;
     Ppu* ppu_;
     Apu* apu_;
-    Controller* controller_;
+    Controller* controller1_;
+    Controller* controller2_;
     Cart* cart_;
 
     BusState state_;

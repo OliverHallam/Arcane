@@ -9,7 +9,8 @@ Bus::Bus() :
     cpu_(nullptr),
     ppu_(nullptr),
     apu_(nullptr),
-    controller_(nullptr),
+    controller1_(nullptr),
+    controller2_(nullptr),
     cart_(nullptr)
 {
 }
@@ -29,9 +30,14 @@ void Bus::Attach(Apu* apu)
     apu_ = apu;
 }
 
-void Bus::Attach(Controller* controller)
+void Bus::AttachPlayer1(Controller* controller)
 {
-    controller_ = controller;
+    controller1_ = controller;
+}
+
+void Bus::AttachPlayer2(Controller* controller)
+{
+    controller2_ = controller;
 }
 
 void Bus::Attach(Cart* cart)
@@ -206,7 +212,10 @@ void Bus::CpuWrite(uint16_t address, uint8_t value)
         if (address == 0x4014)
             BeginOamDma(value);
         else if (address == 0x4016)
-            controller_->Write(value);
+        {
+            controller1_->Write(value);
+            controller2_->Write(value);
+        }
         else
             apu_->Write(address, value);
     }
@@ -247,9 +256,11 @@ void Bus::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         }
         else if (address == 0x4016)
         {
-            controller_->Write(firstValue);
+            controller1_->Write(firstValue);
+            controller2_->Write(firstValue);
             Tick();
-            controller_->Write(secondValue);
+            controller1_->Write(secondValue);
+            controller2_->Write(secondValue);
         }
         else
         {
@@ -477,7 +488,9 @@ uint8_t Bus::CpuReadImpl(uint16_t address)
         if (address < 0x4000)
             return ppu_->Read(address);
         else if (address == 0x4016)
-            return -controller_->Read();
+            return -controller1_->Read();
+        else if (address == 0x4017)
+            return -controller2_->Read();
         else
             return apu_->Read(address);
     }
@@ -496,7 +509,9 @@ uint8_t Bus::CpuReadProgramDataRare(uint16_t address)
     else if (address < 0x4020)
     {
         if (address == 0x4016)
-            return controller_->Read();
+            return -controller1_->Read();
+        else if (address == 0x4017)
+            return -controller2_->Read();
         else
             return apu_->Read(address);
     }

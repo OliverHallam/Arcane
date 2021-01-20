@@ -7,17 +7,24 @@ NesSystem::NesSystem(uint32_t audioSampleRate)
     ppu_{ bus_, display_ },
     cpu_{ bus_ },
     apu_{ bus_, audioSampleRate / 60 },
-    controller_{}
+    controller1_{},
+    controller2_{}
 {
     bus_.Attach(&ppu_);
     bus_.Attach(&cpu_);
     bus_.Attach(&apu_);
-    bus_.Attach(&controller_);
+    bus_.AttachPlayer1(&controller1_);
+    bus_.AttachPlayer2(&controller2_);
 }
 
-Controller& NesSystem::Controller()
+Controller& NesSystem::Controller1()
 {
-    return controller_;
+    return controller1_;
+}
+
+Controller& NesSystem::Controller2()
+{
+    return controller2_;
 }
 
 const Display& NesSystem::Display() const
@@ -69,7 +76,8 @@ void NesSystem::CaptureState(SystemState* state) const
     cpu_.CaptureState(&state->CpuState);
     ppu_.CaptureState(&state->PpuState);
     apu_.CaptureState(&state->ApuState);
-    controller_.CaptureState(&state->ControllerState);
+    controller1_.CaptureState(&state->Controller1State);
+    controller2_.CaptureState(&state->Controller2State);
     cart_->CaptureState(&state->CartState);
 }
 void NesSystem::RestoreState(const SystemState& state)
@@ -78,6 +86,7 @@ void NesSystem::RestoreState(const SystemState& state)
     cpu_.RestoreState(state.CpuState);
     ppu_.RestoreState(state.PpuState);
     apu_.RestoreState(state.ApuState);
-    controller_.RestoreState(state.ControllerState);
+    controller1_.RestoreState(state.Controller1State);
+    controller2_.RestoreState(state.Controller2State);
     cart_->RestoreState(state.CartState);
 }

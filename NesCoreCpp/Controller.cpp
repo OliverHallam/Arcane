@@ -1,43 +1,19 @@
 #include "Controller.h"
 
-void Controller::Up(bool pressed)
+
+void Controller::ButtonDown(Buttons button)
 {
-    state_.Up = pressed;
+    state_.Buttons |= button;
 }
 
-void Controller::Down(bool pressed)
+void Controller::ButtonUp(Buttons button)
 {
-    state_.Down = pressed;
+    state_.Buttons &= ~button;
 }
 
-void Controller::Left(bool pressed)
+void Controller::SetButtonState(int32_t buttons)
 {
-    state_.Left = pressed;
-}
-
-void Controller::Right(bool pressed)
-{
-    state_.Right = pressed;
-}
-
-void Controller::A(bool pressed)
-{
-    state_.A = pressed;
-}
-
-void Controller::B(bool pressed)
-{
-    state_.B = pressed;
-}
-
-void Controller::Select(bool pressed)
-{
-    state_.Select = pressed;
-}
-
-void Controller::Start(bool pressed)
-{
-    state_.Start = pressed;
+    state_.Buttons = buttons;
 }
 
 uint8_t Controller::Read()
@@ -77,24 +53,17 @@ void Controller::RestoreState(const ControllerState& state)
 
 void Controller::CaptureState()
 {
-    state_.State = 0;
-    if (state_.A)
-        state_.State |= 0x80;
-    if (state_.B)
-        state_.State |= 0x40;
-    if (state_.Select)
-        state_.State |= 0x20;
-    if (state_.Start)
-        state_.State |= 0x10;
+    uint32_t buttons = state_.Buttons;
 
-    // we prevent inputs that are supposed to be impossible from a NES controller here - this can cause horrible
+    // Prevent inputs that are supposed to be impossible from a NES controller here - this can cause horrible
     // crashes in some games, e.g. Burger Time
-    if (state_.Up && !state_.Down)
-        state_.State |= 0x08;
-    if (state_.Down && !state_.Up)
-        state_.State |= 0x04;
-    if (state_.Left && !state_.Right)
-        state_.State |= 0x02;
-    if (state_.Right && !state_.Left)
-        state_.State |= 0x01;
+    auto upAndDown = (Buttons::Up | Buttons::Down);
+    if ((buttons & upAndDown) == upAndDown)
+        buttons &= ~upAndDown;
+
+    auto leftAndRight = (Buttons::Left | Buttons::Right);
+    if ((buttons & leftAndRight) == leftAndRight)
+        buttons &= ~leftAndRight;
+
+    state_.State = static_cast<uint8_t>(buttons);
 }

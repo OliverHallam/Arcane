@@ -21,6 +21,8 @@
 #include <cstdlib>
 #include <sstream>
 
+#include <Dbt.h>
+
 App::App(HINSTANCE hInstance)
     : instance_{ hInstance },
     window_{ },
@@ -30,7 +32,9 @@ App::App(HINSTANCE hInstance)
     foreground_{ false },
     overscan_{ false },
     integerScaling_{ true },
-    scanlines_{ false }
+    scanlines_{ false },
+    player1Device_{ 0 },
+    player2Device_{ 0 }
 {
 }
 
@@ -76,6 +80,13 @@ int App::Run(int nCmdShow)
             ReportError(L"Error initializing renderer", e);
             return -1;
         }
+
+        input_.CheckForNewControllers();
+        menu_.SetControllerConnected(
+            input_.IsConnected(InputDevice::Controller0),
+            input_.IsConnected(InputDevice::Controller1),
+            input_.IsConnected(InputDevice::Controller2),
+            input_.IsConnected(InputDevice::Controller3));
 
         try
         {
@@ -165,6 +176,44 @@ int App::Run(int nCmdShow)
                     {
                         while (emulatedTime_ < targetTime)
                         {
+                            input_.UpdateControllerState();
+
+                            auto anyButton = Buttons::A | Buttons::B | Buttons::Select | Buttons::Start;
+
+                            // automatically map controllers, if unmapped
+                            if (player1Device_ == InputDevice::None)
+                            {
+                                for (
+                                    auto device = InputDevice::Keyboard;
+                                    device <= InputDevice::Controller3;
+                                    device = static_cast<InputDevice>(static_cast<uint32_t>(device) + 1))
+                                {
+                                    if (device != player2Device_ && input_.GetState(device) & anyButton)
+                                    {
+                                        player1Device_ = device;
+                                        menu_.SetPlayer1Device(device);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (player2Device_ == InputDevice::None)
+                            {
+                                for (
+                                    auto device = InputDevice::Keyboard;
+                                    device <= InputDevice::Controller3;
+                                    device = static_cast<InputDevice>(static_cast<uint32_t>(device) + 1))
+                                {
+                                    if (device != player1Device_ && (input_.GetState(device) & anyButton))
+                                    {
+                                        player2Device_ = device;
+                                        menu_.SetPlayer2Device(device);
+                                    }
+                                }
+                            }
+
+                            host_.SetController1State(input_.GetState(player1Device_));
+                            host_.SetController2State(input_.GetState(player2Device_));
                             host_.RunFrame();
                             emulatedTime_ += frameTime;
 
@@ -617,6 +666,23 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (DropFiles(reinterpret_cast<HDROP>(wParam)))
             return 0;
         break;
+
+    case WM_DEVICECHANGE:
+        if (wParam == DBT_DEVNODES_CHANGED)
+        {
+            input_.CheckForNewControllers();
+            menu_.SetControllerConnected(
+                input_.IsConnected(InputDevice::Controller0),
+                input_.IsConnected(InputDevice::Controller1),
+                input_.IsConnected(InputDevice::Controller2),
+                input_.IsConnected(InputDevice::Controller3));
+
+            if (!input_.IsConnected(player1Device_))
+                player1Device_ = InputDevice::None;
+
+            if (!input_.IsConnected(player2Device_))
+                player2Device_ = InputDevice::None;
+        }
     }
 
     return DefWindowProc(window_, uMsg, wParam, lParam);
@@ -624,40 +690,11 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 bool App::ProcessKey(WPARAM key, bool down)
 {
+    if (input_.ProcessKey(static_cast<uint32_t>(key), down))
+        return true;
+
     switch (key)
     {
-    case VK_UP:
-        host_.Up(down);
-        return true;
-
-    case VK_DOWN:
-        host_.Down(down);
-        return true;
-
-    case VK_LEFT:
-        host_.Left(down);
-        return true;
-
-    case VK_RIGHT:
-        host_.Right(down);
-        return true;
-
-    case 'Z':
-        host_.B(down);
-        return true;
-
-    case 'X':
-        host_.A(down);
-        return true;
-
-    case VK_RETURN:
-        host_.Start(down);
-        return true;
-
-    case VK_SHIFT:
-        host_.Select(down);
-        return true;
-
     case VK_ESCAPE:
         if (fullscreen_)
             SetFullscreen(false);
@@ -755,6 +792,29 @@ bool App::ProcessCommand(WORD command)
         return true;
     }
 
+    if (command >= static_cast<WORD>(MenuCommand::InputPlayer1Keyboard)
+        && command <= static_cast<WORD>(MenuCommand::InputPlayer1Controller3))
+    {
+        player1Device_ = static_cast<InputDevice>(command - static_cast<WORD>(MenuCommand::InputPlayer1Keyboard) + 1);
+        menu_.SetPlayer1Device(player1Device_);
+        if (player1Device_ == player2Device_)
+        {
+            player2Device_ = InputDevice::None;
+            menu_.SetPlayer2Device(player2Device_);
+        }
+    }
+
+    if (command >= static_cast<WORD>(MenuCommand::InputPlayer2Keyboard)
+        && command <= static_cast<WORD>(MenuCommand::InputPlayer2Controller3))
+    {
+        player2Device_ = static_cast<InputDevice>(command - static_cast<WORD>(MenuCommand::InputPlayer2Keyboard) + 1);
+        menu_.SetPlayer2Device(player2Device_);
+        if (player2Device_ == player1Device_)
+        {
+            player1Device_ = InputDevice::None;
+            menu_.SetPlayer1Device(player1Device_);
+        }
+    }
 
     return false;
 }

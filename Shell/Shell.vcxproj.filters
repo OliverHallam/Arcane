@@ -15,6 +15,7 @@
     <ClCompile Include="QpcTimer.cpp" />
     <ClCompile Include="DefaultShaders.cpp" />
     <ClCompile Include="ScanlineShaders.cpp" />
+    <ClCompile Include="Input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -40,6 +41,8 @@
     <ClInclude Include="Shaders\DefaultVertexShader.h" />
     <ClInclude Include="DefaultShaders.h" />
     <ClInclude Include="ScanlineShaders.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="InputDevice.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

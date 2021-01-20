@@ -8,6 +8,7 @@
 #include "D3DRenderer.h"
 #include "DynamicSampleRate.h"
 #include "WasapiRenderer.h"
+#include "Input.h"
 
 #include "../NesCoreCpp/RomFile.h"
 
@@ -74,6 +75,10 @@ private:
 
     D3DRenderer d3d_;
     WasapiRenderer wasapi_;
+    Input input_;
+
+    InputDevice player1Device_;
+    InputDevice player2Device_;
 
     uint64_t emulatedTime_;
     DynamicSampleRate sampler_{ 800 };

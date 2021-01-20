@@ -60,6 +60,7 @@
     <ClInclude Include="ChrA12Sensitivity.h" />
     <ClInclude Include="ChrA12.h" />
     <ClInclude Include="SignalEdge.h" />
+    <ClInclude Include="Buttons.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />

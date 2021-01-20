@@ -119,50 +119,14 @@ void Host::Restore()
         system_->RestoreState(state_);
 }
 
-void Host::Up(bool pressed)
+void Host::SetController1State(int32_t buttons)
 {
     if (system_)
-        system_->Controller().Up(pressed);
+        system_->Controller1().SetButtonState(buttons);
 }
 
-void Host::Down(bool pressed)
+void Host::SetController2State(int32_t buttons)
 {
     if (system_)
-        system_->Controller().Down(pressed);
-}
-
-void Host::Left(bool pressed)
-{
-    if (system_)
-        system_->Controller().Left(pressed);
-}
-
-void Host::Right(bool pressed)
-{
-    if (system_)
-        system_->Controller().Right(pressed);
-}
-
-void Host::A(bool pressed)
-{
-    if (system_)
-        system_->Controller().A(pressed);
-}
-
-void Host::B(bool pressed)
-{
-    if (system_)
-        system_->Controller().B(pressed);
-}
-
-void Host::Select(bool pressed)
-{
-    if (system_)
-        system_->Controller().Select(pressed);
-}
-
-void Host::Start(bool pressed)
-{
-    if (system_)
-        system_->Controller().Start(pressed);
+        system_->Controller2().SetButtonState(buttons);
 }

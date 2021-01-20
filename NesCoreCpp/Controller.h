@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Buttons.h"
 #include "ControllerState.h"
 
 #include <cstdint>
@@ -7,16 +8,10 @@
 class Controller
 {
 public:
-    void Up(bool pressed);
-    void Down(bool pressed);
-    void Left(bool pressed);
-    void Right(bool pressed);
+    void ButtonDown(Buttons button);
+    void ButtonUp(Buttons button);
 
-    void A(bool pressed);
-    void B(bool pressed);
-
-    void Select(bool pressed);
-    void Start(bool pressed);
+    void SetButtonState(int32_t buttons);
 
     uint8_t Read();
     void Write(uint8_t data);
