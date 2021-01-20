@@ -74,6 +74,15 @@ void Input::UpdateControllerState()
         if (state.Gamepad.bLeftTrigger >= 128)
             buttons |= BUTTON_REWIND;
 
+        if (state.Gamepad.sThumbLX >= 16384)
+            buttons |= BUTTON_RIGHT;
+        if (state.Gamepad.sThumbLX <= -16384)
+            buttons |= BUTTON_LEFT;
+        if (state.Gamepad.sThumbLY >= 16384)
+            buttons |= BUTTON_UP;
+        if (state.Gamepad.sThumbLY <= -16384)
+            buttons |= BUTTON_DOWN;
+
         controllerState_[i] = buttons;
     }
 }
