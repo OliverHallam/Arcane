@@ -63,9 +63,9 @@ void Input::UpdateControllerState()
 
         // XBOX buttons are the wrong way around compared to Nintendo.
         if ((gamepadButtons & XINPUT_GAMEPAD_A) || (gamepadButtons & XINPUT_GAMEPAD_Y))
-            buttons |= BUTTON_B;
-        if ((gamepadButtons & XINPUT_GAMEPAD_B) || (gamepadButtons & XINPUT_GAMEPAD_X))
             buttons |= BUTTON_A;
+        if ((gamepadButtons & XINPUT_GAMEPAD_B) || (gamepadButtons & XINPUT_GAMEPAD_X))
+            buttons |= BUTTON_B;
         if ((gamepadButtons & XINPUT_GAMEPAD_START) != 0)
             buttons |= BUTTON_START;
         if ((gamepadButtons & XINPUT_GAMEPAD_BACK) != 0)
