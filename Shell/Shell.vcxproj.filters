@@ -16,6 +16,7 @@
     <ClCompile Include="DefaultShaders.cpp" />
     <ClCompile Include="ScanlineShaders.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="RewindBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -43,6 +44,8 @@
     <ClInclude Include="ScanlineShaders.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="InputDevice.h" />
+    <ClInclude Include="RewindBuffer.h" />
+    <ClInclude Include="ExtendedButtons.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

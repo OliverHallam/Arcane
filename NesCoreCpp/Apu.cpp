@@ -175,6 +175,11 @@ void Apu::WriteMMC5(uint16_t address, uint8_t value)
     // TODO
 }
 
+void Apu::Reverse()
+{
+    std::reverse(sampleBuffer_.get(), sampleBuffer_.get() + samplesPerFrame_);
+}
+
 uint32_t Apu::SamplesPerFrame() const
 {
     return samplesPerFrame_;

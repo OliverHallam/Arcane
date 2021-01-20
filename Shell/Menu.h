@@ -11,6 +11,7 @@ enum class MenuCommand : WORD
     Restart = 201,
     Snapshot = 202,
     Restore = 203,
+    RewindEnabled = 204,
 
     InputPlayer1Keyboard = 301,
     InputPlayer1Controller0 = 302,
@@ -36,6 +37,8 @@ public:
 
     HMENU Get() const;
     HACCEL AcceleratorTable() const;
+
+    void SetRewindEnabled(bool enabled);
 
     void SetLoaded(bool isLoaded);
     void SetOverscan(bool overscan);

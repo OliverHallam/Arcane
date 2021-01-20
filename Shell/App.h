@@ -67,6 +67,8 @@ private:
     bool integerScaling_;
     bool scanlines_;
 
+    bool rewindEnabled_;
+
     bool foreground_;
 
     Host host_;

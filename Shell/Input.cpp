@@ -4,6 +4,8 @@
 
 #include "../NesCoreCpp/Buttons.h"
 
+#include "ExtendedButtons.h"
+
 #include <winerror.h>
 #include <Xinput.h>
 
@@ -51,23 +53,26 @@ void Input::UpdateControllerState()
         auto gamepadButtons = state.Gamepad.wButtons;
 
         if (gamepadButtons & XINPUT_GAMEPAD_DPAD_UP)
-            buttons |= Buttons::Up;
+            buttons |= BUTTON_UP;
         if (gamepadButtons & XINPUT_GAMEPAD_DPAD_DOWN)
-            buttons |= Buttons::Down;
+            buttons |= BUTTON_DOWN;
         if (gamepadButtons & XINPUT_GAMEPAD_DPAD_LEFT)
-            buttons |= Buttons::Left;
+            buttons |= BUTTON_LEFT;
         if (gamepadButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
-            buttons |= Buttons::Right;
+            buttons |= BUTTON_RIGHT;
 
         // XBOX buttons are the wrong way around compared to Nintendo.
         if ((gamepadButtons & XINPUT_GAMEPAD_A) || (gamepadButtons & XINPUT_GAMEPAD_Y))
-            buttons |= Buttons::B;
+            buttons |= BUTTON_B;
         if ((gamepadButtons & XINPUT_GAMEPAD_B) || (gamepadButtons & XINPUT_GAMEPAD_X))
-            buttons |= Buttons::A;
+            buttons |= BUTTON_A;
         if ((gamepadButtons & XINPUT_GAMEPAD_START) != 0)
-            buttons |= Buttons::Start;
+            buttons |= BUTTON_START;
         if ((gamepadButtons & XINPUT_GAMEPAD_BACK) != 0)
-            buttons |= Buttons::Select;
+            buttons |= BUTTON_SELECT;
+
+        if (state.Gamepad.bLeftTrigger >= 128)
+            buttons |= BUTTON_REWIND;
 
         controllerState_[i] = buttons;
     }
@@ -128,28 +133,31 @@ int32_t Input::GetButton(uint32_t key)
     switch (key)
     {
     case VK_UP:
-        return Buttons::Up;
+        return BUTTON_UP;
 
     case VK_DOWN:
-        return Buttons::Down;
+        return BUTTON_DOWN;
 
     case VK_LEFT:
-        return Buttons::Left;
+        return BUTTON_LEFT;
 
     case VK_RIGHT:
-        return Buttons::Right;
+        return BUTTON_RIGHT;
 
     case 'Z':
-        return Buttons::B;
+        return BUTTON_B;
 
     case 'X':
-        return Buttons::A;
+        return BUTTON_A;
 
     case VK_RETURN:
-        return Buttons::Start;
+        return BUTTON_START;
 
     case VK_SHIFT:
-        return Buttons::Select;
+        return BUTTON_SELECT;
+
+    case VK_BACK:
+        return BUTTON_REWIND;
 
     default:
         return 0;

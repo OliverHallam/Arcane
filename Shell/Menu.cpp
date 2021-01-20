@@ -20,6 +20,8 @@ Menu::Menu()
     AppendMenu(gameMenu, MF_SEPARATOR, NULL, NULL);
     AppendMenu(gameMenu, MF_DISABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Snapshot)), L"Create &Snapshot\tF6");
     AppendMenu(gameMenu, MF_DISABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::Restore)), L"&Restore Snapshot\tF9");
+    AppendMenu(gameMenu, MF_SEPARATOR, NULL, NULL);
+    AppendMenu(gameMenu, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::RewindEnabled)), L"Enable &Rewind");
 
     AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(gameMenu), L"&Game");
 
@@ -71,6 +73,11 @@ HMENU Menu::Get() const
 HACCEL Menu::AcceleratorTable() const
 {
     return acceleratorTable_;
+}
+
+void Menu::SetRewindEnabled(bool enabled)
+{
+    CheckMenuItem(menuBar_, static_cast<UINT>(MenuCommand::RewindEnabled), enabled ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void Menu::SetLoaded(bool isLoaded)

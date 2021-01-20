@@ -88,7 +88,7 @@ void ApuPulse::RestoreState(const ApuPulseState& state)
     lengthCounter_.RestoreState(state.LengthCounter);
     sweep_.RestoreState(state.Sweep);
 
-    state_ = state_;
+    state_ = state.Core;
 }
 
 uint8_t ApuPulse::GetDutyLookup(uint8_t duty)

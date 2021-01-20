@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CartCoreState.h"
+
 #include <array>
 #include <cstdint>
 

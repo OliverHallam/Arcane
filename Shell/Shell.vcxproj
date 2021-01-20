@@ -241,6 +241,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="QpcTimer.cpp" />
+    <ClCompile Include="RewindBuffer.cpp" />
     <ClCompile Include="SaveFile.cpp" />
     <ClCompile Include="ScanlineShaders.cpp" />
     <ClCompile Include="WasapiRenderer.cpp" />
@@ -259,12 +260,14 @@
     <ClInclude Include="Error.h" />
     <ClInclude Include="Host.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="ExtendedButtons.h" />
     <ClInclude Include="InputDevice.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="QpcTimer.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="RewindBuffer.h" />
     <ClInclude Include="SaveFile.h" />
     <ClInclude Include="ScanlineShaders.h" />
     <ClInclude Include="Shaders\DefaultPixelShader.h" />

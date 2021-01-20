@@ -4,6 +4,8 @@
 #include "..\NesCoreCpp\NesSystem.h"
 #include "..\NesCoreCpp\SystemState.h"
 
+#include "RewindBuffer.h"
+
 class Host
 {
 public:
@@ -18,6 +20,9 @@ public:
     void Stop();
     void Step();
     void Restart();
+
+    void EnableRewind();
+    void DisableRewind();
 
     bool Loaded() const;
     bool Running() const;
@@ -41,8 +46,13 @@ private:
     uint32_t sampleRate_;
     std::unique_ptr<NesSystem> system_;
 
+    std::unique_ptr<RewindBuffer> rewindBuffer_;
+
     bool running_;
     bool step_;
+
+    bool wasRewindPressed_;
+    bool rewind_;
 
     SystemState state_;
 };

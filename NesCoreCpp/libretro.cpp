@@ -151,21 +151,21 @@ void retro_run(void)
     uint32_t buttons = 0;
 
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))
-        buttons |= Buttons::Left;
+        buttons |= BUTTON_LEFT;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))
-        buttons |= Buttons::Up;
+        buttons |= BUTTON_UP;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))
-        buttons |= Buttons::Down;
+        buttons |= BUTTON_DOWN;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))
-        buttons |= Buttons::Right;
+        buttons |= BUTTON_RIGHT;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A))
-        buttons |= Buttons::A;
+        buttons |= BUTTON_A;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B))
-        buttons |= Buttons::B;
+        buttons |= BUTTON_B;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START))
-        buttons |= Buttons::Start;
+        buttons |= BUTTON_START;
     if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT))
-        buttons |= Buttons::Select;
+        buttons |= BUTTON_SELECT;
 
     controller.SetButtonState(buttons);
 

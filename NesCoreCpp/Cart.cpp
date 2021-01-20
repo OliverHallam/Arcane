@@ -1170,10 +1170,10 @@ void Cart::RestoreState(const CartState& state)
     state_ = state.Core;
 
     if (prgRamBanks_.size() > 0)
-        std::copy(begin(state.PrgRamBank1), end(state.PrgRamBank1), prgRamBanks_[0]);
+        std::copy(begin(state.PrgRamBank1), begin(state.PrgRamBank1) + prgRamMask_ + 1, prgRamBanks_[0]);
 
     if (prgRamBanks_.size() > 1)
-        std::copy(begin(state.PrgRamBank2), end(state.PrgRamBank2), prgRamBanks_[1]);
+        std::copy(begin(state.PrgRamBank2), begin(state.PrgRamBank2) + prgRamMask_ + 1, prgRamBanks_[1]);
 
     if (chrRamStart_ >= 0)
         std::copy(begin(state.ChrRam) + chrRamStart_, end(state.ChrRam), begin(chrData_));

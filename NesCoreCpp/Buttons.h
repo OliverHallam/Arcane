@@ -2,12 +2,12 @@
 
 enum Buttons
 {
-    A = 0x80,
-    B = 0x40,
-    Select = 0x20,
-    Start = 0x10,
-    Up = 0x08,
-    Down = 0x04,
-    Left = 0x02,
-    Right = 0x01
+    BUTTON_A = 0x80,
+    BUTTON_B = 0x40,
+    BUTTON_SELECT = 0x20,
+    BUTTON_START = 0x10,
+    BUTTON_UP = 0x08,
+    BUTTON_DOWN = 0x04,
+    BUTTON_LEFT = 0x02,
+    BUTTON_RIGHT = 0x01
 };

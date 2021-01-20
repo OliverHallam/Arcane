@@ -57,11 +57,11 @@ void Controller::CaptureState()
 
     // Prevent inputs that are supposed to be impossible from a NES controller here - this can cause horrible
     // crashes in some games, e.g. Burger Time
-    auto upAndDown = (Buttons::Up | Buttons::Down);
+    auto upAndDown = (Buttons::BUTTON_UP | Buttons::BUTTON_DOWN);
     if ((buttons & upAndDown) == upAndDown)
         buttons &= ~upAndDown;
 
-    auto leftAndRight = (Buttons::Left | Buttons::Right);
+    auto leftAndRight = (Buttons::BUTTON_LEFT | Buttons::BUTTON_RIGHT);
     if ((buttons & leftAndRight) == leftAndRight)
         buttons &= ~leftAndRight;
 

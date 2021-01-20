@@ -31,6 +31,7 @@ public:
     void EnableMMC5(bool enabled);
     void WriteMMC5(uint16_t address, uint8_t value);
 
+    void Reverse();
     uint32_t SamplesPerFrame() const;
     const int16_t* Samples() const;
 

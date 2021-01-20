@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "Host.h"
+#include "ExtendedButtons.h"
 
 Host::Host()
     : sampleRate_{ 0 },
@@ -23,6 +24,9 @@ void Host::Load(std::unique_ptr<Cart> cartridge)
     system_->Reset();
 
     system_->CaptureState(&state_);
+
+    if (rewindBuffer_)
+        rewindBuffer_->Clear();
 }
 
 void Host::Unload()
@@ -64,6 +68,17 @@ void Host::Restart()
     system_->Reset();
 }
 
+void Host::EnableRewind()
+{
+    rewindBuffer_ = std::make_unique<RewindBuffer>();
+}
+
+void Host::DisableRewind()
+{
+    rewindBuffer_.reset();
+    rewind_ = false;
+}
+
 bool Host::Loaded() const
 {
     return !!system_;
@@ -76,7 +91,21 @@ bool Host::Running() const
 
 void Host::RunFrame()
 {
+    if (rewind_)
+    {
+        assert(rewindBuffer_);
+
+        auto state = rewindBuffer_->Pop();
+        if (state)
+            system_->RestoreState(*state);
+        else
+            rewind_ = false;
+    }
+
     system_->RunFrame();
+
+    if (rewindBuffer_ && !rewind_)
+        system_->CaptureState(rewindBuffer_->Push());
 
     if (step_)
         running_ = false;
@@ -94,6 +123,11 @@ uint32_t Host::RefreshRate() const
 
 const int16_t* Host::AudioSamples() const
 {
+    if (rewind_)
+    {
+        system_->Apu().Reverse();
+    }
+
     return system_->Apu().Samples();
 }
 
@@ -122,11 +156,28 @@ void Host::Restore()
 void Host::SetController1State(int32_t buttons)
 {
     if (system_)
-        system_->Controller1().SetButtonState(buttons);
+        system_->Controller1().SetButtonState(buttons & 0xff);
+
+    if (rewindBuffer_)
+    {
+        if (buttons & BUTTON_REWIND)
+        {
+            if (!wasRewindPressed_)
+            {
+                rewind_ = true;
+                wasRewindPressed_ = true;
+            }
+        }
+        else
+        {
+            rewind_ = false;
+            wasRewindPressed_ = false;
+        }
+    }
 }
 
 void Host::SetController2State(int32_t buttons)
 {
     if (system_)
-        system_->Controller2().SetButtonState(buttons);
+        system_->Controller2().SetButtonState(buttons & 0xff);
 }

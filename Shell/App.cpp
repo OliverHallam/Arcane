@@ -69,6 +69,11 @@ int App::Run(int nCmdShow)
             return -1;
         }
 
+        // For mysterious reasons, all the controllers show as disconnected, unless you do this twice with a delay in
+        // between.  We'll repeat after the first frame is displayed.
+        input_.CheckForNewControllers();
+        bool xInputInitialized = false;
+
         try
         {
             d3d_.Initialize(window_, Display::WIDTH, Display::HEIGHT);
@@ -80,13 +85,6 @@ int App::Run(int nCmdShow)
             ReportError(L"Error initializing renderer", e);
             return -1;
         }
-
-        input_.CheckForNewControllers();
-        menu_.SetControllerConnected(
-            input_.IsConnected(InputDevice::Controller0),
-            input_.IsConnected(InputDevice::Controller1),
-            input_.IsConnected(InputDevice::Controller2),
-            input_.IsConnected(InputDevice::Controller3));
 
         try
         {
@@ -129,7 +127,6 @@ int App::Run(int nCmdShow)
         auto frameDrift = frameTime / 20;
 
         sampler_ = DynamicSampleRate { wasapi_.SampleRate() / 60 };
-
 
         initialized_ = true;
         bool running = false;
@@ -174,11 +171,22 @@ int App::Run(int nCmdShow)
                     bool outOfSync = !frameReady || (emulatedTime_ + 4 * frameTime) < targetTime;
                     if (!outOfSync)
                     {
+                        if (!xInputInitialized)
+                        {
+                            input_.CheckForNewControllers();
+                            menu_.SetControllerConnected(
+                                input_.IsConnected(InputDevice::Controller0),
+                                input_.IsConnected(InputDevice::Controller1),
+                                input_.IsConnected(InputDevice::Controller2),
+                                input_.IsConnected(InputDevice::Controller3));
+                            xInputInitialized = true;
+                        }
+
                         while (emulatedTime_ < targetTime)
                         {
                             input_.UpdateControllerState();
 
-                            auto anyButton = Buttons::A | Buttons::B | Buttons::Select | Buttons::Start;
+                            auto anyButton = Buttons::BUTTON_A | Buttons::BUTTON_B | Buttons::BUTTON_SELECT | Buttons::BUTTON_START;
 
                             // automatically map controllers, if unmapped
                             if (player1Device_ == InputDevice::None)
@@ -298,7 +306,6 @@ void App::StartRunning()
 {
     auto hThread = GetCurrentThread();
     SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
-
 
     // wait for a vsync to get an accurate time
     d3d_.WaitForFrame();
@@ -760,6 +767,17 @@ bool App::ProcessCommand(WORD command)
     {
         host_.Restore();
         return true;
+    }
+
+    if (command == static_cast<WORD>(MenuCommand::RewindEnabled))
+    {
+        rewindEnabled_ = !rewindEnabled_;
+        if (rewindEnabled_)
+            host_.EnableRewind();
+        else
+            host_.DisableRewind();
+
+        menu_.SetRewindEnabled(rewindEnabled_);
     }
 
     if (command == static_cast<WORD>(MenuCommand::Fullscreen))
