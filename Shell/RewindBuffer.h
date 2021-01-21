@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../NesCoreCpp/SystemState.h"
+#include "../NesCore/SystemState.h"
 
 class RewindBuffer
 {

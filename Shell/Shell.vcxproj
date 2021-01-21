@@ -281,11 +281,6 @@
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NesCoreCpp\NesCoreCpp.vcxproj">
-      <Project>{432eff99-29c3-4d3e-8348-371ea30df6fb}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <FxCompile Include="Shaders\DefaultPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Pixel</ShaderType>
@@ -381,6 +376,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NesCore\NesCore.vcxproj">
+      <Project>{432eff99-29c3-4d3e-8348-371ea30df6fb}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,7 +13,7 @@ struct SystemState
     CpuState CpuState;
     PpuState PpuState;
     ApuState ApuState;
-    ControllerState Controller1State;
-    ControllerState Controller2State;
+    ControllerState Controller1State{};
+    ControllerState Controller2State{};
     CartState CartState;
 };

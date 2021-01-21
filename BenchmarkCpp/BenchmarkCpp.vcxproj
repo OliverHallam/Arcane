@@ -156,12 +156,8 @@
     <ClCompile Include="BenchmarkCpp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NesCoreCpp\NesCoreCpp.vcxproj">
+    <ProjectReference Include="..\NesCore\NesCore.vcxproj">
       <Project>{432eff99-29c3-4d3e-8348-371ea30df6fb}</Project>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

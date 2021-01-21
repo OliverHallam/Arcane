@@ -6,7 +6,9 @@
 Host::Host()
     : sampleRate_{ 0 },
     running_ { false },
-    step_ { false }
+    step_ { false },
+    rewind_{ false },
+    wasRewindPressed_{ false }
 {
 }
 

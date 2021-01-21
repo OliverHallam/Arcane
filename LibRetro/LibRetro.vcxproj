@@ -19,15 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\NesCoreCpp\libretro.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\NesCoreCpp\libretro.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\NesCoreCpp\NesCoreCpp.vcxproj">
       <Project>{432eff99-29c3-4d3e-8348-371ea30df6fb}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\NesCore\NesCore.vcxproj">
+      <Project>{432eff99-29c3-4d3e-8348-371ea30df6fb}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="libretro.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libretro.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

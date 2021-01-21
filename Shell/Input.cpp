@@ -2,7 +2,7 @@
 
 #include "Input.h"
 
-#include "../NesCoreCpp/Buttons.h"
+#include "../NesCore/Buttons.h"
 
 #include "ExtendedButtons.h"
 

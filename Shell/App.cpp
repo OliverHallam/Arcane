@@ -12,8 +12,8 @@
 #include "WasapiRenderer.h"
 #include "QpcTimer.h"
 
-#include "../NesCoreCpp/GameDatabase.h"
-#include "../NesCoreCpp/RomFile.h"
+#include "../NesCore/GameDatabase.h"
+#include "../NesCore/RomFile.h"
 
 #include <shellapi.h>
 #include <dwmapi.h>

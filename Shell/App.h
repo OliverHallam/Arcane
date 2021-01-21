@@ -10,7 +10,7 @@
 #include "WasapiRenderer.h"
 #include "Input.h"
 
-#include "../NesCoreCpp/RomFile.h"
+#include "../NesCore/RomFile.h"
 
 #include <shellapi.h>
 

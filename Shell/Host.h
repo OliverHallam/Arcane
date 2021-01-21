@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
-#include "..\NesCoreCpp\NesSystem.h"
-#include "..\NesCoreCpp\SystemState.h"
+#include "..\NesCore\NesSystem.h"
+#include "..\NesCore\SystemState.h"
 
 #include "RewindBuffer.h"
 

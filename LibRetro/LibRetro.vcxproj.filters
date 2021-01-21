@@ -7,9 +7,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\NesCoreCpp\libretro.cpp" />
+    <ClCompile Include="libretro.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\NesCoreCpp\libretro.h" />
+    <ClInclude Include="libretro.h" />
   </ItemGroup>
 </Project>

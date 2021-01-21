@@ -4,12 +4,12 @@
 #include <memory>
 #include <vector>
 
-#include "..\NesCoreCpp\RomFile.h"
-#include "..\NesCoreCpp\NesSystem.h"
+#include "..\NesCore\RomFile.h"
+#include "..\NesCore\NesSystem.h"
 
 int main()
 {
-    auto path = R"(c:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
+    auto path = R"(d:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
     auto Frames = 10000;
 
     std::ifstream file(path, std::ios::binary | std::ios::ate);
