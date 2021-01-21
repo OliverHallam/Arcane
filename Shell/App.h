@@ -30,7 +30,8 @@ private:
 
     HWND InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow);
 
-    std::unique_ptr<Cart> LoadGame(HWND wnd, const std::wstring& romPath);
+    void Unload();
+    bool LoadGame(HWND wnd, const std::wstring& romPath);
     std::unique_ptr<RomFile> LoadCart(const std::wstring& romPath);
 
     void Open(HWND window);

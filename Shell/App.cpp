@@ -105,14 +105,8 @@ int App::Run(int nCmdShow)
 
         if (romPath.size())
         {
-            auto cart = LoadGame(window_, romPath);
-            if (!cart)
+            if (!LoadGame(window_, romPath))
                 return -1;
-
-            host_.Load(std::move(cart));
-            host_.Start();
-
-            menu_.SetLoaded(true);
         }
         else
         {
@@ -373,7 +367,7 @@ HWND App::InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow)
 
     auto wnd = CreateWindow(
         className,
-        L"NES",
+        L"Arcane",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -395,7 +389,16 @@ HWND App::InitializeWindow(HINSTANCE hInstance, HMENU menu, int nCmdShow)
     return wnd;
 }
 
-std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
+void App::Unload()
+{
+    host_.Stop();
+    host_.Unload();
+    save_.Close();
+    menu_.SetLoaded(false);
+    SetWindowText(window_, L"Arcane");
+}
+
+bool App::LoadGame(HWND wnd, const std::wstring& romPath)
 {
     std::unique_ptr<RomFile> romFile;
     try
@@ -405,12 +408,12 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
     catch (const Error& e)
     {
         ReportError(L"Error loading cartridge", e);
-        return nullptr;
+        return false;
     }
     catch (const winrt::hresult_error& e)
     {
         ReportError(L"Error loading cartridge", e);
-        return nullptr;
+        return false;
     }
 
     auto cart = TryCreateCart(
@@ -421,7 +424,7 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
     if (!cart)
     {
         MessageBox(wnd, L"The selected game is not supported", L"Error loading game", MB_ICONERROR | MB_OK);
-        return nullptr;
+        return false;
     }
 
     // Now we've loaded the ROM, we can mount the new save file
@@ -459,7 +462,19 @@ std::unique_ptr<Cart> App::LoadGame(HWND wnd, const std::wstring& romPath)
 
     cart->Initialize();
 
-    return cart;
+    host_.Load(std::move(cart));
+    host_.Start();
+
+    menu_.SetLoaded(true);
+
+    auto slashPath = romPath.find_last_of('\\');
+    auto dotPos = romPath.find_last_of('.');
+    if (dotPos >= 0)
+        SetWindowText(window_, (romPath.substr(slashPath + 1, dotPos - slashPath - 1) + L" - Arcane").c_str());
+    else
+        SetWindowText(window_, L"Arcane");
+
+    return true;
 }
 
 std::unique_ptr<RomFile> App::LoadCart(const std::wstring& romPath)
@@ -544,20 +559,10 @@ void App::Open(HWND window)
 
     if (GetOpenFileName(&ofn))
     {
-        host_.Stop();
-        host_.Unload();
-        save_.Close();
+        Unload();
 
         std::wstring romPath(ofn.lpstrFile);
-        auto cart = LoadGame(window, romPath);
-
-        if (cart)
-        {
-            host_.Load(std::move(cart));
-            host_.Start();
-
-            menu_.SetLoaded(true);
-        }
+        LoadGame(window, romPath);
     }
 }
 
@@ -738,10 +743,7 @@ bool App::ProcessCommand(WORD command)
 
     if (command == static_cast<WORD>(MenuCommand::Close))
     {
-        host_.Stop();
-        host_.Unload();
-        save_.Close();
-        menu_.SetLoaded(false);
+        Unload();
         return true;
     }
 
@@ -850,20 +852,10 @@ bool App::DropFiles(HDROP drop)
 
     DragFinish(drop);
 
-    host_.Stop();
-    host_.Unload();
-    save_.Close();
+    Unload();
 
     std::wstring romPath(path);
-    auto cart = LoadGame(window_, romPath);
-
-    if (cart)
-    {
-        host_.Load(std::move(cart));
-        host_.Start();
-
-        menu_.SetLoaded(true);
-    }
+    LoadGame(window_, romPath);
 
     return true;
 }
