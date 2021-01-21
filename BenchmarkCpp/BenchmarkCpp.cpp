@@ -7,9 +7,12 @@
 #include "..\NesCore\RomFile.h"
 #include "..\NesCore\NesSystem.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-    auto path = R"(d:\roms\NESRoms\World\Super Mario Bros (JU) (PRG 0).nes)";
+    if (argc != 1)
+        return -1;
+
+    auto path = argv[0];
     auto Frames = 10000;
 
     std::ifstream file(path, std::ios::binary | std::ios::ate);
