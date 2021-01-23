@@ -8,4 +8,6 @@ struct PpuBackgroundState
     uint8_t FineX{};
     uint16_t BackgroundPatternBase{};
     uint32_t LeftCrop{};
+
+    int32_t PatternBitShift;
 };

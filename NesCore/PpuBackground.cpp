@@ -5,6 +5,7 @@
 PpuBackground::PpuBackground(Bus& bus) :
     bus_{ bus }
 {
+    state_.PatternBitShift = 7;
 }
 
 void PpuBackground::SetBasePatternAddress(uint16_t address)
@@ -19,8 +20,8 @@ uint16_t PpuBackground::GetBasePatternAddress() const
 
 void PpuBackground::SetFineX(uint8_t value)
 {
-    patternBitShift_ += state_.FineX - value;
-    patternBitShift_ &= 7;
+    state_.PatternBitShift += state_.FineX - value;
+    state_.PatternBitShift &= 7;
 
     state_.FineX = value;
 }
@@ -58,7 +59,7 @@ void PpuBackground::BeginScanline()
 
 uint8_t PpuBackground::Render()
 {
-    auto patternBytes = currentTile_.PatternBytes >> patternBitShift_;
+    auto patternBytes = currentTile_.PatternBytes >> state_.PatternBitShift;
     auto index = (uint8_t)(
         ((patternBytes >> 7) & 2) |
         (patternBytes & 1));
@@ -139,7 +140,7 @@ void PpuBackground::RenderScanline()
     auto patternBytes = tile.PatternBytes;
     auto attributeBits = tile.AttributeBits;
 
-    switch (patternBitShift_)
+    switch (state_.PatternBitShift)
     {
     case 7:
         index = (uint8_t)(attributeBits | ((patternBytes >> 14) & 2) | ((patternBytes >> 7) & 1));
@@ -431,9 +432,9 @@ void PpuBackground::RunLoad()
 
 void PpuBackground::Tick(int32_t cycle)
 {
-    if (patternBitShift_ == 0)
+    if (state_.PatternBitShift == 0)
     {
-        patternBitShift_ = 7;
+        state_.PatternBitShift = 7;
 
         currentTileIndex_ = ((cycle) >> 3) + 1;
 
@@ -441,7 +442,7 @@ void PpuBackground::Tick(int32_t cycle)
     }
     else
     {
-        patternBitShift_--;
+        state_.PatternBitShift--;
     }
 }
 

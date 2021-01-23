@@ -86,8 +86,6 @@ private:
     uint32_t currentTileIndex_{};
     Tile currentTile_;
 
-    int32_t patternBitShift_{7};
-
     // cache for code performance
     uint16_t patternAddress_{};
 
