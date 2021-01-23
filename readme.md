@@ -8,13 +8,15 @@ The goal of the project is to be lightweight, fast and responsive whilst being u
 
 ## Getting Started
 
+Download the latest release from the [Releases](../../releases/latest) page.
+
 Arcane is distributed as a single executable, less than 200kb in size.  Windows 8.1 is required, but beyond that any
 machine that can run Windows should be able to run Arcane.
 
 Games can be controlled using either an XBOX controller, or the keyboard.
 
 Keyboard controls are arrow keys, `Z` and `X` for the A and B buttons respectively, and `ENTER` and `SHIFT` for Start
-and Select.  The backspace key activates the rewind feature, if it has been enabled in the buffer.
+and Select.  The backspace key activates the rewind feature, if it has been enabled in the menu.
 
 On a controller, either the D-Pad or left analog stick can be used for directional controls.  Both the `A` and `Y`
 buttons are mapped to A, and the `X` and `B` buttons are mapped to `B`.  The `Start` and `Back` buttons are mapped to
