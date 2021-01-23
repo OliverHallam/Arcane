@@ -280,7 +280,7 @@ int App::Run(int nCmdShow)
                     }
                     else
                     {
-                        d3d_.RenderFrame(host_.PixelData(), fullscreen_ && foreground_ ? 0 : 1);
+                        d3d_.RenderFrame(host_.PixelData(), 1);
                     }
 
                     // allow ourselves to run slightly behind if it means we nicely hit a frame boundary.
