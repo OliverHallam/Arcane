@@ -9,10 +9,10 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc != 1)
+    if (argc != 2)
         return -1;
 
-    auto path = argv[0];
+    auto path = argv[1];
     auto Frames = 10000;
 
     std::ifstream file(path, std::ios::binary | std::ios::ate);
