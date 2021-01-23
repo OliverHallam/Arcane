@@ -44,6 +44,8 @@ int App::Run(int nCmdShow)
     auto hProcess = GetCurrentProcess();
     SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS);
 
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE);
+
     try
     {
         std::wstring romPath;
