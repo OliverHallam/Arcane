@@ -109,11 +109,16 @@ int App::Run(int nCmdShow)
         {
             if (!LoadGame(window_, romPath))
                 return -1;
+
+            splash_ = false;
         }
         else
         {
-            Open(window_);
+            splash_ = true;
+            startSplash_ = true;
         }
+
+        d3d_.SetSplash(splash_);
 
         uint64_t qpcFreqeuncy = QpcTimer::Frequency();
 
@@ -128,10 +133,39 @@ int App::Run(int nCmdShow)
         bool running = false;
         bool hitSync = false;
         auto audioSamples = 0;
+
+        uint64_t splashStartTime = 0;
+
         while (true)
         {
             MSG msg;
-            if (running)
+            if (splash_)
+            {
+                while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0)
+                {
+                    if (msg.message == WM_QUIT)
+                        return 0;
+
+                    if (!TranslateAccelerator(window_, menu_.AcceleratorTable(), &msg))
+                    {
+                        TranslateMessage(&msg);
+                        DispatchMessage(&msg);
+                    }
+                }
+
+                auto currentTime = QpcTimer::Current();
+
+                if (startSplash_)
+                {
+                    splashStartTime = currentTime;
+                    startSplash_ = 0;
+                }
+
+                auto splashTime = static_cast<float>(currentTime - splashStartTime) / qpcFreqeuncy;
+                if (!d3d_.RenderSplash(splashTime))
+                    splash_ = false;
+            }
+            else if (running)
             {
                 auto frameReady = !fullscreen_ || d3d_.WaitForFrame();
 
@@ -398,6 +432,12 @@ void App::Unload()
     save_.Close();
     menu_.SetLoaded(false);
     SetWindowText(window_, L"Arcane");
+
+    d3d_.ClearFrameBuffer();
+
+    splash_ = true;
+    startSplash_ = true;
+    d3d_.SetSplash(true);
 }
 
 bool App::LoadGame(HWND wnd, const std::wstring& romPath)
@@ -475,6 +515,9 @@ bool App::LoadGame(HWND wnd, const std::wstring& romPath)
         SetWindowText(window_, (romPath.substr(slashPath + 1, dotPos - slashPath - 1) + L" - Arcane").c_str());
     else
         SetWindowText(window_, L"Arcane");
+
+    splash_ = false;
+    d3d_.SetSplash(false);
 
     return true;
 }
@@ -665,7 +708,9 @@ LRESULT App::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             d3d_.OnSize();
             if (!host_.Running())
+            {
                 d3d_.RepeatLastFrame();
+            }
         }
 
         if (host_.Running())

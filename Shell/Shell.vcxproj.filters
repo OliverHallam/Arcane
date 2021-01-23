@@ -17,6 +17,8 @@
     <ClCompile Include="ScanlineShaders.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="RewindBuffer.cpp" />
+    <ClCompile Include="SplashRenderer.cpp" />
+    <ClCompile Include="LogoGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -46,6 +48,10 @@
     <ClInclude Include="InputDevice.h" />
     <ClInclude Include="RewindBuffer.h" />
     <ClInclude Include="ExtendedButtons.h" />
+    <ClInclude Include="SplashRenderer.h" />
+    <ClInclude Include="Shaders\SplashVertexShader.h" />
+    <ClInclude Include="Shaders\SplashPixelShader.h" />
+    <ClInclude Include="LogoGenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
@@ -55,6 +61,8 @@
     <FxCompile Include="Shaders\DefaultVertexShader.hlsl" />
     <FxCompile Include="Shaders\ScanlinePixelShader.hlsl" />
     <FxCompile Include="Shaders\ScanlineVertexShader.hlsl" />
+    <FxCompile Include="Shaders\SplashVertexShader.hlsl" />
+    <FxCompile Include="Shaders\SplashPixelShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -5,11 +5,22 @@
 
 #include <dwmapi.h>
 
+struct Vertex
+{
+    float x;
+    float y;
+
+    float tx;
+    float ty;
+};
+
 D3DRenderer::D3DRenderer() :
     width_{},
     height_{},
     window_{ NULL },
     overscan_{},
+    splash_{},
+    scanlines_{},
     integerScaling_{ true }
 {
 }
@@ -34,20 +45,18 @@ void D3DRenderer::Initialize(HWND window, uint32_t width, uint32_t height)
     CreateFrameBuffer();
     CreateRasterizerState();
 
+    CreateFramebufferSampler();
+
     defaultShaders_.Create(device_.get());
     scanlineShaders_.Create(device_.get());
-    CreateFramebufferSampler();
+    splashRenderer_.Create(device_.get());
 }
 
 void D3DRenderer::PrepareRenderState()
 {
-    // Input assembler
-    UINT stride = sizeof(Vertex);
-    UINT offset = 0;
-    ID3D11Buffer* const vertexBuffers[1] = { vertexBuffer_.get() };
-    deviceContext_->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
-    deviceContext_->IASetIndexBuffer(indexBuffer_.get(), DXGI_FORMAT_R16_UINT, 0);
     deviceContext_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    SetBuffers();
 
     // rasterizer
     deviceContext_->RSSetState(rasterizerState_.get());
@@ -77,6 +86,40 @@ uint64_t D3DRenderer::GetLastSyncTime(bool reset) const
         winrt::check_hresult(hr);
 
     return stats.SyncQPCTime.QuadPart;
+}
+
+bool D3DRenderer::RenderSplash(float time)
+{
+    bool result = splashRenderer_.PrepareRender(deviceContext_.get(), time);
+
+    RenderSplash();
+
+    return result;
+}
+
+void D3DRenderer::RenderSplash()
+{
+    FLOAT grey[4]{ 0.75, 0.75, 0.75, 1.0 };
+    deviceContext_->ClearRenderTargetView(renderTargetView_.get(), grey);
+
+    auto renderTargetView = renderTargetView_.get();
+    deviceContext_->OMSetRenderTargets(1, &renderTargetView, nullptr);
+
+    splashRenderer_.Render(deviceContext_.get());
+
+    auto hr = swapChain_->Present(1, 0);
+    winrt::check_hresult(hr);
+}
+
+void D3DRenderer::ClearFrameBuffer()
+{
+    D3D11_MAPPED_SUBRESOURCE resource;
+    auto hr = deviceContext_->Map(frameBuffer_.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+    winrt::check_hresult(hr);
+
+    ZeroMemory(resource.pData, resource.RowPitch * height_);
+
+    deviceContext_->Unmap(frameBuffer_.get(), 0);
 }
 
 void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
@@ -114,7 +157,13 @@ void D3DRenderer::RenderFrame(const uint32_t* buffer, uint32_t displayFrames)
 
 void D3DRenderer::RepeatLastFrame()
 {
-    FLOAT grey[4]{ 0.125, 0.125, 0.125, 1.0 };
+    if (splash_)
+    {
+        RenderSplash();
+        return;
+    }
+
+    FLOAT grey[4] { 0.125, 0.125, 0.125, 1.0 };
     deviceContext_->ClearRenderTargetView(renderTargetView_.get(), grey);
 
     auto renderTargetView = renderTargetView_.get();
@@ -195,24 +244,54 @@ void D3DRenderer::OnSize()
         swapChain_->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
 
         CreateRenderTarget();
+
         UpdateViewport();
+    }
+}
+
+void D3DRenderer::SetSplash(bool splash)
+{
+    splash_ = splash;
+
+    UpdateViewport();
+
+    if (splash)
+    {
+        splashRenderer_.PrepareRenderState(deviceContext_.get());
+    }
+    else
+    {
+        SetBuffers();
+        if (scanlines_)
+            scanlineShaders_.PrepareRenderState(deviceContext_.get());
+        else
+            defaultShaders_.PrepareRenderState(deviceContext_.get());
     }
 }
 
 void D3DRenderer::SetOverscan(bool overscan)
 {
     overscan_ = overscan;
-    UpdateViewport();
+
+    if (!splash_)
+        UpdateViewport();
 }
 
 void D3DRenderer::SetIntegerScaling(bool integerScaling)
 {
     integerScaling_ = integerScaling;
-    UpdateViewport();
+
+    if (!splash_)
+        UpdateViewport();
 }
 
 void D3DRenderer::SetScanlines(bool scanlines)
 {
+    scanlines_ = scanlines;
+
+    if (splash_)
+        return;
+
     if (scanlines)
         scanlineShaders_.PrepareRenderState(deviceContext_.get());
     else
@@ -401,6 +480,15 @@ void D3DRenderer::CreateFramebufferSampler()
     winrt::check_hresult(hr);
 }
 
+void D3DRenderer::SetBuffers()
+{
+    UINT stride = sizeof(Vertex);
+    UINT offset = 0;
+    ID3D11Buffer* const vertexBuffers[1] = { vertexBuffer_.get() };
+    deviceContext_->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
+    deviceContext_->IASetIndexBuffer(indexBuffer_.get(), DXGI_FORMAT_R16_UINT, 0);
+}
+
 void D3DRenderer::CreateRasterizerState()
 {
     D3D11_RASTERIZER_DESC rasterizerDesc;
@@ -422,7 +510,9 @@ void D3DRenderer::CreateRasterizerState()
 
 void D3DRenderer::UpdateViewport()
 {
-    if (overscan_)
+    if (splash_)
+        UpdateViewport(256, 96);
+    else if (overscan_)
         UpdateViewport(width_ - 16, height_ - 16);
     else
         UpdateViewport(width_, height_);
@@ -438,7 +528,7 @@ void D3DRenderer::UpdateViewport(int width, int height)
     backBuffer->GetDesc(&backBufferDesc);
 
     FLOAT viewportHeight, viewportWidth;
-    if (integerScaling_)
+    if (integerScaling_ && !splash_)
     {
         // round down to nearest pixel multiple
         viewportHeight = static_cast<FLOAT>((backBufferDesc.Height / height) * height);
