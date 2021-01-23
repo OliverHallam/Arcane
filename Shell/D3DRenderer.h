@@ -2,6 +2,7 @@
 
 #include "DefaultShaders.h"
 #include "ScanlineShaders.h"
+#include "SplashRenderer.h"
 
 #include <cstdint>
 #include <d3d11_4.h>
@@ -19,6 +20,11 @@ public:
     bool WaitForFrame() const;
     uint64_t GetLastSyncTime(bool reset) const;
 
+    bool RenderSplash(float time);
+    void RenderSplash();
+
+    void ClearFrameBuffer();
+
     void RenderFrame(const uint32_t* buffer, uint32_t refreshCycles);
     void RepeatLastFrame();
     void RenderClear();
@@ -28,6 +34,7 @@ public:
 
     void OnSize();
 
+    void SetSplash(bool splash);
     void SetOverscan(bool overscan);
     void SetIntegerScaling(bool integerScaling);
     void SetScanlines(bool scanlines);
@@ -42,6 +49,8 @@ private:
     void CreateRasterizerState();
     void CreateFramebufferSampler();
 
+    void SetBuffers();
+
     void UpdateViewport();
     void UpdateViewport(int width, int height);
 
@@ -50,6 +59,8 @@ private:
 
     bool overscan_;
     bool integerScaling_;
+    bool scanlines_;
+    bool splash_;
 
     winrt::com_ptr<ID3D11Device> device_;
     winrt::com_ptr<ID3D11DeviceContext> deviceContext_;
@@ -70,14 +81,8 @@ private:
     DefaultShaders defaultShaders_;
     ScanlineShaders scanlineShaders_;
 
+    SplashRenderer splashRenderer_;
+
     HWND window_;
 
-    struct Vertex
-    {
-        float x;
-        float y;
-
-        float tx;
-        float ty;
-    };
 };

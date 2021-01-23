@@ -63,6 +63,9 @@ private:
     HWND window_;
     RECT windowRect_;
 
+    bool splash_;
+    bool startSplash_;
+
     bool fullscreen_;
     bool overscan_;
     bool integerScaling_;

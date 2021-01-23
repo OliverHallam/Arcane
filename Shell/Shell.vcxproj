@@ -244,6 +244,8 @@
     <ClCompile Include="RewindBuffer.cpp" />
     <ClCompile Include="SaveFile.cpp" />
     <ClCompile Include="ScanlineShaders.cpp" />
+    <ClCompile Include="LogoGenerator.cpp" />
+    <ClCompile Include="SplashRenderer.cpp" />
     <ClCompile Include="WasapiRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -272,9 +274,13 @@
     <ClInclude Include="ScanlineShaders.h" />
     <ClInclude Include="Shaders\DefaultPixelShader.h" />
     <ClInclude Include="Shaders\DefaultVertexShader.h" />
+    <ClInclude Include="LogoGenerator.h" />
     <ClInclude Include="Shaders\ScanlinePixelShader.h" />
     <ClInclude Include="Shaders\ScanlineVertexShader.h" />
+    <ClInclude Include="Shaders\SplashPixelShader.h" />
+    <ClInclude Include="Shaders\SplashVertexShader.h" />
     <ClInclude Include="Shell.h" />
+    <ClInclude Include="SplashRenderer.h" />
     <ClInclude Include="WasapiRenderer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -372,6 +378,46 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Shaders\ScanlineVertexShader.h</HeaderFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ScanlineVertexShaderBytecode</VariableName>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Shaders\ScanlineVertexShader.h</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="Shaders\SplashPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SplashPixelShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Shaders\SplashPixelShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">SplashPixelShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">Shaders\SplashPixelShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SplashPixelShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Shaders\SplashPixelShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SplashPixelShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Shaders\SplashPixelShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">SplashPixelShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Shaders\SplashPixelShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SplashPixelShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Shaders\SplashPixelShader.h</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="Shaders\SplashVertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SplashVertexShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Shaders\SplashVertexShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">SplashVertexShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'">Shaders\SplashVertexShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SplashVertexShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Shaders\SplashVertexShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SplashVertexShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Shaders\SplashVertexShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">SplashVertexShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'">Shaders\SplashVertexShader.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SplashVertexShaderBytecode</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Shaders\SplashVertexShader.h</HeaderFileOutput>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
