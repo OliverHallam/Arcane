@@ -41,6 +41,11 @@ Menu::Menu()
 
     AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(videoMenu), L"&Video");
 
+    auto helpMenu = CreateMenu();
+    AppendMenu(helpMenu, MF_ENABLED, reinterpret_cast<UINT_PTR>(reinterpret_cast<void*>(MenuCommand::About)), L"&About");
+
+    AppendMenu(menuBar_, MF_POPUP, reinterpret_cast<UINT_PTR>(helpMenu), L"&Help");
+
     ACCEL accelerators[] =
     {
         { FCONTROL | FVIRTKEY, 'O', static_cast<WORD>(MenuCommand::Open) },

@@ -5,6 +5,7 @@
 #include "Menu.h"
 #include "SaveFile.h"
 
+#include "About.h"
 #include "D3DRenderer.h"
 #include "DynamicSampleRate.h"
 #include "WasapiRenderer.h"
@@ -91,4 +92,6 @@ private:
 
     bool inSizeMove_{};
     bool resized_{};
+
+    About about_{};
 };

@@ -19,6 +19,7 @@
     <ClCompile Include="RewindBuffer.cpp" />
     <ClCompile Include="SplashRenderer.cpp" />
     <ClCompile Include="LogoGenerator.cpp" />
+    <ClCompile Include="About.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="nes.ico" />
@@ -52,6 +53,8 @@
     <ClInclude Include="Shaders\SplashVertexShader.h" />
     <ClInclude Include="Shaders\SplashPixelShader.h" />
     <ClInclude Include="LogoGenerator.h" />
+    <ClInclude Include="About.h" />
+    <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

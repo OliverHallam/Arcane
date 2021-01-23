@@ -226,6 +226,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="About.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="DefaultShaders.cpp" />
     <ClCompile Include="DynamicSampleRate.cpp" />
@@ -258,6 +259,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="About.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="DefaultShaders.h" />
     <ClInclude Include="DynamicSampleRate.h" />
@@ -285,6 +287,7 @@
     <ClInclude Include="Shaders\SplashVertexShader.h" />
     <ClInclude Include="Shell.h" />
     <ClInclude Include="SplashRenderer.h" />
+    <ClInclude Include="Version.h" />
     <ClInclude Include="WasapiRenderer.h" />
   </ItemGroup>
   <ItemGroup>

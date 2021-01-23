@@ -883,6 +883,11 @@ bool App::ProcessCommand(WORD command)
         }
     }
 
+    if (command == static_cast<WORD>(MenuCommand::About))
+    {
+        about_.Show(window_);
+    }
+
     return false;
 }
 

@@ -27,7 +27,9 @@ enum class MenuCommand : WORD
     Fullscreen = 401,
     Overscan = 402,
     IntegerScaling = 403,
-    Scanlines = 404
+    Scanlines = 404,
+
+    About = 501
 };
 
 class Menu
