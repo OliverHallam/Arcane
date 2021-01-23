@@ -141,7 +141,7 @@ int LogoGenerator::FillBuffers(float time, Vertex* vertices, uint16_t* indices) 
     uint16_t index = 0;
     auto firstIndex = indices;
     FillBuffers(time, vertices, indices, index, 0.5, 0.5, 0.5, 2);
-    FillBuffers(time, vertices, indices, index, 0.75, 0, 0, 0);
+    FillBuffers(time, vertices, indices, index, 0.6, 0, 0, 0);
     return static_cast<int>(indices - firstIndex);
 }
 
