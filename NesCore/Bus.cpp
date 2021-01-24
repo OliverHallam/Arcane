@@ -470,7 +470,7 @@ void Bus::Tick()
 
     // there is always at least one event scheduled so we can skip the check that the queue is empty
     uint32_t nextEventTime;
-    while ((nextEventTime = state_.SyncQueue.GetNextEventTime()) <= nextCycleCount)
+    while (static_cast<int32_t>((nextEventTime = state_.SyncQueue.GetNextEventTime()) - nextCycleCount) <= 0)
     {
         state_.CycleCount = nextEventTime;
         RunEvent();
