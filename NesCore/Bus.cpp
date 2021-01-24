@@ -73,7 +73,10 @@ bool Bus::HasCart() const
 void Bus::TickCpuRead()
 {
     if (state_.Dma)
+    {
+        [[unlikely]]
         RunDma();
+    }
 
     Tick();
 }
@@ -472,6 +475,7 @@ void Bus::Tick()
     uint32_t nextEventTime;
     while (static_cast<int32_t>((nextEventTime = state_.SyncQueue.GetNextEventTime()) - nextCycleCount) <= 0)
     {
+        [[unlikely]]
         state_.CycleCount = nextEventTime;
         RunEvent();
     }
