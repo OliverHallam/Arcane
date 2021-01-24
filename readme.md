@@ -13,6 +13,9 @@ Download the latest release from the [Releases](../../releases/latest) page.
 Arcane is distributed as a single executable, less than 200kb in size.  Windows 8.1 is required, but beyond that any
 machine that can run Windows should be able to run Arcane.
 
+You may need to install the [Visual C++ Redistributable](https://aka.ms/vs/16/release/vc_redist.x64.exe) package
+first (I'm looking into removing the need for this).
+
 Games can be controlled using either an XBOX controller, or the keyboard.
 
 Keyboard controls are arrow keys, `Z` and `X` for the A and B buttons respectively, and `ENTER` and `SHIFT` for Start
