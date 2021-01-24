@@ -52,7 +52,7 @@ void About::Show(HWND parent)
         window_ = CreateWindowEx(
             WS_EX_DLGMODALFRAME | WS_EX_APPWINDOW,
             className,
-            L"About Arcade",
+            L"About Arcane",
             WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
