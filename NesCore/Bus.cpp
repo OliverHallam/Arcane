@@ -88,12 +88,12 @@ void Bus::TickCpuWrite()
 
 uint32_t Bus::CpuCycleCount() const
 {
-    return state_.CycleCount / 3;
+    return state_.CpuCycleCount;
 }
 
 uint32_t Bus::PpuCycleCount() const
 {
-    return state_.CycleCount;
+    return state_.PpuCycleCount;
 }
 
 int32_t Bus::PpuScanlineCycle() const
@@ -430,12 +430,12 @@ void Bus::OnFrame()
 
 void Bus::Schedule(uint32_t cycles, SyncEvent evt)
 {
-    state_.SyncQueue.Schedule(state_.CycleCount + cycles * 3, evt);
+    state_.SyncQueue.Schedule(state_.PpuCycleCount + cycles * 3, evt);
 }
 
 void Bus::SchedulePpu(uint32_t cycles, SyncEvent evt)
 {
-    state_.SyncQueue.Schedule(state_.CycleCount + cycles, evt);
+    state_.SyncQueue.Schedule(state_.PpuCycleCount + cycles, evt);
 }
 
 bool Bus::Deschedule(SyncEvent evt)
@@ -469,18 +469,19 @@ void Bus::MarkDiagnostic(uint32_t color)
 
 void Bus::Tick()
 {
-    auto nextCycleCount = state_.CycleCount + 3;
+    auto nextCycleCount = state_.PpuCycleCount + 3;
 
     // there is always at least one event scheduled so we can skip the check that the queue is empty
     uint32_t nextEventTime;
     while (static_cast<int32_t>((nextEventTime = state_.SyncQueue.GetNextEventTime()) - nextCycleCount) <= 0)
     {
         [[unlikely]]
-        state_.CycleCount = nextEventTime;
+        state_.PpuCycleCount = nextEventTime;
         RunEvent();
     }
 
-    state_.CycleCount = nextCycleCount;
+    state_.PpuCycleCount = nextCycleCount;
+    state_.CpuCycleCount++;
 }
 
 uint8_t Bus::CpuReadImpl(uint16_t address)

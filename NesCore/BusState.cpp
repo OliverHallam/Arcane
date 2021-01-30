@@ -1,7 +1,8 @@
 #include "BusState.h"
 
 BusState::BusState() :
-    CycleCount{0},
+    CpuCycleCount{ 0 },
+    PpuCycleCount{ 0 },
     Dma{},
     OamDma{},
     DmcDma{},

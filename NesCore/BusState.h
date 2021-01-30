@@ -12,7 +12,8 @@ struct BusState
     std::array<uint8_t, 2048> CpuRam;
     std::array<uint8_t, 2048> PpuRam;
 
-    uint32_t CycleCount;
+    uint32_t CpuCycleCount;
+    uint32_t PpuCycleCount;
 
     bool Dma;
     bool OamDma;
