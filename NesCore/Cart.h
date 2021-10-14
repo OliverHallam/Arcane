@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CartData.h"
 #include "CartDescriptor.h"
 #include "CartCoreState.h"
 #include "CartState.h"
@@ -71,10 +72,8 @@ public:
     void RestoreState(const CartState& state);
 
 private:
-    void WriteMMC1(uint16_t address, uint8_t value);
-    void WriteMMC1Register(uint16_t address, uint8_t value);
-    void UpdateChrMapMMC1();
-    void UpdatePrgMapMMC1();
+    static uint8_t ReadPrg(CartCoreState& state, uint16_t address);
+    static void WritePrg(CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
 
     void WriteUxROM(uint16_t address, uint8_t value);
 
@@ -153,14 +152,11 @@ private:
     void UpdatePrgMap32k();
     void UpdateChrMap8k();
 
-    void UpdatePpuRamMap();
-
     Bus* bus_;
 
-    MapperType mapper_;
+    CartData data_;
 
-    std::vector<uint8_t> prgData_;
-    std::vector<uint8_t> chrData_;
+    MapperType mapper_;
 
     uint32_t prgMask_;
     uint32_t prgBlockSize_;
@@ -169,10 +165,6 @@ private:
     uint32_t chrBlockSize_;
 
     CartCoreState state_;
-
-    std::vector<uint8_t> localPrgRam_;
-    std::vector<uint8_t> localBatteryRam_;
-    std::vector<uint8_t*> prgRamBanks_;
 
     uint32_t prgRamMask_;
 

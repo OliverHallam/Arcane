@@ -5,6 +5,9 @@
 #include <assert.h>
 #include <memory>
 
+#include "Mappers/MapperUtils.h"
+#include "Mappers/NROM.h"
+
 Cart::Cart() :
     chrRamStart_{ -1 },
     chrRamMask_{},
@@ -34,9 +37,9 @@ void Cart::SetMapper(MapperType mapper)
 
 void Cart::SetPrgRom(std::vector<uint8_t> prgData)
 {
-    prgData_ = std::move(prgData);
+    data_.PrgData = std::move(prgData);
 
-    auto size = prgData_.size();
+    auto size = data_.PrgData.size();
     auto sizeBitRemoved = prgData.size() & (prgData.size() - 1);
     if (sizeBitRemoved != 0)
     {
@@ -50,64 +53,64 @@ void Cart::SetPrgRom(std::vector<uint8_t> prgData)
 void Cart::SetPrgRam(uint32_t size)
 {
     prgRamMask_ = size - 1;
-    localPrgRam_.resize(size);
-    prgRamBanks_.push_back(&localPrgRam_[0]);
-    state_.CpuBanks[3] = prgRamBanks_[0];
+    data_.LocalPrgRam.resize(size);
+    data_.PrgRamBanks.push_back(&data_.LocalPrgRam[0]);
+    state_.CpuBanks[3] = data_.PrgRamBanks[0];
 }
 
 void Cart::AddPrgBatteryRam()
 {
     // reserve the slot
-    assert(!prgRamBanks_.size());
-    prgRamBanks_.push_back(nullptr);
+    assert(!data_.PrgRamBanks.size());
+    data_.PrgRamBanks.push_back(nullptr);
 }
 
 void Cart::SetPrgBatteryRam(uint8_t* data)
 {
-    assert(prgRamBanks_.size());
-    assert(!prgRamBanks_[0]);
-    prgRamBanks_[0] = data;
+    assert(data_.PrgRamBanks.size());
+    assert(!data_.PrgRamBanks[0]);
+    data_.PrgRamBanks[0] = data;
 }
 
 void Cart::SetChrRom(std::vector<uint8_t> chrData)
 {
-    chrData_ = std::move(chrData);
+    data_.ChrData = std::move(chrData);
 
-    state_.PpuBanks[0] = &chrData_[0];
-    state_.PpuBanks[1] = &chrData_[0x0400];
-    state_.PpuBanks[2] = &chrData_[0x0800];
-    state_.PpuBanks[3] = &chrData_[0x0c00];
-    state_.PpuBanks[4] = &chrData_[0x1000];
-    state_.PpuBanks[5] = &chrData_[0x1400];
-    state_.PpuBanks[6] = &chrData_[0x1800];
-    state_.PpuBanks[7] = &chrData_[0x1c00];
+    state_.PpuBanks[0] = &data_.ChrData[0];
+    state_.PpuBanks[1] = &data_.ChrData[0x0400];
+    state_.PpuBanks[2] = &data_.ChrData[0x0800];
+    state_.PpuBanks[3] = &data_.ChrData[0x0c00];
+    state_.PpuBanks[4] = &data_.ChrData[0x1000];
+    state_.PpuBanks[5] = &data_.ChrData[0x1400];
+    state_.PpuBanks[6] = &data_.ChrData[0x1800];
+    state_.PpuBanks[7] = &data_.ChrData[0x1c00];
 
-    assert((chrData_.size() & (chrData_.size() - 1)) == 0);
-    chrBlockSize_ = static_cast<uint32_t>(chrData_.size());
-    chrMask_ = static_cast<uint32_t>(chrData_.size()) - 1;
+    assert((data_.ChrData.size() & (data_.ChrData.size() - 1)) == 0);
+    chrBlockSize_ = static_cast<uint32_t>(data_.ChrData.size());
+    chrMask_ = static_cast<uint32_t>(data_.ChrData.size()) - 1;
 }
 
 void Cart::AddChrRam(uint32_t size)
 {
     assert(size >= 0x2000);
-    chrRamStart_ = static_cast<int32_t>(chrData_.size());
+    chrRamStart_ = static_cast<int32_t>(data_.ChrData.size());
 
     assert((size & (size - 1)) == 0);
     chrRamMask_ = size - 1;
 
-    size += static_cast<uint32_t>(chrData_.size());
-    chrData_.resize(size);
+    size += static_cast<uint32_t>(data_.ChrData.size());
+    data_.ChrData.resize(size);
 
     if (chrRamStart_ == 0)
     {
-        state_.PpuBanks[0] = &chrData_[0];
-        state_.PpuBanks[1] = &chrData_[0x0400];
-        state_.PpuBanks[2] = &chrData_[0x0800];
-        state_.PpuBanks[3] = &chrData_[0x0c00];
-        state_.PpuBanks[4] = &chrData_[0x1000];
-        state_.PpuBanks[5] = &chrData_[0x1400];
-        state_.PpuBanks[6] = &chrData_[0x1800];
-        state_.PpuBanks[7] = &chrData_[0x1c00];
+        state_.PpuBanks[0] = &data_.ChrData[0];
+        state_.PpuBanks[1] = &data_.ChrData[0x0400];
+        state_.PpuBanks[2] = &data_.ChrData[0x0800];
+        state_.PpuBanks[3] = &data_.ChrData[0x0c00];
+        state_.PpuBanks[4] = &data_.ChrData[0x1000];
+        state_.PpuBanks[5] = &data_.ChrData[0x1400];
+        state_.PpuBanks[6] = &data_.ChrData[0x1800];
+        state_.PpuBanks[7] = &data_.ChrData[0x1c00];
 
         state_.PpuBankWritable[0] = true;
         state_.PpuBankWritable[1] = true;
@@ -129,7 +132,7 @@ void Cart::SetMirrorMode(MirrorMode mirrorMode)
     state_.MirrorMode = mirrorMode;
     if (bus_)
     {
-        UpdatePpuRamMap();
+        UpdatePpuRamMap(*bus_, state_);
     }
 }
 
@@ -140,30 +143,42 @@ void Cart::EnableBusConflicts(bool conflicts)
 
 void Cart::Initialize()
 {
-    if (prgRamBanks_.size())
+    if (data_.PrgRamBanks.size())
     {
-        if (!prgRamBanks_[0])
+        if (!data_.PrgRamBanks[0])
         {
-            localBatteryRam_.resize(prgRamMask_ + 1);
-            prgRamBanks_[0] = &localBatteryRam_[0];
+            data_.LocalBatteryRam.resize(prgRamMask_ + 1);
+            data_.PrgRamBanks[0] = &data_.LocalBatteryRam[0];
         }
 
         if (mapper_ != MapperType::MMC6) // mapping done manually due to complex protection system
-            state_.CpuBanks[3] = prgRamBanks_[0];
+            state_.CpuBanks[3] = data_.PrgRamBanks[0];
     }
 
     // first and last bank mapped by default.
-    state_.CpuBanks[4] = &prgData_[0];
-    state_.CpuBanks[5] = &prgData_[0x2000];
-    state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
-    state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
+    state_.CpuBanks[4] = &data_.PrgData[0];
+    state_.CpuBanks[5] = &data_.PrgData[0x2000];
+    state_.CpuBanks[6] = &data_.PrgData[data_.PrgData.size() - 0x4000];
+    state_.CpuBanks[7] = &data_.PrgData[data_.PrgData.size() - 0x2000];
 
     // initial state for mapper 5
     state_.PrgBank3 = prgMask_ & 0x01fe000;
 
-    if (mapper_ == MapperType::MMC1)
-        state_.PrgMode = 3;
-    else if (mapper_ == MapperType::MMC5)
+    if (data_.PrgRamBanks.size())
+        state_.WriteMap[3] = WritePrg;
+
+    switch (mapper_)
+    {
+    case MapperType::NROM:
+        NROMInitialize(state_);
+        break;
+
+    case MapperType::MMC1:
+        MMC1::Initialize(state_);
+        break;
+    }
+
+    if (mapper_ == MapperType::MMC5)
     {
         state_.PrgMode = 3;
         state_.PrgRamProtect0 = 3; // two protect flags
@@ -188,10 +203,10 @@ void Cart::Initialize()
     }
     else if (mapper_ == MapperType::AxROM || mapper_ == MapperType::ColorDreams || mapper_ == MapperType::Caltron6in1 || mapper_ == MapperType::NesEvent)
     {
-        state_.CpuBanks[4] = &prgData_[0];
-        state_.CpuBanks[5] = &prgData_[0x2000];
-        state_.CpuBanks[6] = &prgData_[0x4000];
-        state_.CpuBanks[7] = &prgData_[0x6000];
+        state_.CpuBanks[4] = &data_.PrgData[0];
+        state_.CpuBanks[5] = &data_.PrgData[0x2000];
+        state_.CpuBanks[6] = &data_.PrgData[0x4000];
+        state_.CpuBanks[7] = &data_.PrgData[0x6000];
 
         if (mapper_ == MapperType::NesEvent)
         {
@@ -204,10 +219,10 @@ void Cart::Initialize()
     }
     else if (mapper_ == MapperType::MMC2)
     {
-        state_.CpuBanks[4] = &prgData_[0];
-        state_.CpuBanks[5] = &prgData_[prgData_.size() - 0x6000];
-        state_.CpuBanks[6] = &prgData_[prgData_.size() - 0x4000];
-        state_.CpuBanks[7] = &prgData_[prgData_.size() - 0x2000];
+        state_.CpuBanks[4] = &data_.PrgData[0];
+        state_.CpuBanks[5] = &data_.PrgData[data_.PrgData.size() - 0x6000];
+        state_.CpuBanks[6] = &data_.PrgData[data_.PrgData.size() - 0x4000];
+        state_.CpuBanks[7] = &data_.PrgData[data_.PrgData.size() - 0x2000];
     }
     else if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
     {
@@ -223,9 +238,9 @@ void Cart::Initialize()
     }
     else if (mapper_ == MapperType::SunsoftFME7)
     {
-        state_.CpuBanks[4] = &prgData_[0];
-        state_.CpuBanks[5] = &prgData_[0];
-        state_.CpuBanks[6] = &prgData_[0];
+        state_.CpuBanks[4] = &data_.PrgData[0];
+        state_.CpuBanks[5] = &data_.PrgData[0];
+        state_.CpuBanks[6] = &data_.PrgData[0];
     }
     else if (mapper_ == MapperType::ActiveEnterprises)
     {
@@ -240,11 +255,12 @@ void Cart::Initialize()
 void Cart::Attach(Bus* bus)
 {
     bus_ = bus;
-    UpdatePpuRamMap();
+    UpdatePpuRamMap(*bus_, state_);
 }
 
 uint8_t Cart::CpuRead(uint16_t address)
 {
+    /*
     if (mapper_ == MapperType::MMC5)
     {
         if (state_.IrqPending && (address & 0xfffe) == 0xffffa)
@@ -258,12 +274,13 @@ uint8_t Cart::CpuRead(uint16_t address)
 
             UpdateChrMapMMC5();
         }
-    }
+    }*/
 
     auto bank = state_.CpuBanks[address >> 13];
 
     if (bank == nullptr)
     {
+        /*
         if (mapper_ == MapperType::MMC5)
             return ReadMMC5(address);
         else if (mapper_ == MapperType::MMC6)
@@ -272,10 +289,10 @@ uint8_t Cart::CpuRead(uint16_t address)
             {
                 auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
                 if ((protect & 6) != 0)
-                    return prgRamBanks_[0][address & 0x3ff];
+                    return data_.PrgRamBanks[0][address & 0x3ff];
             }
         }
-
+        */
         return 0;
     }
 
@@ -284,6 +301,11 @@ uint8_t Cart::CpuRead(uint16_t address)
 
 void Cart::CpuWrite(uint16_t address, uint8_t value)
 {
+    auto write = state_.WriteMap[address >> 13];
+    if (write)
+        write(state_, data_, address, value);
+
+    /*
     if (address < 0x8000)
     {
         if (mapper_ == MapperType::MMC5 && address < 0x6000)
@@ -295,7 +317,7 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         {
             auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
             if ((protect & 5) != 0)
-                prgRamBanks_[0][address & 0x3ff] = value;
+                data_.PrgRamBanks[0][address & 0x3ff] = value;
             return;
         }
         else if (mapper_ == MapperType::NINA001)
@@ -336,9 +358,6 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     switch (mapper_)
     {
-    case MapperType::MMC1:
-        WriteMMC1(address, value);
-        break;
 
     case MapperType::UxROM:
         WriteUxROM(address, value);
@@ -436,10 +455,16 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
         WriteAladdin(address, value);
         return;
     }
+    */
 }
 
 void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 {
+    auto write = state_.Write2Map[address >> 13];
+    if (write)
+        write(*bus_, state_, data_, address, firstValue, secondValue);
+
+    /*
     if (address < 0x8000)
     {
         if (mapper_ == MapperType::MMC5 && address < 0x6000)
@@ -478,7 +503,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
             bus_->TickCpuWrite();
             auto protect = (address & 0200) != 0 ? state_.PrgRamProtect1 : state_.PrgRamProtect0;
             if ((protect & 5) != 0)
-                prgRamBanks_[0][address & 0x3ff] = secondValue;
+                data_.PrgRamBanks[0][address & 0x3ff] = secondValue;
             return;
         }
         else if (mapper_ == MapperType::NINA03)
@@ -510,12 +535,6 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 
     switch (mapper_)
     {
-    case MapperType::MMC1:
-        // The MMC1 takes the first value and ignores the second.
-        WriteMMC1(address, firstValue);
-        bus_->TickCpuWrite();
-        break;
-
     case MapperType::UxROM:
         bus_->TickCpuWrite();
         WriteUxROM(address, secondValue);
@@ -656,6 +675,7 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
         bus_->TickCpuWrite();
         break;
     }
+    */
 }
 
 uint8_t Cart::PpuReadData(uint16_t address)
@@ -689,7 +709,7 @@ uint8_t Cart::PpuReadData(uint16_t address)
                     }
                     else
                     {
-                        return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
+                        return data_.ChrData[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
                     }
                 }
             }
@@ -700,7 +720,7 @@ uint8_t Cart::PpuReadData(uint16_t address)
                 {
                     // pattern byte
                     auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-                    return chrData_[chrAddress & (chrData_.size() - 1)];
+                    return data_.ChrData[chrAddress & (data_.ChrData.size() - 1)];
                 }
                 else if ((address & 0x03ff) >= 0x03c0)
                 {
@@ -844,7 +864,7 @@ uint8_t Cart::PpuReadPatternLow(uint16_t address)
             auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
             if (isSplit)
             {
-                return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
+                return data_.ChrData[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
             }
         }
 
@@ -852,7 +872,7 @@ uint8_t Cart::PpuReadPatternLow(uint16_t address)
         {
             // pattern byte
             auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-            return chrData_[chrAddress & (chrData_.size() - 1)];
+            return data_.ChrData[chrAddress & (data_.ChrData.size() - 1)];
         }
     }
 
@@ -872,14 +892,14 @@ uint8_t Cart::PpuReadPatternHigh(uint16_t address)
             auto isSplit = (state_.CurrentTile < state_.SplitTile) ^ state_.RightSplit;
             if (isSplit)
             {
-                return chrData_[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
+                return data_.ChrData[state_.SplitBank | (address & 0xff8) | (state_.SplitY & 0x07)];
             }
         }
 
         if (state_.ExtendedRamMode == 1)
         {
             auto chrAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-            return chrData_[chrAddress & (chrData_.size() - 1)];
+            return data_.ChrData[chrAddress & (data_.ChrData.size() - 1)];
         }
     }
     else if (mapper_ == MapperType::MMC2)
@@ -925,7 +945,7 @@ uint16_t Cart::PpuReadPattern16(uint16_t address)
             if (isSplit)
             {
                 auto romAddress = state_.SplitBank + (address & 0xfff);
-                return (chrData_[romAddress | 8] << 8) | chrData_[romAddress];
+                return (data_.ChrData[romAddress | 8] << 8) | data_.ChrData[romAddress];
             }
         }
 
@@ -935,8 +955,8 @@ uint16_t Cart::PpuReadPattern16(uint16_t address)
 
             // pattern byte
             auto chrRamAddress = state_.ExtendedPatternAddress | (address & 0x0fff);
-            chrRamAddress &= (chrData_.size() - 1);
-            return (chrData_[chrRamAddress | 8] << 8) | chrData_[chrRamAddress];
+            chrRamAddress &= (data_.ChrData.size() - 1);
+            return (data_.ChrData[chrRamAddress | 8] << 8) | data_.ChrData[chrRamAddress];
         }
     }
     else if (mapper_ == MapperType::MMC2)
@@ -970,13 +990,7 @@ void Cart::ChrA12Rising()
 
     if (mapper_ == MapperType::MMC1)
     {
-        if (state_.ChrA12Sensitivity == ChrA12Sensitivity::AllEdges)
-        {
-            UpdatePrgMapMMC1();
-
-            if (state_.CpuBanks[3])
-                state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
-        }
+        MMC1::A12Rising(state_, data_);
     }
     else if (mapper_ != MapperType::MCACC) // MMC3, MMC6, QJ, RAMBO-1, TxSROM, TQROM, 800037
     {
@@ -1001,11 +1015,7 @@ void Cart::ChrA12Falling()
 
     if (mapper_ == MapperType::MMC1)
     {
-        if (state_.ChrA12Sensitivity == ChrA12Sensitivity::AllEdges)
-        {
-            if (state_.CpuBanks[3])
-                state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank0];
-        }
+        MMC1::A12Falling(state_, data_);
     }
     else // if (mapper_ == MapperType::MCACC)
     {
@@ -1153,255 +1163,43 @@ void Cart::CaptureState(CartState* state) const
 {
     state->Core = state_;
 
-    if (prgRamBanks_.size() > 0)
-        std::copy(prgRamBanks_[0], prgRamBanks_[0] + prgRamMask_ + 1, begin(state->PrgRamBank1));
+    if (data_.PrgRamBanks.size() > 0)
+        std::copy(data_.PrgRamBanks[0], data_.PrgRamBanks[0] + prgRamMask_ + 1, begin(state->PrgRamBank1));
 
-    if (prgRamBanks_.size() > 1)
-        std::copy(prgRamBanks_[1], prgRamBanks_[1] + prgRamMask_ + 1, begin(state->PrgRamBank2));
+    if (data_.PrgRamBanks.size() > 1)
+        std::copy(data_.PrgRamBanks[1], data_.PrgRamBanks[1] + prgRamMask_ + 1, begin(state->PrgRamBank2));
 
-    assert(prgRamBanks_.size() <= 2);
+    assert(data_.PrgRamBanks.size() <= 2);
 
     if (chrRamStart_ >= 0)
-        std::copy(begin(chrData_) + chrRamStart_, end(chrData_), begin(state->ChrRam));
+        std::copy(begin(data_.ChrData) + chrRamStart_, end(data_.ChrData), begin(state->ChrRam));
 }
 
 void Cart::RestoreState(const CartState& state)
 {
     state_ = state.Core;
 
-    if (prgRamBanks_.size() > 0)
-        std::copy(begin(state.PrgRamBank1), begin(state.PrgRamBank1) + prgRamMask_ + 1, prgRamBanks_[0]);
+    if (data_.PrgRamBanks.size() > 0)
+        std::copy(begin(state.PrgRamBank1), begin(state.PrgRamBank1) + prgRamMask_ + 1, data_.PrgRamBanks[0]);
 
-    if (prgRamBanks_.size() > 1)
-        std::copy(begin(state.PrgRamBank2), begin(state.PrgRamBank2) + prgRamMask_ + 1, prgRamBanks_[1]);
+    if (data_.PrgRamBanks.size() > 1)
+        std::copy(begin(state.PrgRamBank2), begin(state.PrgRamBank2) + prgRamMask_ + 1, data_.PrgRamBanks[1]);
 
     if (chrRamStart_ >= 0)
-        std::copy(begin(state.ChrRam) + chrRamStart_, end(state.ChrRam), begin(chrData_));
+        std::copy(begin(state.ChrRam) + chrRamStart_, end(state.ChrRam), begin(data_.ChrData));
 
 }
 
-void Cart::WriteMMC1(uint16_t address, uint8_t value)
+uint8_t Cart::ReadPrg(CartCoreState& state, uint16_t address)
 {
-    if ((value & 0x80) == 0x80)
-    {
-        state_.MapperShiftCount = 0;
-        state_.MapperShift = 0;
-
-        // when the shift register is reset, the control bit is or'd with 0x0C
-        state_.PrgMode = 3;
-        UpdatePrgMapMMC1();
-        return;
-    }
-
-    state_.MapperShift |= (value & 1) << state_.MapperShiftCount;
-    state_.MapperShiftCount++;
-
-    if (state_.MapperShiftCount == 5)
-    {
-        WriteMMC1Register(address, state_.MapperShift);
-
-        state_.MapperShiftCount = 0;
-        state_.MapperShift = 0;
-    }
+    auto bank = state.CpuBanks[address >> 13];
+    return bank[address & 0x1fff];
 }
 
-void Cart::WriteMMC1Register(uint16_t address, uint8_t value)
+void Cart::WritePrg(CartCoreState& state, CartData& data, uint16_t address, uint8_t value)
 {
-    switch (address >> 13)
-    {
-    case 4:
-        // control
-
-        // chr mode
-        state_.ChrMode = (value >> 4) & 0x01;
-        UpdateChrMapMMC1();
-
-        // prg mode
-        state_.PrgMode = (value >> 2) & 0x03;
-        UpdatePrgMapMMC1();
-
-        // mirroring mode
-        state_.MirrorMode = static_cast<MirrorMode>(value & 0x03);
-        UpdatePpuRamMap();
-        break;
-
-    case 5:
-    {
-        // CHR bank 0
-        state_.ChrBank0 = value << 12;
-        UpdateChrMapMMC1();
-
-        auto sensitivityBefore = state_.ChrA12Sensitivity;
-
-        state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
-
-        // TODO: SNROM PRG RAM disable line
-        if (prgData_.size() == 0x80000)
-        {
-            state_.PrgPlane0 = ((state_.ChrBank0 << 2) & 0x40000);
-            if (state_.PrgPlane0 != state_.PrgPlane1)
-                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
-
-            // TODO: we need to get the current A12 state from the PPU.
-            if (!state_.ChrA12)
-                UpdatePrgMapMMC1();
-        }
-
-        if (prgRamBanks_.size() > 1)
-        {
-            if (prgRamBanks_.size() > 2)
-                state_.PrgRamBank0 = (value >> 2) & 0x03;
-            else
-                state_.PrgRamBank0 = (value >> 1) & 0x01;
-
-            if (state_.PrgRamBank0 != state_.PrgRamBank1)
-                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
-
-            // TODO: we need to get the current A12 state from the PPU.
-            if (!state_.ChrA12 && state_.CpuBanks[3])
-                state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank0];
-        }
-
-        if (state_.ChrA12Sensitivity != sensitivityBefore)
-            bus_->UpdateA12Sensitivity();
-        break;
-    }
-
-    case 6:
-    {
-        // CHR bank 1
-        state_.ChrBank1 = value << 12;
-        UpdateChrMapMMC1();
-
-        auto sensitivityBefore = state_.ChrA12Sensitivity;
-        state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
-
-        // TODO: SNROM PRG RAM disable line
-        if (prgData_.size() == 0x80000)
-        {
-            state_.PrgPlane1 = ((state_.ChrBank1 << 2) & 0x40000);
-
-            if (state_.PrgPlane0 != state_.PrgPlane1)
-                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
-
-            // TODO: we need to get the current A12 state from the PPU.
-            if (state_.ChrA12)
-                UpdatePrgMapMMC1();
-        }
-
-        // TODO: SZROM maps this differently.
-        if (prgRamBanks_.size() > 1)
-        {
-            if (prgRamBanks_.size() > 2)
-                state_.PrgRamBank1 = (value >> 2) & 0x03;
-            else
-                state_.PrgRamBank1 = (value >> 1) & 0x01;
-
-            if (state_.PrgRamBank0 != state_.PrgRamBank1)
-                state_.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
-
-            // TODO: we need to get the current A12 state from the PPU.
-            if (state_.ChrA12 && state_.CpuBanks[3])
-                state_.CpuBanks[3] = prgRamBanks_[state_.PrgRamBank1];
-        }
-
-        if (state_.ChrA12Sensitivity != sensitivityBefore)
-            bus_->UpdateA12Sensitivity();
-
-        break;
-    }
-
-    case 7:
-        // PRG bank
-
-        // enable/disable PRG RAM
-        state_.PrgRamEnabled = (value & 0x10) == 0;
-        state_.PrgBank0 = ((value & 0x0f) << 14 & prgMask_);
-        UpdatePrgMapMMC1();
-        break;
-    }
-}
-
-void Cart::UpdateChrMapMMC1()
-{
-    bus_->SyncPpu();
-
-    switch (state_.ChrMode)
-    {
-    case 0:
-    {
-        auto chrBank = static_cast<size_t>(state_.ChrBank0) & 0x1e000;
-        auto base = &chrData_[chrBank];
-        state_.PpuBanks[0] = base;
-        state_.PpuBanks[1] = base + 0x0400;
-        state_.PpuBanks[2] = base + 0x0800;
-        state_.PpuBanks[3] = base + 0x0c00;
-        state_.PpuBanks[4] = base + 0x1000;
-        state_.PpuBanks[5] = base + 0x1400;
-        state_.PpuBanks[6] = base + 0x1800;
-        state_.PpuBanks[7] = base + 0x1c00;
-        break;
-    }
-
-    case 1:
-    {
-        auto base0 = &chrData_[state_.ChrBank0 & (chrData_.size() - 1)];
-        state_.PpuBanks[0] = base0;
-        state_.PpuBanks[1] = base0 + 0x0400;
-        state_.PpuBanks[2] = base0 + 0x0800;
-        state_.PpuBanks[3] = base0 + 0x0c00;
-
-        auto base1 = &chrData_[state_.ChrBank1 & (chrData_.size() - 1)];
-        state_.PpuBanks[4] = base1;
-        state_.PpuBanks[5] = base1 + 0x0400;
-        state_.PpuBanks[6] = base1 + 0x0800;
-        state_.PpuBanks[7] = base1 + 0x0c00;
-        break;
-    }
-    }
-}
-
-void Cart::UpdatePrgMapMMC1()
-{
-    if (!state_.PrgRamEnabled || prgRamBanks_.size() == 0)
-        state_.CpuBanks[3] = nullptr;
-    else
-        state_.CpuBanks[3] = state_.ChrA12 ? prgRamBanks_[state_.PrgRamBank1] : prgRamBanks_[state_.PrgRamBank0];
-
-    auto prgPlane = state_.ChrA12 ? state_.PrgPlane1 : state_.PrgPlane0;
-
-    switch (state_.PrgMode)
-    {
-    case 0:
-    case 1:
-    {
-        auto base = &prgData_[prgPlane | (state_.PrgBank0 & 0xffff8000)];
-        state_.CpuBanks[4] = base;
-        state_.CpuBanks[5] = base + 0x2000;
-        state_.CpuBanks[6] = base + 0x4000;
-        state_.CpuBanks[7] = base + 0x6000;
-        break;
-    }
-
-    case 2:
-    {
-        auto base = &prgData_[prgPlane | state_.PrgBank0];
-        state_.CpuBanks[4] = &prgData_[prgPlane];
-        state_.CpuBanks[5] = &prgData_[prgPlane | 0x2000];
-        state_.CpuBanks[6] = base;
-        state_.CpuBanks[7] = base + 0x2000;
-        break;
-    }
-
-    case 3:
-    {
-        auto base = &prgData_[prgPlane | state_.PrgBank0];
-        state_.CpuBanks[4] = base;
-        state_.CpuBanks[5] = base + 0x2000;
-        state_.CpuBanks[6] = &prgData_[prgPlane | (prgData_.size() - 0x4000)];
-        state_.CpuBanks[7] = &prgData_[prgPlane | (prgData_.size() - 0x2000)];
-    }
-    }
+    auto bank = state.CpuBanks[address >> 13];
+    bank[address & 0x1fff] = value;
 }
 
 void Cart::WriteUxROM(uint16_t address, uint8_t value)
@@ -1413,7 +1211,7 @@ void Cart::WriteUxROM(uint16_t address, uint8_t value)
     }
 
     auto bankAddress = (value << 14) & prgMask_;
-    auto base = &prgData_[bankAddress];
+    auto base = &data_.PrgData[bankAddress];
     state_.CpuBanks[4] = base;
     state_.CpuBanks[5] = base + 0x2000;
 }
@@ -1622,12 +1420,12 @@ void Cart::SetBankMMC3(uint32_t bank)
 
 void Cart::UpdatePrgMapMMC3()
 {
-    if (state_.PrgRamEnabled && prgRamBanks_.size())
-        state_.CpuBanks[3] = prgRamBanks_[0];
+    if (state_.PrgRamEnabled && data_.PrgRamBanks.size())
+        state_.CpuBanks[3] = data_.PrgRamBanks[0];
     else
         state_.CpuBanks[3] = nullptr;
 
-    auto block = &prgData_[state_.PrgBankHighBits & prgMask_];
+    auto block = &data_.PrgData[state_.PrgBankHighBits & prgMask_];
 
     if (state_.PrgMode == 0)
     {
@@ -1653,7 +1451,7 @@ void Cart::UpdateChrMapMMC3()
         return;
     }
 
-    auto block = &chrData_[state_.ChrBankHighBits & chrMask_];
+    auto block = &data_.ChrData[state_.ChrBankHighBits & chrMask_];
 
     if ((state_.ChrMode & 1) == 0)
     {
@@ -1898,7 +1696,7 @@ void Cart::WriteMMC5(uint16_t address, uint8_t value)
 
     case 0x5113:
     {
-        auto bank = prgRamBanks_[(value & 7) >> 2];
+        auto bank = data_.PrgRamBanks[(value & 7) >> 2];
         state_.CpuBanks[3] = bank ? &bank[(value << 13) & prgRamMask_] : nullptr;
         break;
     }
@@ -2071,7 +1869,7 @@ void Cart::UpdatePrgMapMMC5()
     {
     case 0:
     {
-        auto base = &prgData_[(state_.PrgBank3 & 0xffff8000)];
+        auto base = &data_.PrgData[(state_.PrgBank3 & 0xffff8000)];
         state_.CpuBanks[4] = base;
         state_.CpuBanks[5] = base + 0x2000;
         state_.CpuBanks[6] = base + 0x4000;
@@ -2089,7 +1887,7 @@ void Cart::UpdatePrgMapMMC5()
         if (state_.PrgBank1Ram)
         {
             auto prgRamIndex = state_.PrgBank1 >> 2;
-            auto bank = prgRamIndex < prgRamBanks_.size() ? prgRamBanks_[prgRamIndex] : nullptr;
+            auto bank = prgRamIndex < data_.PrgRamBanks.size() ? data_.PrgRamBanks[prgRamIndex] : nullptr;
             if (bank)
             {
                 // TODO: what happens if the bank doesn't align with a 4k boundary?
@@ -2110,7 +1908,7 @@ void Cart::UpdatePrgMapMMC5()
         }
         else
         {
-            auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
+            auto baseLow = &data_.PrgData[(state_.PrgBank1 & 0xffffc000)];
             state_.CpuBanks[4] = baseLow;
             state_.CpuBanks[5] = baseLow + 0x2000;
 
@@ -2118,7 +1916,7 @@ void Cart::UpdatePrgMapMMC5()
             state_.CpuBankWritable[5] = false;
         }
 
-        auto baseHigh = &prgData_[(state_.PrgBank3 & 0xffffc000)];
+        auto baseHigh = &data_.PrgData[(state_.PrgBank3 & 0xffffc000)];
         state_.CpuBanks[6] = baseHigh;
         state_.CpuBanks[7] = baseHigh + 0x2000;
 
@@ -2132,7 +1930,7 @@ void Cart::UpdatePrgMapMMC5()
         if (state_.PrgBank1Ram)
         {
             auto prgRamIndex = state_.PrgBank1 >> 2;
-            auto bank = prgRamIndex < prgRamBanks_.size() ? prgRamBanks_[prgRamIndex] : nullptr;
+            auto bank = prgRamIndex < data_.PrgRamBanks.size() ? data_.PrgRamBanks[prgRamIndex] : nullptr;
             if (bank)
             {
                 // TODO: what happens if the bank doesn't align with a 4k boundary?
@@ -2153,7 +1951,7 @@ void Cart::UpdatePrgMapMMC5()
         }
         else
         {
-            auto baseLow = &prgData_[(state_.PrgBank1 & 0xffffc000)];
+            auto baseLow = &data_.PrgData[(state_.PrgBank1 & 0xffffc000)];
             state_.CpuBanks[4] = baseLow;
             state_.CpuBanks[5] = baseLow + 0x2000;
 
@@ -2164,7 +1962,7 @@ void Cart::UpdatePrgMapMMC5()
         MapPrgBankMMC5(state_.PrgBank2Ram, state_.PrgBank2, &state_.CpuBanks[6], &state_.CpuBankWritable[6]);
 
 
-        state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
+        state_.CpuBanks[7] = &data_.PrgData[(state_.PrgBank3)];
         state_.CpuBankWritable[7] = false;
         break;
     }
@@ -2175,7 +1973,7 @@ void Cart::UpdatePrgMapMMC5()
         MapPrgBankMMC5(state_.PrgBank1Ram, state_.PrgBank1, &state_.CpuBanks[5], &state_.CpuBankWritable[5]);
         MapPrgBankMMC5(state_.PrgBank2Ram, state_.PrgBank2, &state_.CpuBanks[6], &state_.CpuBankWritable[6]);
 
-        state_.CpuBanks[7] = &prgData_[(state_.PrgBank3)];
+        state_.CpuBanks[7] = &data_.PrgData[(state_.PrgBank3)];
         state_.CpuBankWritable[7] = false;
     }
     }
@@ -2186,7 +1984,7 @@ void Cart::MapPrgBankMMC5(bool isRam, int32_t index, uint8_t** bank, bool* writa
     if (isRam)
     {
         auto prgRamIndex = index >> 2;
-        auto ramBank = prgRamIndex < prgRamBanks_.size() ? prgRamBanks_[prgRamIndex] : nullptr;
+        auto ramBank = prgRamIndex < data_.PrgRamBanks.size() ? data_.PrgRamBanks[prgRamIndex] : nullptr;
         if (ramBank)
         {
             *bank = ramBank + (((index & 0x03) << 13) & prgRamMask_);
@@ -2200,7 +1998,7 @@ void Cart::MapPrgBankMMC5(bool isRam, int32_t index, uint8_t** bank, bool* writa
     }
     else
     {
-        *bank = &prgData_[index];
+        *bank = &data_.PrgData[index];
         *writable = false;
     }
 }
@@ -2224,9 +2022,9 @@ void Cart::UpdateChrMapMMC5()
     {
         uint8_t* base;
         if (useSecondary)
-            base = &chrData_[(state_.SecondaryChrBank3 << 13) & chrMask_];
+            base = &data_.ChrData[(state_.SecondaryChrBank3 << 13) & chrMask_];
         else
-            base = &chrData_[(state_.ChrBank7 << 13) & chrMask_];
+            base = &data_.ChrData[(state_.ChrBank7 << 13) & chrMask_];
 
         state_.PpuBanks[0] = base;
         state_.PpuBanks[1] = base + 0x0400;
@@ -2245,12 +2043,12 @@ void Cart::UpdateChrMapMMC5()
         uint8_t* baseHigh;
         if (useSecondary)
         {
-            baseLow = baseHigh = &chrData_[(state_.SecondaryChrBank3 << 12) & chrMask_];
+            baseLow = baseHigh = &data_.ChrData[(state_.SecondaryChrBank3 << 12) & chrMask_];
         }
         else
         {
-            baseLow = &chrData_[(state_.ChrBank3 << 12) & chrMask_];
-            baseHigh = &chrData_[(state_.ChrBank7 << 12) & chrMask_];
+            baseLow = &data_.ChrData[(state_.ChrBank3 << 12) & chrMask_];
+            baseHigh = &data_.ChrData[(state_.ChrBank7 << 12) & chrMask_];
         }
 
         state_.PpuBanks[0] = baseLow;
@@ -2272,15 +2070,15 @@ void Cart::UpdateChrMapMMC5()
         uint8_t* base3;
         if (useSecondary)
         {
-            base0 = base2 = &chrData_[(state_.ChrBank3 << 11) & chrMask_];
-            base1 = base3 = &chrData_[(state_.ChrBank7 << 11) & chrMask_];
+            base0 = base2 = &data_.ChrData[(state_.ChrBank3 << 11) & chrMask_];
+            base1 = base3 = &data_.ChrData[(state_.ChrBank7 << 11) & chrMask_];
         }
         else
         {
-            base0 = &chrData_[(state_.ChrBank1 << 11) & chrMask_];
-            base1 = &chrData_[(state_.ChrBank3 << 11) & chrMask_];
-            base2 = &chrData_[(state_.ChrBank5 << 11) & chrMask_];
-            base3 = &chrData_[(state_.ChrBank7 << 11) & chrMask_];
+            base0 = &data_.ChrData[(state_.ChrBank1 << 11) & chrMask_];
+            base1 = &data_.ChrData[(state_.ChrBank3 << 11) & chrMask_];
+            base2 = &data_.ChrData[(state_.ChrBank5 << 11) & chrMask_];
+            base3 = &data_.ChrData[(state_.ChrBank7 << 11) & chrMask_];
         }
         state_.PpuBanks[0] = base0;
         state_.PpuBanks[1] = base0 + 0x0400;
@@ -2297,25 +2095,25 @@ void Cart::UpdateChrMapMMC5()
     {
         if (useSecondary)
         {
-            state_.PpuBanks[0] = &chrData_[(state_.SecondaryChrBank0 << 10) & chrMask_];
-            state_.PpuBanks[1] = &chrData_[(state_.SecondaryChrBank1 << 10) & chrMask_];
-            state_.PpuBanks[2] = &chrData_[(state_.SecondaryChrBank2 << 10) & chrMask_];
-            state_.PpuBanks[3] = &chrData_[(state_.SecondaryChrBank3 << 10) & chrMask_];
-            state_.PpuBanks[4] = &chrData_[(state_.SecondaryChrBank0 << 10) & chrMask_];
-            state_.PpuBanks[5] = &chrData_[(state_.SecondaryChrBank1 << 10) & chrMask_];
-            state_.PpuBanks[6] = &chrData_[(state_.SecondaryChrBank2 << 10) & chrMask_];
-            state_.PpuBanks[7] = &chrData_[(state_.SecondaryChrBank3 << 10) & chrMask_];
+            state_.PpuBanks[0] = &data_.ChrData[(state_.SecondaryChrBank0 << 10) & chrMask_];
+            state_.PpuBanks[1] = &data_.ChrData[(state_.SecondaryChrBank1 << 10) & chrMask_];
+            state_.PpuBanks[2] = &data_.ChrData[(state_.SecondaryChrBank2 << 10) & chrMask_];
+            state_.PpuBanks[3] = &data_.ChrData[(state_.SecondaryChrBank3 << 10) & chrMask_];
+            state_.PpuBanks[4] = &data_.ChrData[(state_.SecondaryChrBank0 << 10) & chrMask_];
+            state_.PpuBanks[5] = &data_.ChrData[(state_.SecondaryChrBank1 << 10) & chrMask_];
+            state_.PpuBanks[6] = &data_.ChrData[(state_.SecondaryChrBank2 << 10) & chrMask_];
+            state_.PpuBanks[7] = &data_.ChrData[(state_.SecondaryChrBank3 << 10) & chrMask_];
         }
         else
         {
-            state_.PpuBanks[0] = &chrData_[(state_.ChrBank0 << 10) & chrMask_];
-            state_.PpuBanks[1] = &chrData_[(state_.ChrBank1 << 10) & chrMask_];
-            state_.PpuBanks[2] = &chrData_[(state_.ChrBank2 << 10) & chrMask_];
-            state_.PpuBanks[3] = &chrData_[(state_.ChrBank3 << 10) & chrMask_];
-            state_.PpuBanks[4] = &chrData_[(state_.ChrBank4 << 10) & chrMask_];
-            state_.PpuBanks[5] = &chrData_[(state_.ChrBank5 << 10) & chrMask_];
-            state_.PpuBanks[6] = &chrData_[(state_.ChrBank6 << 10) & chrMask_];
-            state_.PpuBanks[7] = &chrData_[(state_.ChrBank7 << 10) & chrMask_];
+            state_.PpuBanks[0] = &data_.ChrData[(state_.ChrBank0 << 10) & chrMask_];
+            state_.PpuBanks[1] = &data_.ChrData[(state_.ChrBank1 << 10) & chrMask_];
+            state_.PpuBanks[2] = &data_.ChrData[(state_.ChrBank2 << 10) & chrMask_];
+            state_.PpuBanks[3] = &data_.ChrData[(state_.ChrBank3 << 10) & chrMask_];
+            state_.PpuBanks[4] = &data_.ChrData[(state_.ChrBank4 << 10) & chrMask_];
+            state_.PpuBanks[5] = &data_.ChrData[(state_.ChrBank5 << 10) & chrMask_];
+            state_.PpuBanks[6] = &data_.ChrData[(state_.ChrBank6 << 10) & chrMask_];
+            state_.PpuBanks[7] = &data_.ChrData[(state_.ChrBank7 << 10) & chrMask_];
         }
         break;
     }
@@ -2379,7 +2177,7 @@ void Cart::WriteAxROM(uint16_t address, uint8_t value)
         SetMirrorMode(mirrorMode);
     }
 
-    auto prgBank = &prgData_[((value & 0x07) << 15) & prgMask_];
+    auto prgBank = &data_.PrgData[((value & 0x07) << 15) & prgMask_];
     state_.CpuBanks[4] = prgBank;
     state_.CpuBanks[5] = prgBank + 0x2000;
     state_.CpuBanks[6] = prgBank + 0x4000;
@@ -2393,7 +2191,7 @@ void Cart::WriteMMC2(uint16_t address, uint8_t value)
     case 0xA:
     {
         auto prgBank = value & 0x0f;
-        state_.CpuBanks[4] = &prgData_[(prgBank << 13) & prgMask_];
+        state_.CpuBanks[4] = &data_.PrgData[(prgBank << 13) & prgMask_];
         break;
     }
 
@@ -2469,8 +2267,8 @@ void Cart::UpdateChrMapMMC2()
     auto bank0 = state_.UseSecondaryChr0 ? state_.SecondaryChrBank0 : state_.ChrBank0;
     auto bank1 = state_.UseSecondaryChr1 ? state_.SecondaryChrBank1 : state_.ChrBank1;
 
-    auto base0 = &chrData_[(bank0 << 12) & chrMask_];
-    auto base1 = &chrData_[(bank1 << 12) & chrMask_];
+    auto base0 = &data_.ChrData[(bank0 << 12) & chrMask_];
+    auto base1 = &data_.ChrData[(bank1 << 12) & chrMask_];
 
     state_.PpuBanks[0] = base0;
     state_.PpuBanks[1] = base0 + 0x0400;
@@ -2511,7 +2309,7 @@ void Cart::WriteCPROM(uint16_t address, uint8_t value)
 
     bus_->SyncPpu();
 
-    auto ppuBase = &chrData_[((value & 0x03) << 12) & chrMask_];
+    auto ppuBase = &data_.ChrData[((value & 0x03) << 12) & chrMask_];
     state_.PpuBanks[4] = ppuBase;
     state_.PpuBanks[5] = ppuBase + 0x0400;
     state_.PpuBanks[6] = ppuBase + 0x0800;
@@ -2524,7 +2322,7 @@ void Cart::WriteNINA001(uint16_t address, uint8_t value)
     {
     case 0x7ffd:
     {
-        auto base = &prgData_[((value & 0x01) << 15) & prgMask_];
+        auto base = &data_.PrgData[((value & 0x01) << 15) & prgMask_];
         state_.CpuBanks[4] = base;
         state_.CpuBanks[5] = base + 0x2000;
         state_.CpuBanks[6] = base + 0x4000;
@@ -2535,7 +2333,7 @@ void Cart::WriteNINA001(uint16_t address, uint8_t value)
     case 0x7ffe:
     {
         bus_->SyncPpu();
-        auto base = &chrData_[((value & 0x0f) << 12) & chrMask_];
+        auto base = &data_.ChrData[((value & 0x0f) << 12) & chrMask_];
         state_.PpuBanks[0] = base;
         state_.PpuBanks[1] = base + 0x0400;
         state_.PpuBanks[2] = base + 0x0800;
@@ -2546,7 +2344,7 @@ void Cart::WriteNINA001(uint16_t address, uint8_t value)
     case 0x7fff:
     {
         bus_->SyncPpu();
-        auto base = &chrData_[((value & 0x0f) << 12) & chrMask_];
+        auto base = &data_.ChrData[((value & 0x0f) << 12) & chrMask_];
         state_.PpuBanks[4] = base;
         state_.PpuBanks[5] = base + 0x0400;
         state_.PpuBanks[6] = base + 0x0800;
@@ -2564,7 +2362,7 @@ void Cart::WriteBNROM(uint16_t address, uint8_t value)
         value &= bank[address & 0x1fff];
     }
 
-    auto base = &prgData_[((value & 0x03) << 15) & prgMask_];
+    auto base = &data_.PrgData[((value & 0x03) << 15) & prgMask_];
     state_.CpuBanks[4] = base;
     state_.CpuBanks[5] = base + 0x2000;
     state_.CpuBanks[6] = base + 0x4000;
@@ -2815,19 +2613,19 @@ void Cart::WriteSunsoft4(uint16_t address, uint8_t value)
 
 void Cart::UpdatePrgMapSunsoft4()
 {
-    state_.CpuBanks[3] = state_.PrgRamEnabled ? prgRamBanks_[0] : nullptr;
+    state_.CpuBanks[3] = state_.PrgRamEnabled ? data_.PrgRamBanks[0] : nullptr;
 
-    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
+    auto cpuBase = &data_.PrgData[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
     state_.CpuBanks[4] = cpuBase;
     state_.CpuBanks[5] = cpuBase + 0x2000;
 }
 
 void Cart::UpdateChrMapSunsoft4()
 {
-    auto ppuBase0 = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
-    auto ppuBase1 = &chrData_[(state_.ChrBankHighBits | state_.ChrBank1) & chrMask_];
-    auto ppuBase2 = &chrData_[(state_.ChrBankHighBits | state_.ChrBank2) & chrMask_];
-    auto ppuBase3 = &chrData_[(state_.ChrBankHighBits | state_.ChrBank3) & chrMask_];
+    auto ppuBase0 = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
+    auto ppuBase1 = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank1) & chrMask_];
+    auto ppuBase2 = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank2) & chrMask_];
+    auto ppuBase3 = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank3) & chrMask_];
     state_.PpuBanks[0] = ppuBase0;
     state_.PpuBanks[1] = ppuBase0 + 0x0400;
     state_.PpuBanks[2] = ppuBase1;
@@ -2842,12 +2640,12 @@ void Cart::UpdateNametableMapSunsoft4()
 {
     if (state_.NametableMode0 == 0)
     {
-        UpdatePpuRamMap();
+        UpdatePpuRamMap(*bus_, state_);
         return;
     }
 
-    auto base0 = &chrData_[(state_.ChrBankHighBits | state_.ChrBank4) & chrMask_];
-    auto base1 = &chrData_[(state_.ChrBankHighBits | state_.ChrBank5) & chrMask_];
+    auto base0 = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank4) & chrMask_];
+    auto base1 = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank5) & chrMask_];
 
     switch (state_.MirrorMode)
     {
@@ -3048,28 +2846,28 @@ void Cart::UpdatePrgMapSunsoftFME7()
     if (state_.PrgBank0Ram)
     {
         // TODO: theoretically this can switch betweeen RAM banks
-        state_.CpuBanks[3] = state_.PrgRamEnabled ? prgRamBanks_[0] : nullptr;
+        state_.CpuBanks[3] = state_.PrgRamEnabled ? data_.PrgRamBanks[0] : nullptr;
     }
     else
     {
-        state_.CpuBanks[3] = &prgData_[state_.PrgBank0];
+        state_.CpuBanks[3] = &data_.PrgData[state_.PrgBank0];
     }
 
-    state_.CpuBanks[4] = &prgData_[state_.PrgBank1];
-    state_.CpuBanks[5] = &prgData_[state_.PrgBank2];
-    state_.CpuBanks[6] = &prgData_[state_.PrgBank3];
+    state_.CpuBanks[4] = &data_.PrgData[state_.PrgBank1];
+    state_.CpuBanks[5] = &data_.PrgData[state_.PrgBank2];
+    state_.CpuBanks[6] = &data_.PrgData[state_.PrgBank3];
 }
 
 void Cart::UpdateChrMapSunsoftFME7()
 {
-    state_.PpuBanks[0] = &chrData_[state_.ChrBank0];
-    state_.PpuBanks[1] = &chrData_[state_.ChrBank1];
-    state_.PpuBanks[2] = &chrData_[state_.ChrBank2];
-    state_.PpuBanks[3] = &chrData_[state_.ChrBank3];
-    state_.PpuBanks[4] = &chrData_[state_.ChrBank4];
-    state_.PpuBanks[5] = &chrData_[state_.ChrBank5];
-    state_.PpuBanks[6] = &chrData_[state_.ChrBank6];
-    state_.PpuBanks[7] = &chrData_[state_.ChrBank7];
+    state_.PpuBanks[0] = &data_.ChrData[state_.ChrBank0];
+    state_.PpuBanks[1] = &data_.ChrData[state_.ChrBank1];
+    state_.PpuBanks[2] = &data_.ChrData[state_.ChrBank2];
+    state_.PpuBanks[3] = &data_.ChrData[state_.ChrBank3];
+    state_.PpuBanks[4] = &data_.ChrData[state_.ChrBank4];
+    state_.PpuBanks[5] = &data_.ChrData[state_.ChrBank5];
+    state_.PpuBanks[6] = &data_.ChrData[state_.ChrBank6];
+    state_.PpuBanks[7] = &data_.ChrData[state_.ChrBank7];
 }
 
 void Cart::WriteBF9097(uint16_t address, uint8_t value)
@@ -3134,7 +2932,7 @@ void Cart::WriteNesEventRegister(uint16_t address, uint8_t value)
         UpdatePrgMapNesEvent();
 
         state_.MirrorMode = static_cast<MirrorMode>(value & 0x03);
-        UpdatePpuRamMap();
+        UpdatePpuRamMap(*bus_, state_);
         break;
 
     case 5:
@@ -3187,12 +2985,12 @@ void Cart::UpdatePrgMapNesEvent()
 
     if (state_.PrgMode2 == 0)
     {
-        if (!state_.PrgRamEnabled || prgRamBanks_.size() == 0)
+        if (!state_.PrgRamEnabled || data_.PrgRamBanks.size() == 0)
             state_.CpuBanks[3] = nullptr;
         else
-            state_.CpuBanks[3] = prgRamBanks_[0];
+            state_.CpuBanks[3] = data_.PrgRamBanks[0];
 
-        auto cpuBase = &prgData_[state_.PrgBank1];
+        auto cpuBase = &data_.PrgData[state_.PrgBank1];
         state_.CpuBanks[4] = cpuBase;
         state_.CpuBanks[5] = cpuBase + 0x2000;
         state_.CpuBanks[6] = cpuBase + 0x4000;
@@ -3200,7 +2998,7 @@ void Cart::UpdatePrgMapNesEvent()
         return;
     }
 
-    UpdatePrgMapMMC1();
+    UpdatePpuRamMap(*bus_, state_);
 }
 
 void Cart::UpdateChrMapTQROM()
@@ -3230,9 +3028,9 @@ void Cart::Set2kBankTQROM(int index, uint32_t bank)
     uint8_t* base;
     auto isRam = bank & 0x010000;
     if (isRam)
-        base = &chrData_[chrRamStart_ + (bank & 0xf800 & chrRamMask_)];
+        base = &data_.ChrData[chrRamStart_ + (bank & 0xf800 & chrRamMask_)];
     else
-        base = &chrData_[bank & 0xf800 & chrMask_];
+        base = &data_.ChrData[bank & 0xf800 & chrMask_];
 
     state_.PpuBanks[index] = base;
     state_.PpuBanks[index + 1] = base + 0x400;
@@ -3246,9 +3044,9 @@ void Cart::Set1kBankTQROM(int index, uint32_t bank)
     uint8_t* base;
     auto isRam = bank & 0x010000;
     if (isRam)
-        base = &chrData_[chrRamStart_ + (bank & 0xfc00 & chrRamMask_)];
+        base = &data_.ChrData[chrRamStart_ + (bank & 0xfc00 & chrRamMask_)];
     else
-        base = &chrData_[bank & 0xfc00 & chrMask_];
+        base = &data_.ChrData[bank & 0xfc00 & chrMask_];
 
     state_.PpuBanks[index] = base;
     state_.PpuBankWritable[index] = isRam;
@@ -3275,7 +3073,7 @@ void Cart::WriteActiveEnterprises(uint16_t address, uint8_t value)
     SetMirrorMode((address & 0x2000) ? MirrorMode::Horizontal : MirrorMode::Vertical);
 
     // no bank switching for Cheetamen II
-    if (prgData_.size() >= 0x00080000)
+    if (data_.PrgData.size() >= 0x00080000)
         state_.PrgBankHighBits = (address & 0x1800) << 8;
 
     state_.PrgBank0 = (address & 0x07c0) << 8;
@@ -3307,7 +3105,7 @@ void Cart::UpdatePrgMapActiveEnterprises()
 
     if (state_.PrgMode)
     {
-        auto base = &prgData_[state_.PrgBankHighBits | state_.PrgBank0];
+        auto base = &data_.PrgData[state_.PrgBankHighBits | state_.PrgBank0];
         state_.CpuBanks[4] = base;
         state_.CpuBanks[5] = base + 0x2000;
         state_.CpuBanks[6] = base;
@@ -3315,7 +3113,7 @@ void Cart::UpdatePrgMapActiveEnterprises()
     }
     else
     {
-        auto base = &prgData_[state_.PrgBankHighBits | ((state_.PrgBank0) & 0xffff8000) ];
+        auto base = &data_.PrgData[state_.PrgBankHighBits | ((state_.PrgBank0) & 0xffff8000) ];
         state_.CpuBanks[4] = base;
         state_.CpuBanks[5] = base + 0x2000;
         state_.CpuBanks[6] = base + 0x4000;
@@ -3345,18 +3143,18 @@ void Cart::WriteAladdin(uint16_t address, uint8_t value)
 
 void Cart::UpdatePrgMapQuattro()
 {
-    auto base0 = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
+    auto base0 = &data_.PrgData[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
     state_.CpuBanks[4] = base0;
     state_.CpuBanks[5] = base0 + 0x2000;
 
-    auto base1 = &prgData_[(state_.PrgBankHighBits | 0xc000) & prgMask_];
+    auto base1 = &data_.PrgData[(state_.PrgBankHighBits | 0xc000) & prgMask_];
     state_.CpuBanks[6] = base1;
     state_.CpuBanks[7] = base1 + 0x2000;
 }
 
 void Cart::UpdatePrgMap32k()
 {
-    auto cpuBase = &prgData_[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
+    auto cpuBase = &data_.PrgData[(state_.PrgBankHighBits | state_.PrgBank0) & prgMask_];
     state_.CpuBanks[4] = cpuBase;
     state_.CpuBanks[5] = cpuBase + 0x2000;
     state_.CpuBanks[6] = cpuBase + 0x4000;
@@ -3365,7 +3163,7 @@ void Cart::UpdatePrgMap32k()
 
 void Cart::UpdateChrMap8k()
 {
-    auto base = &chrData_[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
+    auto base = &data_.ChrData[(state_.ChrBankHighBits | state_.ChrBank0) & chrMask_];
     state_.PpuBanks[0] = base;
     state_.PpuBanks[1] = base + 0x0400;
     state_.PpuBanks[2] = base + 0x0800;
@@ -3374,41 +3172,6 @@ void Cart::UpdateChrMap8k()
     state_.PpuBanks[5] = base + 0x1400;
     state_.PpuBanks[6] = base + 0x1800;
     state_.PpuBanks[7] = base + 0x1c00;
-}
-
-void Cart::UpdatePpuRamMap()
-{
-    auto base = bus_->GetPpuRamBase();
-    switch (state_.MirrorMode)
-    {
-    case MirrorMode::SingleScreenLow:
-        state_.PpuBanks[8] = state_.PpuBanks[12] = base;
-        state_.PpuBanks[9] = state_.PpuBanks[13] = base;
-        state_.PpuBanks[10] = state_.PpuBanks[14] = base;
-        state_.PpuBanks[11] = state_.PpuBanks[15] = base;
-        break;
-
-    case MirrorMode::SingleScreenHigh:
-        state_.PpuBanks[8] = state_.PpuBanks[12] = base + 0x400;
-        state_.PpuBanks[9] = state_.PpuBanks[13] = base + 0x400;
-        state_.PpuBanks[10] = state_.PpuBanks[14] = base + 0x400;
-        state_.PpuBanks[11] = state_.PpuBanks[15] = base + 0x400;
-        break;
-
-    case MirrorMode::Vertical:
-        state_.PpuBanks[8] = state_.PpuBanks[12] = base;
-        state_.PpuBanks[9] = state_.PpuBanks[13] = base + 0x400;
-        state_.PpuBanks[10] = state_.PpuBanks[14] = base;
-        state_.PpuBanks[11] = state_.PpuBanks[15] = base + 0x400;
-        break;
-
-    case MirrorMode::Horizontal:
-        state_.PpuBanks[8] = state_.PpuBanks[12] = base;
-        state_.PpuBanks[9] = state_.PpuBanks[13] = base;
-        state_.PpuBanks[10] = state_.PpuBanks[14] = base + 0x400;
-        state_.PpuBanks[11] = state_.PpuBanks[15] = base + 0x400;
-        break;
-    }
 }
 
 std::unique_ptr<Cart> TryCreateCart(

@@ -3,11 +3,23 @@
 #include "ChrA12Sensitivity.h"
 #include "MirrorMode.h"
 
+#include "Mappers/MMC1.h"
+
 #include <array>
 #include <cstdint>
 
+class Bus;
+struct CartCoreState;
+
+typedef void(*CartWriteHandler)(CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
+typedef void(*CartWrite2Handler)(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t firstValue, uint8_t secondValue);
+
 struct CartCoreState
 {
+    union {
+        MMC1State MMC1;
+    } MapperState {};
+
     MirrorMode MirrorMode{ MirrorMode::Horizontal };
 
     // MMC1 shift register
@@ -105,6 +117,9 @@ struct CartCoreState
     int InitializationState{};
 
     // TODO: we should reconstruct these on restore, so we can share/save the state
+    std::array<CartWriteHandler, 8> WriteMap{};
+    std::array<CartWrite2Handler, 8> Write2Map{};
+
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> CpuBanks{};
     std::array<bool, 8> CpuBankWritable{};

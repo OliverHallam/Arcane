@@ -278,6 +278,7 @@
     <ClInclude Include="Cart.h" />
     <ClInclude Include="CartCoreState.h" />
     <ClInclude Include="CartData.h" />
+    <ClInclude Include="CartDatabase.h" />
     <ClInclude Include="CartDescriptor.h" />
     <ClInclude Include="CartState.h" />
     <ClInclude Include="ChrA12.h" />
@@ -290,6 +291,9 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="GameDatabase.h" />
+    <ClInclude Include="Mappers\MapperUtils.h" />
+    <ClInclude Include="Mappers\MMC1.h" />
+    <ClInclude Include="Mappers\NROM.h" />
     <ClInclude Include="MapperType.h" />
     <ClInclude Include="PpuBackgroundState.h" />
     <ClInclude Include="PpuCoreState.h" />
@@ -326,6 +330,9 @@
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="EventQueue.cpp" />
     <ClCompile Include="GameDatabase.cpp" />
+    <ClCompile Include="Mappers\MapperUtils.cpp" />
+    <ClCompile Include="Mappers\MMC1.cpp" />
+    <ClCompile Include="Mappers\NROM.cpp" />
     <ClCompile Include="RomFile.cpp" />
     <ClCompile Include="NesSystem.cpp" />
     <ClCompile Include="Ppu.cpp" />

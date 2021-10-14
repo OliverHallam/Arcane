@@ -33,7 +33,6 @@ void DefaultShaders::CreateShaders(ID3D11Device* device)
         vertexShader_.put());
     winrt::check_hresult(hr);
 
-    winrt::com_ptr<ID3D11PixelShader> pixelShader;
     hr = device->CreatePixelShader(
         DefaultPixelShaderBytecode,
         _countof(DefaultPixelShaderBytecode),

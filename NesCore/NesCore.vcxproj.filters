@@ -5,6 +5,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Mappers">
+      <UniqueIdentifier>{e6e75542-4cef-4ea9-99e4-a332b8c12bee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ppu.h" />
@@ -29,7 +32,7 @@
     <ClInclude Include="MirrorMode.h" />
     <ClInclude Include="RomFile.h" />
     <ClInclude Include="GameDatabase.h" />
-    <ClInclude Include="CartData.h" />
+    <ClInclude Include="CartDatabase.h" />
     <ClInclude Include="Crc32.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="SyncEvent.h" />
@@ -61,6 +64,10 @@
     <ClInclude Include="ChrA12.h" />
     <ClInclude Include="SignalEdge.h" />
     <ClInclude Include="Buttons.h" />
+    <ClInclude Include="Mappers\MMC1.h" />
+    <ClInclude Include="Mappers\NROM.h" />
+    <ClInclude Include="CartData.h" />
+    <ClInclude Include="Mappers\MapperUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -88,5 +95,8 @@
     <ClCompile Include="BusState.cpp" />
     <ClCompile Include="CpuState.cpp" />
     <ClCompile Include="ChrA12.cpp" />
+    <ClCompile Include="Mappers\NROM.cpp" />
+    <ClCompile Include="Mappers\MMC1.cpp" />
+    <ClCompile Include="Mappers\MapperUtils.cpp" />
   </ItemGroup>
 </Project>
