@@ -68,6 +68,12 @@
     <ClInclude Include="Mappers\NROM.h" />
     <ClInclude Include="CartData.h" />
     <ClInclude Include="Mappers\MapperUtils.h" />
+    <ClInclude Include="Mappers\UxROM.h" />
+    <ClInclude Include="Mappers\CNROM.h" />
+    <ClInclude Include="Mappers\MMC3.h" />
+    <ClInclude Include="Mappers\MCACC.h" />
+    <ClInclude Include="Mappers\Rambo1.h" />
+    <ClInclude Include="Mappers\MMC6.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ppu.cpp" />
@@ -98,5 +104,11 @@
     <ClCompile Include="Mappers\NROM.cpp" />
     <ClCompile Include="Mappers\MMC1.cpp" />
     <ClCompile Include="Mappers\MapperUtils.cpp" />
+    <ClCompile Include="Mappers\UxROM.cpp" />
+    <ClCompile Include="Mappers\CNROM.cpp" />
+    <ClCompile Include="Mappers\MMC3.cpp" />
+    <ClCompile Include="Mappers\MCACC.cpp" />
+    <ClCompile Include="Mappers\Rambo1.cpp" />
+    <ClCompile Include="Mappers\MMC6.cpp" />
   </ItemGroup>
 </Project>

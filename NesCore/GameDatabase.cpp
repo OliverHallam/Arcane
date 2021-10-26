@@ -1,6 +1,6 @@
 #include "GameDatabase.h"
 
-#include "CartData.h"
+#include "CartDatabase.h"
 #include "Crc32.h"
 
 #include <memory>
@@ -25,8 +25,8 @@ uint32_t GameDatabase::HashData(const std::vector<std::uint8_t>& prgData, const 
 
 std::unique_ptr<CartDescriptor> GameDatabase::Lookup(uint32_t crc32)
 {
-    auto currentEntry = CartData;
-    auto lastEntry = currentEntry + sizeof(CartData);
+    auto currentEntry = CartDatabase;
+    auto lastEntry = currentEntry + sizeof(CartDatabase);
 
     // 6 bytes per game in the database
     for (; currentEntry < lastEntry; currentEntry += 6)

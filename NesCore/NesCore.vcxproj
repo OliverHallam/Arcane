@@ -45,52 +45,52 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Diagnostic|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DiagnosticRelease|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Diagnostic|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DiagnosticRelease|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -135,7 +135,6 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PreprocessorDefinitions>MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -291,9 +290,15 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="GameDatabase.h" />
+    <ClInclude Include="Mappers\CNROM.h" />
     <ClInclude Include="Mappers\MapperUtils.h" />
+    <ClInclude Include="Mappers\MCACC.h" />
     <ClInclude Include="Mappers\MMC1.h" />
+    <ClInclude Include="Mappers\MMC3.h" />
+    <ClInclude Include="Mappers\MMC6.h" />
     <ClInclude Include="Mappers\NROM.h" />
+    <ClInclude Include="Mappers\Rambo1.h" />
+    <ClInclude Include="Mappers\UxROM.h" />
     <ClInclude Include="MapperType.h" />
     <ClInclude Include="PpuBackgroundState.h" />
     <ClInclude Include="PpuCoreState.h" />
@@ -330,9 +335,15 @@
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="EventQueue.cpp" />
     <ClCompile Include="GameDatabase.cpp" />
+    <ClCompile Include="Mappers\CNROM.cpp" />
     <ClCompile Include="Mappers\MapperUtils.cpp" />
+    <ClCompile Include="Mappers\MCACC.cpp" />
     <ClCompile Include="Mappers\MMC1.cpp" />
+    <ClCompile Include="Mappers\MMC3.cpp" />
+    <ClCompile Include="Mappers\MMC6.cpp" />
     <ClCompile Include="Mappers\NROM.cpp" />
+    <ClCompile Include="Mappers\Rambo1.cpp" />
+    <ClCompile Include="Mappers\UxROM.cpp" />
     <ClCompile Include="RomFile.cpp" />
     <ClCompile Include="NesSystem.cpp" />
     <ClCompile Include="Ppu.cpp" />

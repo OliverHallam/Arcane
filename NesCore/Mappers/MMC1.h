@@ -33,15 +33,15 @@ struct CartData;
 struct MMC1 {
     static void Initialize(CartCoreState& state);
 
-    static void Write(CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
+    static void Write(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
     static void Write2(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t firstValue, uint8_t secondValue);
 
     static void A12Rising(CartCoreState& state, CartData& data);
     static void A12Falling(CartCoreState& state, CartData& data);
 
 private:
-    static void WriteRegister(CartCoreState& state, CartData& data,  uint16_t address, uint8_t value);
+    static void WriteRegister(Bus& bus, CartCoreState& state, CartData& data,  uint16_t address, uint8_t value);
 
-    static void UpdateChrMap(CartCoreState& state, CartData& data);
+    static void UpdateChrMap(Bus& bus, CartCoreState& state, CartData& data);
     static void UpdatePrgMap(CartCoreState& state, CartData& data);
 };

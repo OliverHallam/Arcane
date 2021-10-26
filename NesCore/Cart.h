@@ -72,12 +72,8 @@ public:
     void RestoreState(const CartState& state);
 
 private:
-    static uint8_t ReadPrg(CartCoreState& state, uint16_t address);
-    static void WritePrg(CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
-
-    void WriteUxROM(uint16_t address, uint8_t value);
-
-    void WriteCNROM(uint16_t address, uint8_t value);
+    static uint8_t ReadPrg(CartCoreState& state, CartData& data, uint16_t address);
+    static void WritePrg(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
 
     void WriteMMC3(uint16_t address, uint8_t value);
     void SetBankMMC3(uint32_t bank);
@@ -157,12 +153,6 @@ private:
     CartData data_;
 
     MapperType mapper_;
-
-    uint32_t prgMask_;
-    uint32_t prgBlockSize_;
-
-    uint32_t chrMask_;
-    uint32_t chrBlockSize_;
 
     CartCoreState state_;
 

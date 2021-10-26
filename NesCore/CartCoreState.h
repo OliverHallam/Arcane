@@ -4,6 +4,12 @@
 #include "MirrorMode.h"
 
 #include "Mappers/MMC1.h"
+#include "Mappers/UxROM.h"
+#include "Mappers/CNROM.h"
+#include "Mappers/MMC3.h"
+#include "Mappers/MMC6.h"
+#include "Mappers/MCACC.h"
+#include "Mappers/Rambo1.h"
 
 #include <array>
 #include <cstdint>
@@ -11,13 +17,21 @@
 class Bus;
 struct CartCoreState;
 
-typedef void(*CartWriteHandler)(CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
+typedef void(*CartWriteHandler)(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t value);
 typedef void(*CartWrite2Handler)(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t firstValue, uint8_t secondValue);
+
+typedef uint8_t(*CartReadHandler)(CartCoreState& state, CartData& data, uint16_t address);
 
 struct CartCoreState
 {
     union {
         MMC1State MMC1;
+        UxROMState UxROM;
+        CNROMState CNROM;
+        MMC3State MMC3;
+        MMC6State MMC6;
+        MCACCState MCACC;
+        Rambo1State Rambo1;
     } MapperState {};
 
     MirrorMode MirrorMode{ MirrorMode::Horizontal };
@@ -80,18 +94,12 @@ struct CartCoreState
     bool ChrA12{};
 
     bool IrqEnabled{};
-    uint32_t IrqMode{};
     uint32_t IrqCounter{};
-    uint32_t ChrA12PulseCounter{};
-    uint32_t LastA12Cycle{};
     uint32_t PrescalerResetCycle{};
     bool BumpIrqCounter{};
 
     bool CpuCounterEnabled{};
     uint32_t CpuCounterSyncCycle{};
-
-    bool ReloadCounter{};
-    uint8_t ReloadValue{};
 
     bool InFrame{};
     bool PpuInFrame{}; // can lag behind the other InFrame
@@ -119,6 +127,8 @@ struct CartCoreState
     // TODO: we should reconstruct these on restore, so we can share/save the state
     std::array<CartWriteHandler, 8> WriteMap{};
     std::array<CartWrite2Handler, 8> Write2Map{};
+
+    std::array<CartReadHandler, 8> ReadMap{};
 
     // The CPU address space in 8k banks
     std::array<uint8_t*, 8> CpuBanks{};
