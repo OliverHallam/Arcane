@@ -8,7 +8,7 @@ void MCACC::Initialize(CartCoreState& state, CartData& data)
     MMC3::Initialize(state, data);
 
     state.WriteMap[6] = Write0xcxxx;
-    state.WriteMap[6] = Write0xexxx;
+    state.WriteMap[7] = Write0xexxx;
 
     auto& mcaccState = state.MapperState.MCACC;
     mcaccState.ChrA12PulseCounter = 1;
@@ -28,7 +28,7 @@ void MCACC::A12Falling(Bus& bus, CartCoreState& state)
             bus.MarkDiagnostic(0xff0000ff);
 #endif 
 
-            ClockMMC3IrqCounter();
+            MMC3::ClockIrqCounter(bus, state);
             mcaccState.ChrA12PulseCounter = 8;
         }
     }
@@ -55,7 +55,7 @@ void MMC3::Write0xcxxx(Bus& bus, CartCoreState& state, CartData& data, uint16_t 
 #endif
     }
 
-    MMC3::UpdateA12Sensitivity(bus, state, ChrA12Sensitivity::FallingEdgeDivided);
+    MMC3::UpdateChrA12Sensitivity(bus, state, ChrA12Sensitivity::FallingEdgeDivided);
 }
 
 void MCACC::Write0xexxx(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t value)
@@ -72,5 +72,5 @@ void MCACC::Write0xexxx(Bus& bus, CartCoreState& state, CartData& data, uint16_t
         mmc3State.IrqEnabled = true;
     }
 
-    MMC3::UpdateA12Sensitivity(bus, state, ChrA12Sensitivity::FallingEdgeDivided);
+    MMC3::UpdateChrA12Sensitivity(bus, state, ChrA12Sensitivity::FallingEdgeDivided);
 }

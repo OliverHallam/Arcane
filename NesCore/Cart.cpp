@@ -377,9 +377,6 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     switch (mapper_)
     {
-    case MapperType::MMC3:
-    case MapperType::MMC6:
-    case MapperType::MCACC:
     case MapperType::QJ:
     case MapperType::TxSROM:
     case MapperType::TQROM:
@@ -417,11 +414,6 @@ void Cart::CpuWrite(uint16_t address, uint8_t value)
 
     case MapperType::RumbleStation:
         WriteRumbleStationHigh(address, value);
-        break;
-
-    case MapperType::Rambo1:
-    case MapperType::Tengen800037:
-        WriteRambo1(address, value);
         break;
 
     case MapperType::GxROM:
@@ -545,9 +537,6 @@ void Cart::CpuWrite2(uint16_t address, uint8_t firstValue, uint8_t secondValue)
 
     switch (mapper_)
     {
-    case MapperType::MMC3:
-    case MapperType::MMC6:
-    case MapperType::MCACC:
     case MapperType::QJ:
     case MapperType::TxSROM:
     case MapperType::TQROM:
@@ -985,28 +974,30 @@ ChrA12Sensitivity Cart::ChrA12Sensitivity() const
 
 void Cart::ChrA12Rising()
 {
-    state_.ChrA12 = true;
-
     if (mapper_ == MapperType::MMC1)
     {
         MMC1::A12Rising(state_, data_);
     }
-    else if (mapper_ != MapperType::MCACC) // MMC3, MMC6, QJ, RAMBO-1, TxSROM, TQROM, 800037
+    else if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
     {
-        MMC3::A12Rising(state_, data_);
+        Rambo1::A12Rising(*bus_, state_, data_);
+    }
+    else // MMC3, MMC6, QJ, RAMBO-1, TxSROM, TQROM, 800037
+    {
+        assert(mapper_ != MapperType::MCACC);
+        MMC3::A12Rising(*bus_, state_, data_);
     }
 }
 
 void Cart::ChrA12Falling()
 {
-    state_.ChrA12 = false;
-
     if (mapper_ == MapperType::MMC1)
     {
         MMC1::A12Falling(state_, data_);
     }
     else // if (mapper_ == MapperType::MCACC)
     {
+        assert(mapper_ == MapperType::MCACC);
         MCACC::A12Falling(*bus_, state_);
     }
 }
@@ -1127,7 +1118,7 @@ void Cart::ClockCpuIrqCounter()
 {
     assert(mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037);
 
-    Rambo1::ClockIrqCounter(*bus_, state_);
+    Rambo1::ClockCpuIrqCounter(*bus_, state_);
 }
 
 void Cart::CaptureState(CartState* state) const
@@ -1170,301 +1161,6 @@ void Cart::WritePrg(Bus& bus, CartCoreState& state, CartData& data, uint16_t add
 {
     auto bank = state.CpuBanks[address >> 13];
     bank[address & 0x1fff] = value;
-}
-
-void Cart::WriteMMC3(uint16_t address, uint8_t value)
-{
-    if (address < 0xa000)
-    {
-        if ((address & 1) == 0)
-        {
-            bus_->SyncPpu();
-            state_.BankSelect = value & 0x07;
-            state_.PrgMode = (value >> 6) & 1;
-            state_.ChrMode = (value >> 7) & 1;
-            UpdatePrgMapMMC3();
-            UpdateChrMapMMC3();
-
-            if (mapper_ == MapperType::MMC6)
-            {
-                // PRG RAM enable
-                // use bit 3 of the protect flag to signal this 
-                if ((value & 0x20) != 0)
-                {
-                    state_.PrgRamProtect0 |= 4;
-                    state_.PrgRamProtect1 |= 4;
-                }
-                else
-                {
-                    state_.PrgRamProtect0 &= ~4;
-                    state_.PrgRamProtect1 &= ~4;
-                }
-            }
-        }
-        else
-        {
-            SetBankMMC3(value);
-        }
-    }
-    else if (address < 0xc000)
-    {
-        if ((address & 1) == 0)
-        {
-            SetMirrorMode(value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical);
-        }
-        else
-        {
-            if (mapper_ == MapperType::MMC6)
-            {
-                state_.PrgRamProtect0 &= ~3;
-                state_.PrgRamProtect0 |= (value >> 4 & 3);
-
-                state_.PrgRamProtect1 &= ~3;
-                state_.PrgRamProtect1 |= (value >> 6 & 3);
-            }
-            else
-            {
-                state_.PrgRamEnabled = (value & 0x80) != 0;
-                state_.PrgRamProtect0 = (value & 0x40) != 0;
-                UpdatePrgMapMMC3();
-            }
-        }
-    }
-    else if (address < 0xe000)
-    {
-        if ((address & 1) == 0)
-        {
-            state_.ReloadValue = value;
-        }
-        else
-        {
-            state_.ReloadCounter = true;
-
-            // MC-ACC:
-            // "writing to 0xC001 resets the pulse counter"
-            state_.ChrA12PulseCounter = 1;
-
-#ifdef DIAGNOSTIC
-            bus_->MarkDiagnostic(0xff444444);
-#endif
-        }
-
-        auto sensitivityBefore = state_.ChrA12Sensitivity;
-        if (state_.IrqCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
-            state_.ChrA12Sensitivity =
-                mapper_ == MapperType::MCACC
-                    ? ChrA12Sensitivity::FallingEdgeDivided
-                    : ChrA12Sensitivity::RisingEdgeSmoothed;
-        else
-            state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
-
-        if (state_.ChrA12Sensitivity != sensitivityBefore)
-            bus_->UpdateA12Sensitivity();
-
-    }
-    else
-    {
-        if ((address & 1) == 0)
-        {
-            state_.IrqEnabled = false;
-            bus_->SetCartIrq(false);
-        }
-        else
-        {
-            state_.IrqEnabled = true;
-        }
-
-        auto sensitivityBefore = state_.ChrA12Sensitivity;
-        if (state_.IrqCounter > 0 || (state_.ReloadValue > 0) || state_.IrqEnabled)
-            state_.ChrA12Sensitivity =
-            mapper_ == MapperType::MCACC
-            ? ChrA12Sensitivity::FallingEdgeDivided
-            : ChrA12Sensitivity::RisingEdgeSmoothed;
-        else
-            state_.ChrA12Sensitivity = ChrA12Sensitivity::None;
-
-        if (state_.ChrA12Sensitivity != sensitivityBefore)
-            bus_->UpdateA12Sensitivity();
-    }
-}
-
-void Cart::SetBankMMC3(uint32_t bank)
-{
-    switch (state_.BankSelect)
-    {
-    case 0:
-        bus_->SyncPpu();
-        
-        state_.ChrBank0 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 1:
-        bus_->SyncPpu();
-        state_.ChrBank1 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 2:
-        bus_->SyncPpu();
-        state_.ChrBank2 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 3:
-        bus_->SyncPpu();
-        state_.ChrBank3 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 4:
-        bus_->SyncPpu();
-        state_.ChrBank4 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 5:
-        bus_->SyncPpu();
-        state_.ChrBank5 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 6:
-        state_.PrgBank0 = bank << 13;
-        UpdatePrgMapMMC3();
-        break;
-
-    case 7:
-        state_.PrgBank1 = bank << 13;
-        UpdatePrgMapMMC3();
-        break;
-
-    // RAMBO-1 extensions:
-    case 8:
-        bus_->SyncPpu();
-        state_.ChrBank6 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 9:
-        bus_->SyncPpu();
-        state_.ChrBank7 = bank << 10;
-        UpdateChrMapMMC3();
-        break;
-
-    case 15:
-        state_.PrgBank2 = bank << 13;
-        UpdatePrgMapMMC3();
-        break;
-    }
-}
-
-void Cart::UpdatePrgMapMMC3()
-{
-    if (state_.PrgRamEnabled && data_.PrgRamBanks.size())
-        state_.CpuBanks[3] = data_.PrgRamBanks[0];
-    else
-        state_.CpuBanks[3] = nullptr;
-
-    auto block = &data_.PrgData[state_.PrgBankHighBits & data_.PrgMask];
-
-    if (state_.PrgMode == 0)
-    {
-        state_.CpuBanks[4] = &block[state_.PrgBank0 & data_.PrgMask];
-        state_.CpuBanks[5] = &block[state_.PrgBank1 & data_.PrgMask];
-        state_.CpuBanks[6] = &block[state_.PrgBank2 & data_.PrgMask];
-        state_.CpuBanks[7] = &block[data_.PrgBlockSize - 0x2000];
-    }
-    else
-    {
-        state_.CpuBanks[4] = &block[state_.PrgBank2 & data_.PrgMask];
-        state_.CpuBanks[5] = &block[state_.PrgBank1 & data_.PrgMask];
-        state_.CpuBanks[6] = &block[state_.PrgBank0 & data_.PrgMask];
-        state_.CpuBanks[7] = &block[data_.PrgBlockSize- 0x2000];
-    }
-}
-
-void Cart::UpdateChrMapMMC3()
-{
-    if (mapper_ == MapperType::TQROM)
-    {
-        UpdateChrMapTQROM();
-        return;
-    }
-
-    auto block = &data_.ChrData[state_.ChrBankHighBits & data_.ChrMask];
-
-    if ((state_.ChrMode & 1) == 0)
-    {
-        if ((state_.ChrMode & 2) != 0)
-        {
-            // RAMBO-1 full 1kb mode
-            state_.PpuBanks[0] = &block[state_.ChrBank0 & data_.ChrMask];
-            state_.PpuBanks[1] = &block[state_.ChrBank6 & data_.ChrMask];
-            state_.PpuBanks[2] = &block[state_.ChrBank1 & data_.ChrMask];
-            state_.PpuBanks[3] = &block[state_.ChrBank7 & data_.ChrMask];
-        }
-        else
-        {
-            auto base0 = &block[state_.ChrBank0 & data_.ChrMask & 0xfffff800];
-            state_.PpuBanks[0] = base0;
-            state_.PpuBanks[1] = base0 + 0x400;
-
-            auto base1 = &block[state_.ChrBank1 & data_.ChrMask & 0xfffff800];
-            state_.PpuBanks[2] = base1;
-            state_.PpuBanks[3] = base1 + 0x400;
-        }
-
-        state_.PpuBanks[4] = &block[state_.ChrBank2 & data_.ChrMask];
-        state_.PpuBanks[5] = &block[state_.ChrBank3 & data_.ChrMask];
-        state_.PpuBanks[6] = &block[state_.ChrBank4 & data_.ChrMask];
-        state_.PpuBanks[7] = &block[state_.ChrBank5 & data_.ChrMask];
-
-
-        if (mapper_ == MapperType::TxSROM || mapper_ == MapperType::Tengen800037)
-        {
-            auto base = bus_->GetPpuRamBase();
-            state_.PpuBanks[8] = state_.PpuBanks[12] = &base[(state_.ChrBank0 >> 7) & 0x00400];
-            state_.PpuBanks[9] = state_.PpuBanks[13] = &base[(state_.ChrBank0 >> 7) & 0x00400];
-            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank1 >> 7) & 0x00400];
-            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank1 >> 7) & 0x00400];
-        }
-    } 
-    else
-    {
-        state_.PpuBanks[0] = &block[state_.ChrBank2 & data_.ChrMask];
-        state_.PpuBanks[1] = &block[state_.ChrBank3 & data_.ChrMask];
-        state_.PpuBanks[2] = &block[state_.ChrBank4 & data_.ChrMask];
-        state_.PpuBanks[3] = &block[state_.ChrBank5 & data_.ChrMask];
-
-        if ((state_.ChrMode & 2) != 0)
-        {
-            // RAMBO-1 full 1kb mode
-            state_.PpuBanks[4] = &block[state_.ChrBank0 & data_.ChrMask];
-            state_.PpuBanks[5] = &block[state_.ChrBank6 & data_.ChrMask];
-            state_.PpuBanks[6] = &block[state_.ChrBank1 & data_.ChrMask];
-            state_.PpuBanks[7] = &block[state_.ChrBank7 & data_.ChrMask];
-        }
-        else
-        {
-            auto base0 = &block[state_.ChrBank0 & data_.ChrMask & 0xfffff800];
-            state_.PpuBanks[4] = base0;
-            state_.PpuBanks[5] = base0 + 0x400;
-
-            auto base1 = &block[state_.ChrBank1 & data_.ChrMask & 0xfffff800];
-            state_.PpuBanks[6] = base1;
-            state_.PpuBanks[7] = base1 + 0x400;
-        }
-
-        if (mapper_ == MapperType::TxSROM || mapper_ == MapperType::Tengen800037)
-        {
-            auto base = bus_->GetPpuRamBase();
-            state_.PpuBanks[8] = state_.PpuBanks[12] = &base[(state_.ChrBank2 >> 7) & 0x00400];
-            state_.PpuBanks[9] = state_.PpuBanks[13] = &base[(state_.ChrBank3 >> 7) & 0x00400];
-            state_.PpuBanks[10] = state_.PpuBanks[14] = &base[(state_.ChrBank4 >> 7) & 0x00400];
-            state_.PpuBanks[11] = state_.PpuBanks[15] = &base[(state_.ChrBank5 >> 7) & 0x00400];
-        }
-    }
 }
 
 uint8_t Cart::ReadMMC5(uint16_t address)
@@ -2345,100 +2041,6 @@ void Cart::WriteQJLow(uint16_t address, uint8_t value)
     bus_->SyncPpu();
     UpdatePrgMapMMC3();
     UpdateChrMapMMC3();
-}
-
-void Cart::WriteRambo1(uint16_t address, uint8_t value)
-{
-    // very similar to WriteMMC3
-    if (address < 0xa000)
-    {
-        if ((address & 1) == 0)
-        {
-            bus_->SyncPpu();
-            state_.BankSelect = value & 0x0f;
-            state_.PrgMode = (value >> 6) & 1;
-            state_.ChrMode = (value >> 7) & 1;
-            state_.ChrMode |= (value & 0x20) >> 4;
-            UpdatePrgMapMMC3();
-            UpdateChrMapMMC3();
-        }
-        else
-        {
-            SetBankMMC3(value);
-        }
-    }
-    else if (address < 0xc000)
-    {
-        if ((address & 1) == 0)
-        {
-            SetMirrorMode(value & 1 ? MirrorMode::Horizontal : MirrorMode::Vertical);
-        }
-    }
-    else if (address < 0xe000)
-    {
-        if ((address & 1) == 0)
-        {
-            state_.ReloadValue = value;
-
-            if (state_.IrqMode == 1)
-            {
-                auto cyclesSinceReset = bus_->PpuCycleCount() - state_.PrescalerResetCycle;
-                cyclesSinceReset %= 12;
-
-                bus_->Deschedule(SyncEvent::CartCpuIrqCounter);
-                if (state_.IrqMode == 1 && (state_.IrqCounter > 0 || state_.ReloadValue > 0 || state_.IrqEnabled))
-                {
-                    bus_->SchedulePpu(12 - cyclesSinceReset, SyncEvent::CartCpuIrqCounter);
-                }
-            }
-        }
-        else
-        {
-            state_.IrqMode = value & 1;
-            state_.ReloadCounter = true;
-
-            if (mapper_ == MapperType::Rambo1 || mapper_ == MapperType::Tengen800037)
-            {
-                bus_->Deschedule(SyncEvent::CartCpuIrqCounter);
-
-                if (state_.IrqMode == 0)
-                {
-                    // this won't trip in the current scanline, if it was not within 16 CPU cycles of the clock going low.
-                    // We'll emulate this by bumping the count by one when we reset it.
-                    // an exception to this rule is if the count is zero, and we are resetting it to zero, then this happening a scanline late isn't observable
-                    if (state_.ReloadValue == 0)
-                    {
-                        state_.BumpIrqCounter = false;
-                    }
-                    else
-                    {
-                        state_.BumpIrqCounter = bus_->PpuCycleCount() >= state_.LastA12Cycle + 48;
-                    }
-                }
-                else
-                {
-                    state_.PrescalerResetCycle = bus_->PpuCycleCount();
-
-                    if (state_.IrqMode == 1 && (state_.IrqCounter > 0 || state_.ReloadValue > 0 || state_.IrqEnabled))
-                    {
-                        bus_->Schedule(4, SyncEvent::CartCpuIrqCounter);
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        if ((address & 1) == 0)
-        {
-            state_.IrqEnabled = false;
-        }
-        else
-        {
-            state_.IrqEnabled = true;
-        }
-        bus_->SetCartIrq(false);
-    }
 }
 
 void Cart::WriteGxROM(uint16_t address, uint8_t value)

@@ -19,11 +19,22 @@ void MMC1::Initialize(CartCoreState& state)
 
     auto& mmc1state = state.MapperState.MMC1;
 
+    mmc1state.MapperShiftCount = 0;
+    mmc1state.MapperShift = 0;
     mmc1state.BankSelect = 0;
     mmc1state.CommandNumber = 0;
-    mmc1state.MapperShift = 0;
-    mmc1state.MapperShiftCount = 0;
+    mmc1state.MirrorMode = MirrorMode::Horizontal;
+    mmc1state.ChrMode = 0;
+    mmc1state.ChrBank0 = 0;
+    mmc1state.ChrBank1 = 0;
     mmc1state.PrgMode = 3;
+    mmc1state.PrgPlane0 = 0;
+    mmc1state.PrgPlane1 = 0;
+    mmc1state.PrgBank = 0;
+    mmc1state.PrgRamEnabled = 0;
+    mmc1state.PrgRamBank0 = 0;
+    mmc1state.PrgRamBank1 = 0;
+    mmc1state.ChrA12 = false;
 }
 
 void MMC1::Write(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t value)
@@ -61,6 +72,9 @@ void MMC1::Write2(Bus& bus, CartCoreState& state, CartData& data, uint16_t addre
 
 void MMC1::A12Rising(CartCoreState& state, CartData& data)
 {
+    auto& mmc1state = state.MapperState.MMC1;
+    mmc1state.ChrA12 = true;
+
     if (state.ChrA12Sensitivity == ChrA12Sensitivity::AllEdges)
     {
         UpdatePrgMap(state, data);
@@ -69,6 +83,9 @@ void MMC1::A12Rising(CartCoreState& state, CartData& data)
 
 void MMC1::A12Falling(CartCoreState& state, CartData& data)
 {
+    auto& mmc1state = state.MapperState.MMC1;
+    mmc1state.ChrA12 = false;
+
     if (state.ChrA12Sensitivity == ChrA12Sensitivity::AllEdges)
     {
         UpdatePrgMap(state, data);
@@ -77,7 +94,7 @@ void MMC1::A12Falling(CartCoreState& state, CartData& data)
 
 void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_t address, uint8_t value)
 {
-    auto& mmc1state = state.MapperState.MMC1;
+    auto& mmc1State = state.MapperState.MMC1;
 
     switch (address >> 13)
     {
@@ -85,22 +102,22 @@ void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_
         // control
 
         // chr mode
-        mmc1state.ChrMode = (value >> 4) & 0x01;
+        mmc1State.ChrMode = (value >> 4) & 0x01;
         UpdateChrMap(bus, state, data);
 
         // prg mode
-        mmc1state.PrgMode = (value >> 2) & 0x03;
+        mmc1State.PrgMode = (value >> 2) & 0x03;
         UpdatePrgMap(state, data);
 
         // mirroring mode
-        mmc1state.MirrorMode = static_cast<MirrorMode>(value & 0x03);
+        mmc1State.MirrorMode = static_cast<MirrorMode>(value & 0x03);
         UpdatePpuRamMap(bus, state);
         break;
 
     case 5:
     {
         // CHR bank 0
-        mmc1state.ChrBank0 = value << 12;
+        mmc1State.ChrBank0 = value << 12;
         UpdateChrMap(bus, state, data);
 
         auto sensitivityBefore = state.ChrA12Sensitivity;
@@ -110,28 +127,28 @@ void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_
         // TODO: SNROM PRG RAM disable line
         if (data.PrgData.size() == 0x80000)
         {
-            mmc1state.PrgPlane0 = ((mmc1state.ChrBank0 << 2) & 0x40000);
-            if (mmc1state.PrgPlane0 != mmc1state.PrgPlane1)
+            mmc1State.PrgPlane0 = ((mmc1State.ChrBank0 << 2) & 0x40000);
+            if (mmc1State.PrgPlane0 != mmc1State.PrgPlane1)
                 state.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
 
             // TODO: we need to get the current A12 state from the PPU.
-            if (!state.ChrA12)
+            if (!mmc1State.ChrA12)
                 UpdatePrgMap(state, data);
         }
 
         if (data.PrgRamBanks.size() > 1)
         {
             if (data.PrgRamBanks.size() > 2)
-                mmc1state.PrgRamBank0 = (value >> 2) & 0x03;
+                mmc1State.PrgRamBank0 = (value >> 2) & 0x03;
             else
-                mmc1state.PrgRamBank0 = (value >> 1) & 0x01;
+                mmc1State.PrgRamBank0 = (value >> 1) & 0x01;
 
-            if (mmc1state.PrgRamBank0 != mmc1state.PrgRamBank1)
+            if (mmc1State.PrgRamBank0 != mmc1State.PrgRamBank1)
                 state.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
 
             // TODO: we need to get the current A12 state from the PPU.
-            if (!state.ChrA12 && state.CpuBanks[3])
-                state.CpuBanks[3] = data.PrgRamBanks[mmc1state.PrgRamBank0];
+            if (!mmc1State.ChrA12 && state.CpuBanks[3])
+                state.CpuBanks[3] = data.PrgRamBanks[mmc1State.PrgRamBank0];
         }
 
         if (state.ChrA12Sensitivity != sensitivityBefore)
@@ -142,7 +159,7 @@ void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_
     case 6:
     {
         // CHR bank 1
-        mmc1state.ChrBank1 = value << 12;
+        mmc1State.ChrBank1 = value << 12;
         UpdateChrMap(bus, state, data);
 
         auto sensitivityBefore = state.ChrA12Sensitivity;
@@ -151,13 +168,13 @@ void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_
         // TODO: SNROM PRG RAM disable line
         if (data.PrgData.size() == 0x80000)
         {
-            mmc1state.PrgPlane1 = ((mmc1state.ChrBank1 << 2) & 0x40000);
+            mmc1State.PrgPlane1 = ((mmc1State.ChrBank1 << 2) & 0x40000);
 
-            if (mmc1state.PrgPlane0 != mmc1state.PrgPlane1)
+            if (mmc1State.PrgPlane0 != mmc1State.PrgPlane1)
                 state.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
 
             // TODO: we need to get the current A12 state from the PPU.
-            if (state.ChrA12)
+            if (mmc1State.ChrA12)
                 UpdatePrgMap(state, data);
         }
 
@@ -165,16 +182,16 @@ void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_
         if (data.PrgRamBanks.size() > 1)
         {
             if (data.PrgRamBanks.size() > 2)
-                mmc1state.PrgRamBank1 = (value >> 2) & 0x03;
+                mmc1State.PrgRamBank1 = (value >> 2) & 0x03;
             else
-                mmc1state.PrgRamBank1 = (value >> 1) & 0x01;
+                mmc1State.PrgRamBank1 = (value >> 1) & 0x01;
 
-            if (mmc1state.PrgRamBank0 != mmc1state.PrgRamBank1)
+            if (mmc1State.PrgRamBank0 != mmc1State.PrgRamBank1)
                 state.ChrA12Sensitivity = ChrA12Sensitivity::AllEdges;
 
             // TODO: we need to get the current A12 state from the PPU.
-            if (state.ChrA12 && state.CpuBanks[3])
-                state.CpuBanks[3] = data.PrgRamBanks[mmc1state.PrgRamBank1];
+            if (mmc1State.ChrA12 && state.CpuBanks[3])
+                state.CpuBanks[3] = data.PrgRamBanks[mmc1State.PrgRamBank1];
         }
 
         if (state.ChrA12Sensitivity != sensitivityBefore)
@@ -187,8 +204,8 @@ void MMC1::WriteRegister(Bus& bus, CartCoreState& state, CartData& data, uint16_
         // PRG bank
 
         // enable/disable PRG RAM
-        mmc1state.PrgRamEnabled = (value & 0x10) == 0;
-        mmc1state.PrgBank = ((value & 0x0f) << 14 & data.PrgMask);
+        mmc1State.PrgRamEnabled = (value & 0x10) == 0;
+        mmc1State.PrgBank = ((value & 0x0f) << 14 & data.PrgMask);
         UpdatePrgMap(state, data);
         break;
     }
@@ -242,9 +259,9 @@ void MMC1::UpdatePrgMap(CartCoreState& state, CartData& data)
     if (!mmc1State.PrgRamEnabled || data.PrgRamBanks.size() == 0)
         state.CpuBanks[3] = nullptr;
     else
-        state.CpuBanks[3] = state.ChrA12 ? data.PrgRamBanks[mmc1State.PrgRamBank1] : data.PrgRamBanks[mmc1State.PrgRamBank0];
+        state.CpuBanks[3] = mmc1State.ChrA12 ? data.PrgRamBanks[mmc1State.PrgRamBank1] : data.PrgRamBanks[mmc1State.PrgRamBank0];
 
-    auto prgPlane = state.ChrA12 ? mmc1State.PrgPlane1 : mmc1State.PrgPlane0;
+    auto prgPlane = mmc1State.ChrA12 ? mmc1State.PrgPlane1 : mmc1State.PrgPlane0;
 
     switch (mmc1State.PrgMode)
     {

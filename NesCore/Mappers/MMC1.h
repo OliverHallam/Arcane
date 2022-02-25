@@ -11,7 +11,7 @@ struct MMC1State
     uint32_t BankSelect;
     uint32_t CommandNumber;
 
-    MirrorMode MirrorMode{ MirrorMode::Horizontal };
+    MirrorMode MirrorMode;
     
     uint32_t ChrMode;
     uint32_t ChrBank0;
@@ -21,9 +21,11 @@ struct MMC1State
     uint32_t PrgPlane0;
     uint32_t PrgPlane1;
     uint32_t PrgBank;
-    uint32_t PrgRamEnabled{};
-    uint32_t PrgRamBank0{};
-    uint32_t PrgRamBank1{};
+    uint32_t PrgRamEnabled;
+    uint32_t PrgRamBank0;
+    uint32_t PrgRamBank1;
+
+    bool ChrA12;
 };
 
 class Bus;

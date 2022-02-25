@@ -91,12 +91,9 @@ struct CartCoreState
     uint32_t ExtendedPatternAddress{};
 
     ChrA12Sensitivity ChrA12Sensitivity{};
-    bool ChrA12{};
 
     bool IrqEnabled{};
     uint32_t IrqCounter{};
-    uint32_t PrescalerResetCycle{};
-    bool BumpIrqCounter{};
 
     bool CpuCounterEnabled{};
     uint32_t CpuCounterSyncCycle{};
